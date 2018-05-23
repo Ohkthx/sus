@@ -17,8 +17,7 @@ namespace SUS.Server
         {
             // Client initated Authenticate, look up and verify information.
             // if not information found, prompt to create a new gamestate.
-            var go = GameObject.Instance;
-            GameState gamestate = go.GetGameState(auth.ID);
+            GameState gamestate = GameObject.FindGameState(auth.ID);
 
             // Send our response if no player is found, else send the client their GameState.
             if (gamestate == null)
@@ -31,9 +30,9 @@ namespace SUS.Server
         {
             // Client has sent a player, create a proper gamestate and send it to the client.
             GameState newState = new GameState(player);
-            newState.Location = GameObject.Instance.GetStartingZone();
+            newState.Location = GameObject.GetStartingZone();
             newState.moved = true;
-            GameObject.Instance.UpdateGameStates(ref newState);
+            GameObject.UpdateGameStates(ref newState);
 
             socketHandler.ToClient(newState.ToByte());
         }
@@ -42,7 +41,7 @@ namespace SUS.Server
         {
             // TODO: Update user locally and reflect any other updates back to the client.
             //  Like player locations, enemy locations, etc.
-            GameObject.Instance.UpdateGameStates(ref gameState);
+            GameObject.UpdateGameStates(ref gameState);
 
             socketHandler.ToClient(gameState.Location.ToByte());
         }
@@ -55,7 +54,7 @@ namespace SUS.Server
             {
                 case RequestTypes.location:
                     Node n = (Node)req.Value;
-                    socketHandler.ToClient(GameObject.Instance.GetNode(n.ID).ToByte());
+                    socketHandler.ToClient(GameObject.FindNode(n.ID).ToByte());
                     break;
                 default:
                     Console.WriteLine(" [ERR] Bad Request recieved.");

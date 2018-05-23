@@ -135,8 +135,6 @@ namespace SUS.Shared.Utility
     [Serializable]
     public sealed class Request
     {
-
-
         public RequestTypes Type { get; private set; }
         public Object Value = null;
 
@@ -169,6 +167,7 @@ namespace SUS.Shared.Utility
 
     public class SocketHandler
     {
+        private bool DEBUG;
         private ManualResetEvent sendDone = new ManualResetEvent(false);
         private ManualResetEvent readDone = new ManualResetEvent(false);
         private Object response = null;
@@ -177,10 +176,11 @@ namespace SUS.Shared.Utility
 
         public enum Types { None = 0, Server = 1, Client = 2 }
 
-        public SocketHandler(Socket socket, Types type)
+        public SocketHandler(Socket socket, Types type, bool debug = false)
         {
             this.type = type;
             this.socket = socket;
+            this.DEBUG = debug;
         }
 
         private void Receive()
@@ -229,7 +229,9 @@ namespace SUS.Shared.Utility
                     } 
                     else
                     {
-                        Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), this.type)}.");
+                        if (this.DEBUG)
+                            Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), this.type)}.");
+
                         this.response = Utility.Deserialize(state.Value);
 
                         readDone.Set();
@@ -237,11 +239,12 @@ namespace SUS.Shared.Utility
                 }
                 else
                 {
-                    Console.WriteLine("Here?");
                     // All the data has arrived; put it in response.  
                     if (state.Value.Length == state.ObjectSize)
                     {
-                        Console.WriteLine($" => {state.Value.Length + sizeof(long)} read from {Enum.GetName(typeof(Types), this.type)}.");
+                        if (DEBUG)
+                            Console.WriteLine($" => {state.Value.Length + sizeof(long)} read from {Enum.GetName(typeof(Types), this.type)}.");
+
                         this.response = Utility.Deserialize(state.Value);
                     }
 
@@ -274,7 +277,9 @@ namespace SUS.Shared.Utility
 
                 if (state.Value.Length == state.ObjectSize)
                 {
-                    Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), this.type)}.");
+                    if (this.DEBUG)
+                        Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), this.type)}.");
+
                     this.response = Utility.Deserialize(state.Value);
                     readDone.Set();
                 }
@@ -297,7 +302,9 @@ namespace SUS.Shared.Utility
 
                 // Complete sending the data to the remote device.  
                 int bytesSent = handler.EndSend(ar);
-                Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), this.type)}.");
+
+                if (this.DEBUG)
+                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), this.type)}.");
 
                 sendDone.Set();
             }
@@ -323,7 +330,10 @@ namespace SUS.Shared.Utility
 
                 // Complete sending the data to the remote device.  
                 int bytesSent = handler.EndSend(ar);
-                Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), this.type)}.");
+
+                if (this.DEBUG)
+                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), this.type)}.");
+
                 sendDone.Set();
             }
             catch (Exception e)

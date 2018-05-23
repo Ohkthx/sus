@@ -11,10 +11,9 @@ using SUS.Shared.Utility;
 namespace SUS
 {
     [Serializable]
-    public sealed class GameObject
+    public static class GameObject
     {
         #region Locks
-        private static GameObject instance = null;
         private static readonly object padlock = new object();
         private static Mutex gamestatesMutex = new Mutex();
         private static Mutex playersMutex = new Mutex();
@@ -24,49 +23,25 @@ namespace SUS
 
         #region Dictionaries
         // Player ID => GameState
-        private static Dictionary<ulong, GameState> GameStates = new Dictionary<ulong, GameState>();
+        private static Dictionary<ulong, GameState> m_Gamestates = new Dictionary<ulong, GameState>();
 
         // Location.Type => Node
-        private static Dictionary<int, Node> Nodes = new Dictionary<int, Node>();
+        private static Dictionary<int, Node> m_Nodes = new Dictionary<int, Node>();
+
+        // Serial => Mobile
+        private static Dictionary<Serial, Mobile> m_Mobiles = new Dictionary<Serial, Mobile>();
 
         // Player ID => Player 
-        private static Dictionary<ulong, Player> Players = new Dictionary<ulong, Player>();
+        private static Dictionary<ulong, Player> m_Players = new Dictionary<ulong, Player>();
 
         // Player ID => Client Socket
-        private static Dictionary<ulong, SocketHandler> Clients = new Dictionary<ulong, SocketHandler>();
-        #endregion
-
-        #region Events
-        private delegate void locationRaiser();
-        private event locationRaiser locationUpdate;
-        #endregion
-
-        #region Constructors
-        GameObject()
-        {
-        }
-
-        public static GameObject Instance
-        {
-            get
-            {
-                lock (padlock)
-                {
-                    if (instance == null)
-                    {
-                        instance = new GameObject();
-
-                    }
-                    return instance;
-                }
-            }
-        }
+        private static Dictionary<ulong, SocketHandler> m_Clients = new Dictionary<ulong, SocketHandler>();
         #endregion
 
         #region Map Data
-        public void CreateMap()
+        public static void CreateMap()
         {
-            if (Nodes.Count() != 0)
+            if (m_Nodes.Count() != 0)
                 return;
 
             Node Britain = new Node(Types.Town, Locations.Britain, "Britain Bank!");
@@ -85,17 +60,17 @@ namespace SUS
             UpdateNodes(Graveyard);
         }
 
-        public Node GetStartingZone()
+        public static Node GetStartingZone()
         {
-            if (Nodes.Count() == 0)
+            if (m_Nodes.Count() == 0)
                 CreateMap();
 
-            return Nodes[(int)Locations.Britain];
+            return m_Nodes[(int)Locations.Britain];
         }
         #endregion
 
         #region Updating
-        public void UpdateGameStates(ref GameState gamestate, bool remove = false)
+        public static void UpdateGameStates(ref GameState gamestate, bool remove = false)
         {
             // Update Location if the gamestate shows that the character moved from last location.
             if (gamestate.moved)
@@ -103,45 +78,45 @@ namespace SUS
                 if (gamestate.LocationLast != null)
                 { 
                     // Remove from old location.
-                    this.UpdateLocationPlayer(gamestate.LocationLast.ID, gamestate.Account, true);
-                    gamestate.LocationLast = Nodes[(int)gamestate.LocationLast.ID];
+                    UpdateLocationPlayer(gamestate.LocationLast.ID, gamestate.Account, true);
+                    gamestate.LocationLast = m_Nodes[(int)gamestate.LocationLast.ID];
                 }
 
                 // Add to new location.
-                this.UpdateLocationPlayer(gamestate.Location.ID, gamestate.Account);
+                UpdateLocationPlayer(gamestate.Location.ID, gamestate.Account);
 
                 // Reflect the updated locations back to the user.
-                gamestate.Location = Nodes[(int)gamestate.Location.ID];
+                gamestate.Location = m_Nodes[(int)gamestate.Location.ID];
                 gamestate.moved = false;
             }
 
             gamestatesMutex.WaitOne();
             if (remove)
                 // Removes if the player DOES exist.
-                GameStates.Remove(gamestate.ID());
+                m_Gamestates.Remove(gamestate.ID());
             else
                 // This will add or update (override current).
-                GameStates[gamestate.ID()] = gamestate;
+                m_Gamestates[gamestate.ID()] = gamestate;
 
             UpdatePlayers(gamestate.GetPlayer(), remove);
             gamestatesMutex.ReleaseMutex();
         }
 
-        private void UpdatePlayers(Player player, bool remove = false)
+        private static void UpdatePlayers(Player player, bool remove = false)
         {
             playersMutex.WaitOne();
             if (remove)
-                Players.Remove(player.m_ID);
+                m_Players.Remove(player.m_ID);
             else
-                Players[player.m_ID] = player;
+                m_Players[player.m_ID] = player;
             playersMutex.ReleaseMutex();
         }
 
         // Add or Remove a player from a Node.
-        private void UpdateLocationPlayer(int nodeKey, Player account, bool remove = false)
+        private static void UpdateLocationPlayer(int nodeKey, Player account, bool remove = false)
         {
             Node n;
-            if (!Nodes.TryGetValue((int)nodeKey, out n))
+            if (!m_Nodes.TryGetValue((int)nodeKey, out n))
             {
                 // Location doesn't exist?!
                 Console.WriteLine($" [ ERR ] Location missing: {Enum.GetName(typeof(Locations), nodeKey)}");
@@ -154,38 +129,44 @@ namespace SUS
             else
                 n.AddMobile(account);
 
-            this.UpdateNodes(n);
+            UpdateNodes(n);
         }
 
-        public void UpdateNodes(Node node, bool remove = false)
+        public static void UpdateNodes(Node node, bool remove = false)
         {
             locationsMutex.WaitOne();
             if (remove)
-                Nodes.Remove(node.ID);
+                m_Nodes.Remove(node.ID);
             else
             {
                 // TODO: Combine Location data here (players?, add and remove.
-                Nodes[node.ID] = node;
+                m_Nodes[node.ID] = node;
 
-                // Event to update players.
-                this.locationUpdate?.Invoke();
             }
             locationsMutex.ReleaseMutex();
         }
         #endregion
 
-        public GameState GetGameState(ulong ID)
+        public static Mobile FindMobile(Serial serial)
+        {
+            Mobile m;
+            if (!m_Mobiles.TryGetValue(serial, out m))
+                return null;
+            return m;
+        }
+
+        public static GameState FindGameState(ulong ID)
         {
             GameState gs;
-            if (!GameStates.TryGetValue(ID, out gs))
+            if (!m_Gamestates.TryGetValue(ID, out gs))
                 return null;
             return gs;
         }
             
-        public Node GetNode(int ID)
+        public static Node FindNode(int ID)
         {
             Node n;
-            if (!Nodes.TryGetValue(ID, out n))
+            if (!m_Nodes.TryGetValue(ID, out n))
                 return null;
             return n;
         }

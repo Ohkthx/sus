@@ -17,20 +17,27 @@ namespace SUSClient
 
     class Program
     {
-        static void Main(string[] args) 
-            => StartUp();
+        private static bool DEBUG = false;
 
-        static void StartUp()
+        static void Main(string[] args) 
+            => StartUp(args);
+
+        static void StartUp(string []args)
         {
+            foreach (string arg in args)
+                if (arg.ToLower() == "-debug")
+                {
+                    Console.WriteLine("Found debug..");
+                    DEBUG = true;
+                }
+
+
             AsynchronousClient.StartClient();
             Console.Read();
         }
 
         public static void ServerHandler(ref Socket server)
         {
-            for (int x = 0; x < 30; x++)
-                Console.WriteLine($"{RandomImpl.NextDouble(), 2}");
-
             ulong id;
             do {
                 Console.Write("Select an ID: ");
@@ -39,11 +46,12 @@ namespace SUSClient
             Console.Write("Select a Username: ");
             var username = Console.ReadLine();
 
-            SocketHandler socketHandler = new SocketHandler(server, SocketHandler.Types.Server);
+            SocketHandler socketHandler = new SocketHandler(server, SocketHandler.Types.Server, debug: DEBUG);
 
             // Authorizing with host.
             Authenticate auth = new Authenticate(id);
-            Console.WriteLine("\n <= Sending Authentication.");
+            if (DEBUG)
+                Console.WriteLine("\n <= Sending Authentication.");
             socketHandler.ToServer(auth.ToByte());
 
             GameState myGS = null;
@@ -53,31 +61,46 @@ namespace SUSClient
             {
                 if (obj is Authenticate)
                 {
-                    Console.WriteLine(" => Received Authenticate.");
+                    if (DEBUG)
+                        Console.WriteLine(" => Received Authenticate.");
                     Player player = new Player(id, username, 100);
-                    Console.WriteLine("\n <= Sending New Player.");
+
+                    if (DEBUG)
+                        Console.WriteLine("\n <= Sending New Player.");
                     socketHandler.ToServer(player.ToByte());
                 }
                 else if (obj is GameState)
                 {
                     myGS = (GameState)obj;
-                    Console.WriteLine(" => Received GameState of Player.\n");
+
+                    if (DEBUG)
+                        Console.WriteLine(" => Received GameState of Player.\n");
+
                     Console.WriteLine($" [ Player: {myGS.Account.m_Name}, Location: {myGS.Location.Name} ]\n");
 
                     ia = new InteractiveConsole(myGS);
                 }
                 else if (obj is Request)
-                    Console.WriteLine(" => Recieved request.");
+                {
+                    if (DEBUG)
+                        Console.WriteLine(" => Recieved request.");
+                }
                 else if (obj is Node && ia != null)
                 {
-                    Console.WriteLine(" => Received node.");
+                    if (DEBUG)
+                        Console.WriteLine(" => Received node.");
                     ia.LocationUpdater((Node)obj);
                 }
                 else if (obj is Player)
-                    Console.WriteLine(" => Received Player.");
+                {
+                    if (DEBUG)
+                        Console.WriteLine(" => Received Player.");
+                }
                 else if (obj is SocketKill)
                 {
-                    Console.WriteLine(" => Received SocketKill");
+                    if (DEBUG)
+                        Console.WriteLine(" => Received SocketKill");
+
                     socketHandler.Kill();
                     break;
                 }
@@ -88,18 +111,21 @@ namespace SUSClient
 
                     if (ia.sendGameState)
                     {
-                        Console.WriteLine(" <= Sending Updated Gamestate.");
+                        if (DEBUG)
+                            Console.WriteLine(" <= Sending Updated Gamestate.");
                         socketHandler.ToServer(myGS.ToByte());
                     }
                     else if (ia.sendRequest)
                     {
-                        Console.WriteLine(" <= Sending request for current location.");
+                        if (DEBUG)
+                            Console.WriteLine(" <= Sending request for current location.");
                         Request req = new Request(RequestTypes.location, myGS.Location);
                         socketHandler.ToServer(req.ToByte());
                     }
                     else
                     {
-                        Console.WriteLine(" <= Sending SocketKill.");
+                        if (DEBUG)
+                            Console.WriteLine(" <= Sending SocketKill.");
                         socketHandler.ToServer(ia.socketKill.ToByte());
                     }
                 }
