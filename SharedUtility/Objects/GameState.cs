@@ -77,10 +77,7 @@ namespace SUS.Shared.Objects
                     if (node.Name.ToLower().Contains(location.ToLower()))
                     {
                         // Found the right place..
-                        this.LocationLast = this.Location;
-                        this.LocationLast.Clean();
-                        this.Location = node;
-                        this.moved = true;
+                        SwapLocation(this.Location, node);
                         return true;
                     }
                 }
@@ -94,12 +91,18 @@ namespace SUS.Shared.Objects
                 return false;
 
             var nodes = this.Location.Connections.ToList();
-            this.LocationLast = this.Location;
-            this.LocationLast.Clean();
-            this.Location = nodes[pos-1];
-            this.moved = true;
+            SwapLocation(this.Location, nodes[pos - 1]);
 
             return true;
+        }
+
+        private void SwapLocation(Node oldLocation, Node newLocation)
+        {
+            this.LocationLast = oldLocation;
+            this.LocationLast.Clean();
+
+            this.Location = newLocation;
+            this.moved = true;
         }
         #endregion
 
