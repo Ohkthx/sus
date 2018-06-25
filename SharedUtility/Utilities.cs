@@ -265,8 +265,17 @@ namespace SUS.Shared.Utility
             StateObject state = (StateObject)ar.AsyncState;
             Socket handler = state.workSocket;
 
-            // Read data from the client socket.   
-            int bytesRead = handler.EndReceive(ar);
+            // Read data from the client socket.
+            int bytesRead = 0;
+            try
+            {
+                bytesRead = handler.EndReceive(ar);
+            }
+            catch (SocketException se)
+            {
+                Kill();
+                return;
+            }
 
             if (bytesRead > 0)
             {
@@ -316,9 +325,17 @@ namespace SUS.Shared.Utility
 
         private void Send(byte[] data)
         {
-            // Begin sending the data to the remote device.  
-            socket.BeginSend(data, 0, data.Length, 0,
-                    new AsyncCallback(SendCallback), socket);
+            // Begin sending the data to the remote device.
+            try
+            {
+                socket.BeginSend(data, 0, data.Length, 0,
+                        new AsyncCallback(SendCallback), socket);
+            }
+            catch (SocketException se)
+            {
+                Kill();
+                return;
+            }
         }
 
         private void SendCallback(IAsyncResult ar)

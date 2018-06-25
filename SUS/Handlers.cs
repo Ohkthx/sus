@@ -46,6 +46,11 @@ namespace SUS.Server
             socketHandler.ToClient(gameState.Location.ToByte());
         }
 
+        public static void MobileAction(SocketHandler socketHandler, MobileAction mobileAction)
+        {
+            socketHandler.ToClient(mobileAction.ToByte());
+        }
+
         public static void Node(SocketHandler socketHandler, Node node) { }
 
         public static void Request(SocketHandler socketHandler, Request req)

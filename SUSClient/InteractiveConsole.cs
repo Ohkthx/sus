@@ -15,30 +15,37 @@ namespace SUSClient
     {
         private static GameState gs = null;
         public SocketKill socketKill = null;
+        public MobileAction myAction = null;
+
         public bool sendGameState = false;
         public bool sendRequest = false;
         public bool locationRequest = false;
-        private enum Actions { move, look, lastloc, players, actions, exit }
+        public bool actionRequest = false;
+
+        private enum ConsoleActions { move, look, lastloc, players, attack, actions, exit }
 
         public InteractiveConsole(GameState gamestate) { gs = gamestate; }
 
         public GameState Core()
         {
+            // If we requested a location of players, process it first.
             if (this.locationRequest)
                 this.players();
+            this.Reset();       // Reset our bools.
 
-            this.Reset();
+
             List<string> ValidActions = new List<string>();
             string act = string.Empty;
 
             Console.Write("Valid Actions: ");
-            foreach (string action in Enum.GetNames(typeof(Actions)))
+            foreach (string action in Enum.GetNames(typeof(ConsoleActions)))
             {
                 ValidActions.Add(action.ToLower());
                 Console.Write($"[{action.ToLower()}]  ");
             }
             Console.WriteLine();
-            while (this.socketKill == null && sendGameState == false && sendRequest == false)
+
+            while (this.socketKill == null && sendGameState == false && sendRequest == false && actionRequest == false)
             {
                 while (true)
                 {
@@ -66,6 +73,9 @@ namespace SUSClient
                     case "actions":
                         actions();
                         break;
+                    case "attack":
+                        attack();
+                        break;
                     case "exit":
                         exit();
                         break;
@@ -83,6 +93,7 @@ namespace SUSClient
             this.sendGameState = false;
             this.sendRequest = false;
             this.locationRequest = false;
+            this.actionRequest = false;
         }
 
         public void LocationUpdater(Node location)
@@ -133,8 +144,9 @@ namespace SUSClient
                 return;
             }
 
-            int pos = 0;
             Console.WriteLine($" Local Players:");
+
+            int pos = 0;
             if (gs.Location.Players.Count() > 0)
             {
                 foreach (Player p in gs.Location.Players)
@@ -145,17 +157,25 @@ namespace SUSClient
                         Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID}");
                     }
                 }
-                Console.WriteLine();
             }
-            
-            if (pos == 0) 
+
+            if (pos == 0)
                 Console.WriteLine("    => None.");
+
+            Console.WriteLine();
+        }
+
+        private void attack()
+        {
+            Console.WriteLine("Performing an attack on self!");
+            this.myAction = new MobileAction(gs.Account.m_ID);
+            this.actionRequest = true;
         }
 
         private void actions()
         {
             Console.Write(" Valid Actions: \n  ");
-            foreach (string action in Enum.GetNames(typeof(Actions)))
+            foreach (string action in Enum.GetNames(typeof(ConsoleActions)))
                 Console.Write($"[{action.ToLower()}]  ");
             Console.WriteLine();
         }

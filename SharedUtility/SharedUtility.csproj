@@ -58,9 +58,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GameObject.cs" />
     <Compile Include="Objects\GameState.cs" />
     <Compile Include="Objects\Item.cs" />
     <Compile Include="Objects\Location.cs" />
+    <Compile Include="Objects\MobileAction.cs" />
     <Compile Include="Objects\Mobiles\BaseCreature.cs" />
     <Compile Include="Objects\Mobiles\NPC.cs" />
     <Compile Include="Objects\Mobiles\Mobile.cs" />

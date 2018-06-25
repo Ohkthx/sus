@@ -50,13 +50,17 @@ namespace SUSClient
 
             // Authorizing with host.
             Authenticate auth = new Authenticate(id);
+
             if (DEBUG)
                 Console.WriteLine("\n <= Sending Authentication.");
+
+            // Send the authentication to the server.
             socketHandler.ToServer(auth.ToByte());
 
             GameState myGS = null;
             InteractiveConsole ia = null;
 
+            // While we are recieving information from the server, continue to decipher and process it.
             for (object obj = null; (obj = socketHandler.FromClient()) != null; )
             {
                 if (obj is Authenticate)
@@ -80,10 +84,15 @@ namespace SUSClient
 
                     ia = new InteractiveConsole(myGS);
                 }
+                else if (obj is MobileAction && ia != null)
+                {
+                    if (DEBUG)
+                        Console.WriteLine(" => Recieved Action!");
+                }
                 else if (obj is Request)
                 {
                     if (DEBUG)
-                        Console.WriteLine(" => Recieved request.");
+                        Console.WriteLine(" => Recieved Request.");
                 }
                 else if (obj is Node && ia != null)
                 {
@@ -99,31 +108,39 @@ namespace SUSClient
                 else if (obj is SocketKill)
                 {
                     if (DEBUG)
-                        Console.WriteLine(" => Received SocketKill");
+                        Console.WriteLine(" => Received SocketKill.");
 
                     socketHandler.Kill();
                     break;
                 }
 
                 if (ia != null)
-                {
-                    myGS = ia.Core();
+                {   // Get an action to perform and send it to the server.
+                    myGS = ia.Core();   // Activates the interactive console to grab the action.
 
                     if (ia.sendGameState)
-                    {
+                    {   // Send an updated Gamestate to the server.
                         if (DEBUG)
                             Console.WriteLine(" <= Sending Updated Gamestate.");
                         socketHandler.ToServer(myGS.ToByte());
                     }
                     else if (ia.sendRequest)
-                    {
+                    {   // Send an updated Request for information to the server.
                         if (DEBUG)
                             Console.WriteLine(" <= Sending request for current location.");
                         Request req = new Request(RequestTypes.location, myGS.Location);
                         socketHandler.ToServer(req.ToByte());
                     }
+                    else if (ia.actionRequest)
+                    {   // Send an action to the server, most likely for combat.
+                        // TODO: Combine this with sendRequest? Could reduce some of the complexity.
+                        if (DEBUG)
+                            Console.WriteLine(" <= Sending an action to the server.");
+                        socketHandler.ToServer(ia.myAction.ToByte());
+                    }
                     else
-                    {
+                    {   // Send a SocketKill to the server to close the socket down peacefully.
+                        // TODO: Add in catches for signal interrupts and run this.
                         if (DEBUG)
                             Console.WriteLine(" <= Sending SocketKill.");
                         socketHandler.ToServer(ia.socketKill.ToByte());

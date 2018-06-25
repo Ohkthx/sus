@@ -25,7 +25,7 @@ namespace SUS
         public static void ClientHandler(ref Socket client)
         {
             SocketKill socketKill = new SocketKill(false);
-            SocketHandler socketHandler = new SocketHandler(client, SocketHandler.Types.Client);
+            SocketHandler socketHandler = new SocketHandler(client, SocketHandler.Types.Client, debug: true);
 
             while (socketKill.killme == false)
             {
@@ -41,6 +41,8 @@ namespace SUS
                     ServerInstance.Node(socketHandler, (Node)obj);
                 else if (obj is Request)
                     ServerInstance.Request(socketHandler, (Request)obj);
+                else if (obj is MobileAction)
+                    ServerInstance.MobileAction(socketHandler, (MobileAction)obj);
                 else if (obj is SocketKill)
                     socketKill = (SocketKill)obj;
             }
