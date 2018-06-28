@@ -104,6 +104,19 @@ namespace SUS.Shared.Objects
             this.Location = newLocation;
             this.moved = true;
         }
+
+        public bool UpdateMobile(Mobile mobile)
+        {   // Attempt updating our current location, if it fails process all connected locations.
+            if (this.Location.UpdateMobile(mobile))
+                return true;
+
+            for (int i = 0; i < this.Location.Connections.Count; i++)
+                if (this.Location.Connections.ElementAt(i).UpdateMobile(mobile))
+                    return true;
+
+            // Location + Mobile combination was never found, return false.
+            return false;
+        }
         #endregion
 
     }

@@ -115,23 +115,27 @@ namespace SUS.Shared.Objects
             return Utility.Utility.Serialize(this);
         }
 
-        public void AddMobile(Mobile mobile)
+        public bool AddMobile(Mobile mobile)
         {
             if (mobile is Player)
-            {
-                Players.Add((Player)mobile);
-            }
-            else {
-                NPCs.Add((NPC)mobile);
-            }
+                return this.Players.Add((Player)mobile);
+            else 
+                return this.NPCs.Add((NPC)mobile);
         }
 
-        public void RemoveMobile(Mobile mobile)
+        public int RemoveMobile(Mobile mobile)
         {
             if (mobile is Player)
-                Players.RemoveWhere(p => p.m_ID == mobile.m_ID);
+                return this.Players.RemoveWhere(p => p.m_ID == mobile.m_ID);
             else
-                NPCs.RemoveWhere(p => p.m_ID == mobile.m_ID);
+                return this.NPCs.RemoveWhere(p => p.m_ID == mobile.m_ID);
+        }
+
+        public bool UpdateMobile(Mobile mobile)
+        {   // Remove the mobile, if there is none that are removed- return early, else just readd the new.
+            if (RemoveMobile(mobile) <= 0)
+                return false;
+            return AddMobile(mobile);
         }
 
         public void AddConnection(ref Node node)

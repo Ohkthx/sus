@@ -58,6 +58,9 @@ namespace SUS
             UpdateNodes(Sewers);
             UpdateNodes(Wilderness);
             UpdateNodes(Graveyard);
+
+            if (Spawn(new NPC("Orc", 10, 10, 8, 2), Locations.Britain))
+                Console.WriteLine("Spawned an Orc in Britain.");
         }
 
         public static Node GetStartingZone()
@@ -147,6 +150,7 @@ namespace SUS
         }
         #endregion
 
+        #region Finding
         public static Mobile FindMobile(Serial serial)
         {
             Mobile m;
@@ -169,6 +173,22 @@ namespace SUS
             if (!m_Nodes.TryGetValue(ID, out n))
                 return null;
             return n;
+        }
+        #endregion
+
+        public static bool Spawn(Mobile mobile, Locations location)
+        {
+            Node n = FindNode((int)location);
+            if (n == null)
+                return false;       // Bad location was provided.
+
+            if (n.AddMobile(mobile))
+            {   // If adding the mobile to the location succeeded, update the Nodes.
+                UpdateNodes(n);         // Update the current list of nodes.
+                return true;
+            }
+
+            return false;
         }
     }
 }
