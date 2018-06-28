@@ -41,8 +41,6 @@ namespace SUS
                     ServerInstance.Node(socketHandler, (Node)obj);
                 else if (obj is Request)
                     ServerInstance.Request(socketHandler, (Request)obj);
-                else if (obj is MobileAction)
-                    ServerInstance.MobileAction(socketHandler, (MobileAction)obj);
                 else if (obj is SocketKill)
                     socketKill = (SocketKill)obj;
             }

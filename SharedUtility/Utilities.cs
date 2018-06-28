@@ -10,7 +10,7 @@ using SUS.Shared.Objects.Mobiles;
 
 namespace SUS.Shared.Utility
 {
-    public enum RequestTypes { location }
+    public enum RequestTypes { Location, MobileAction }
 
     public static class Utility
     {

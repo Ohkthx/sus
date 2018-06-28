@@ -109,7 +109,6 @@ namespace SUSClient
                 {
                     if (DEBUG)
                         Console.WriteLine(" => Received SocketKill.");
-
                     socketHandler.Kill();
                     break;
                 }
@@ -124,19 +123,12 @@ namespace SUSClient
                             Console.WriteLine(" <= Sending Updated Gamestate.");
                         socketHandler.ToServer(myGS.ToByte());
                     }
-                    else if (ia.sendRequest)
+                    else if (ia.clientRequest != null)
                     {   // Send an updated Request for information to the server.
                         if (DEBUG)
                             Console.WriteLine(" <= Sending request for current location.");
-                        Request req = new Request(RequestTypes.location, myGS.Location);
-                        socketHandler.ToServer(req.ToByte());
-                    }
-                    else if (ia.actionRequest)
-                    {   // Send an action to the server, most likely for combat.
-                        // TODO: Combine this with sendRequest? Could reduce some of the complexity.
-                        if (DEBUG)
-                            Console.WriteLine(" <= Sending an action to the server.");
-                        socketHandler.ToServer(ia.myAction.ToByte());
+
+                        socketHandler.ToServer(ia.clientRequest.ToByte());
                     }
                     else
                     {   // Send a SocketKill to the server to close the socket down peacefully.

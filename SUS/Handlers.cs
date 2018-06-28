@@ -46,20 +46,19 @@ namespace SUS.Server
             socketHandler.ToClient(gameState.Location.ToByte());
         }
 
-        public static void MobileAction(SocketHandler socketHandler, MobileAction mobileAction)
-        {
-            socketHandler.ToClient(mobileAction.ToByte());
-        }
-
         public static void Node(SocketHandler socketHandler, Node node) { }
 
         public static void Request(SocketHandler socketHandler, Request req)
         {
             switch (req.Type)
             {
-                case RequestTypes.location:
+                case RequestTypes.Location:
                     Node n = (Node)req.Value;
                     socketHandler.ToClient(GameObject.FindNode(n.ID).ToByte());
+                    break;
+                case RequestTypes.MobileAction:
+                    MobileAction ma = (MobileAction)req.Value;
+                    socketHandler.ToClient(ma.ToByte());
                     break;
                 default:
                     Console.WriteLine(" [ERR] Bad Request recieved.");
