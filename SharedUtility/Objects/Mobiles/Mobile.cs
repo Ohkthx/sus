@@ -20,7 +20,7 @@ namespace SUS.Shared.Objects.Mobiles
     [Serializable]
     public class Mobile
     {
-        public ulong m_ID { get; set; }
+        public Serial m_ID { get; set; }
         public string m_Name { get; set; }
 
         protected int m_Hits;
@@ -96,7 +96,10 @@ namespace SUS.Shared.Objects.Mobiles
             foreach (int skill in Enum.GetValues(typeof(Skill.Types)))
                 m_Skills.Add(skill, new Skill(Enum.GetName(typeof(Skill.Types),skill), skill));
 
-            this.m_ID = ID;
+            if (ID == 0)
+                this.m_ID = Serial.NewObject;
+            else
+                this.m_ID = new Serial(ID);
             this.m_Name = name;
             this.m_HitsMax = m_Hits = hits;
         }

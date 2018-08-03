@@ -65,5 +65,15 @@ namespace SUS.Server
                     break;
             }
         }
+
+        private static void MobileActionHandler(MobileAction mobileAction)
+        {
+            Player initator = GameObject.FindMobile(mobileAction.GetInitator()) as Player;
+            // TODO: Handle null initator.
+            if (mobileAction.Type == ActionType.Attack)
+            {
+
+            }
+        }
     }
 }

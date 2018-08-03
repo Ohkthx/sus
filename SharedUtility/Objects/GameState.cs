@@ -52,9 +52,9 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
-        public ulong ID()
+        public UInt64 ID()
         {
-            return Account.m_ID;
+            return Account.m_ID.ToInt();
         }
 
         public Player GetPlayer()

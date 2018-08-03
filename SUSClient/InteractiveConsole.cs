@@ -13,73 +13,76 @@ namespace SUSClient
 {
     class InteractiveConsole
     {
+        private enum ConsoleActions { none, move, look, lastloc, players, npcs, attack, actions, exit }
+
         private static GameState gs = null;
         public SocketKill socketKill = null;
         public Request clientRequest = null;    // Temporary storage for a request sent by the client.
 
-        private int getEntityType = 0;
+        private ConsoleActions lastAction = ConsoleActions.none;
         public bool sendGameState = false;
-
-        private enum ConsoleActions { move, look, lastloc, players, npcs, attack, actions, exit }
 
         public InteractiveConsole(GameState gamestate) { gs = gamestate; }
 
         public GameState Core()
-        {
-            // If we requested a location of players, process it first.
-            if (this.clientRequest != null && this.clientRequest.Type == RequestTypes.Location)
-            {
-                this.getMobiles(getEntityType);
-            }
+        {   // If we requested a location of players, process it first.
+            if (lastAction != ConsoleActions.none)
+                responseHandler();
             this.Reset();       // Reset our bools.
 
-
-            List<string> ValidActions = new List<string>();
-            string act = string.Empty;
+            Dictionary<string, ConsoleActions> ValidActions = new Dictionary<string, ConsoleActions>();
 
             Console.Write("Valid Actions: ");
-            foreach (string action in Enum.GetNames(typeof(ConsoleActions)))
+            foreach (ConsoleActions action in Enum.GetValues(typeof(ConsoleActions)))
             {
-                ValidActions.Add(action.ToLower());
-                Console.Write($"[{action.ToLower()}]  ");
+                string name = Enum.GetName(typeof(ConsoleActions), action);
+                ValidActions.Add(name, action);
+                Console.Write($"[{name.ToLower()}]  ");
             }
+
             Console.WriteLine();
 
             while (this.socketKill == null && sendGameState == false && clientRequest == null)
             {
+                ConsoleActions consoleAction = ConsoleActions.none;
+                string act = string.Empty;
+
                 while (true)
                 {
                     Console.Write("\nChoose an action: ");
                     act = Console.ReadLine().ToLower();
 
-                    if (ValidActions.Contains(act))
+                    if (ValidActions.TryGetValue(act, out consoleAction))
+                    {
+                        this.lastAction = consoleAction;
                         break;
+                    }
                 }
 
-                switch (act)
+                switch (consoleAction)
                 {
-                    case "move":
+                    case ConsoleActions.move:
                         move();
                         break;
-                    case "look":
+                    case ConsoleActions.look:
                         look();
                         break;
-                    case "lastloc":
+                    case ConsoleActions.lastloc:
                         lastloc();
                         break;
-                    case "players":
-                        getMobiles(0);
+                    case ConsoleActions.players:
+                        getPlayers();
                         break;
-                    case "npcs":
-                        getMobiles(1);
+                    case ConsoleActions.npcs:
+                        getNPCs();
                         break;
-                    case "actions":
+                    case ConsoleActions.actions:
                         actions();
                         break;
-                    case "attack":
+                    case ConsoleActions.attack:
                         attack();
                         break;
-                    case "exit":
+                    case ConsoleActions.exit:
                         exit();
                         break;
                     default:
@@ -91,8 +94,27 @@ namespace SUSClient
             return gs;
         }
 
+        private void responseHandler()
+        {
+            switch (lastAction)
+            {
+                case ConsoleActions.players:
+                    getMobiles(0);
+                    break;
+                case ConsoleActions.npcs:
+                    getMobiles(1);
+                    break;
+                case ConsoleActions.attack:
+                    attack();
+                    break;
+                default:
+                    break;
+            }
+        }
+
         public void Reset()
         {
+            this.lastAction = ConsoleActions.none;
             this.sendGameState = false;
             this.clientRequest = null;
         }
@@ -137,46 +159,26 @@ namespace SUSClient
 
         private void getMobiles(int type)
         {   // Send our request if we haven't.
-            this.getEntityType = type;
-            if (this.clientRequest == null)
-            {
-                this.clientRequest = new Request(RequestTypes.Location, gs.Location);
-                return;
-            }
-
-            int pos, amount;
-            pos = amount = 0;
-
             if (type == 0)
-            {
-                Console.WriteLine($" Local Players:");
-                amount = gs.Location.Players.Count();
-            }
+                listPlayers(getPlayers());
             else
-            {
-                Console.WriteLine($" Local NPCs:");
-                amount = gs.Location.NPCs.Count();
-            }
+                listNPCs(getNPCs());
+        }
 
-            if (amount > 0)
+        private void listPlayers(List<Player> players)
+        {
+            Console.WriteLine($" Local Players:");
+
+            int pos = 0;
+            if (players.Count() > 0)
             {
-                if (type == 0)
+                foreach (Player p in players)
                 {
-                    foreach (Player p in gs.Location.Players)
-                        if (p.m_ID != gs.ID())
-                        {
-                            pos++;
-                            Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID}");
-                        }
-                }
-                else
-                {
-                    foreach (NPC p in gs.Location.NPCs)
-                        if (p.m_ID != gs.ID())
-                        {
-                            pos++;
-                            Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID}");
-                        }
+                    if (p.m_ID != gs.ID())
+                    {
+                        pos++;
+                        Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID}");
+                    }
                 }
             }
 
@@ -186,8 +188,57 @@ namespace SUSClient
             Console.WriteLine();
         }
 
+        private List<Player> getPlayers()
+        {
+            if (this.clientRequest == null)
+            {
+                this.clientRequest = new Request(RequestTypes.Location, gs.Location);
+                return null;
+            }
+
+            return gs.Location.Players.ToList();
+        }
+
+        private void listNPCs(List<NPC> npcs)
+        {
+            Console.WriteLine($" Local NPcs:");
+
+            int pos = 0;
+            if (npcs.Count() > 0)
+            {
+                foreach (NPC p in npcs)
+                {
+                    if (p.m_ID != gs.ID())
+                    {
+                        pos++;
+                        Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID}");
+                    }
+                }
+            }
+
+            if (pos == 0)
+                Console.WriteLine("    => None.");
+
+            Console.WriteLine();
+        }
+
+        private List<NPC> getNPCs()
+        {
+            if (this.clientRequest == null)
+            {
+                this.clientRequest = new Request(RequestTypes.Location, gs.Location);
+                return null;
+            }
+
+            return gs.Location.NPCs.ToList();
+        }
+
         private void attack()
         {
+            List<NPC> npcs = getNPCs();
+            if (npcs == null)
+                return;         // Haven't made the request, making it now by returning early.
+
             Console.WriteLine("Performing an attack on self!");
             this.clientRequest = new Request(RequestTypes.MobileAction, new MobileAction(gs.Account.m_ID));
         }

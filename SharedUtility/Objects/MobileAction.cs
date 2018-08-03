@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using SUS.Shared.Utility;
+
 namespace SUS.Shared.Objects
 {
     public enum ActionType
@@ -28,13 +30,30 @@ namespace SUS.Shared.Objects
     {
         public ActionType Type = ActionType.None;
         public AbilityType Abiltiy = AbilityType.None;
-        public UInt64 Initator;
-        public List<UInt64> Affected = new List<UInt64>();
+        private UInt64 Initator;
+        private List<UInt64> Affected = new List<UInt64>();
+        public string Result = string.Empty;
 
         public MobileAction(UInt64 initator)
         {
             this.Initator = initator;
-            this.Affected.Add(Initator);
+        }
+
+        public Serial GetInitator()
+        {
+            return new Serial(this.Initator);
+        }
+
+        public void AddTarget(UInt64 targetId)
+        {
+            if (this.Affected.Contains(targetId))
+                return;
+            this.Affected.Add(targetId);
+        }
+
+        public List<UInt64> GetTargets()
+        {
+            return this.Affected;
         }
 
         public byte[] ToByte()

@@ -108,10 +108,11 @@ namespace SUS
         private static void UpdatePlayers(Player player, bool remove = false)
         {
             playersMutex.WaitOne();
+            UInt64 pUint64 = player.m_ID.ToInt();
             if (remove)
-                m_Players.Remove(player.m_ID);
+                m_Players.Remove(pUint64);
             else
-                m_Players[player.m_ID] = player;
+                m_Players[pUint64] = player;
             playersMutex.ReleaseMutex();
         }
 
@@ -175,6 +176,16 @@ namespace SUS
             return n;
         }
         #endregion
+
+        public static void Initiate()
+        {
+            // Start our serials.
+            Serial s = new Serial(0);
+
+            // Create our map.
+            if (m_Nodes.Count() == 0)
+                CreateMap();
+        }
 
         public static bool Spawn(Mobile mobile, Locations location)
         {

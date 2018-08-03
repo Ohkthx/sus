@@ -271,7 +271,7 @@ namespace SUS.Shared.Utility
             {
                 bytesRead = handler.EndReceive(ar);
             }
-            catch (SocketException se)
+            catch (SocketException)
             {
                 Kill();
                 return;
@@ -331,7 +331,7 @@ namespace SUS.Shared.Utility
                 socket.BeginSend(data, 0, data.Length, 0,
                         new AsyncCallback(SendCallback), socket);
             }
-            catch (SocketException se)
+            catch (SocketException)
             {
                 Kill();
                 return;
