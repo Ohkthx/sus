@@ -9,7 +9,7 @@ namespace SUS.Shared.Utility
     [Serializable]
     public class Serial
     {
-        private readonly UInt64 m_Serial;  // TODO: Perhaps change to UInt64 instead of int.
+        private readonly UInt64 m_Serial;
 
         private static Serial m_LastMobile = new Serial(0);
 
@@ -47,6 +47,11 @@ namespace SUS.Shared.Utility
         public static implicit operator Serial(UInt64 a)
         {
             return new Serial(a);
+        }
+
+        public override string ToString()
+        {
+            return this.m_Serial.ToString();
         }
     }
 }
