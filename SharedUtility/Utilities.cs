@@ -178,6 +178,9 @@ namespace SUS.Shared.Utility
 
         public enum Types { None = 0, Server = 1, Client = 2 }
 
+        /// <summary>
+        ///     Creates an instance of a SocketHandler with the information provided.
+        /// </summary>
         public SocketHandler(Socket socket, Types type, bool debug = false)
         {
             this.type = type;

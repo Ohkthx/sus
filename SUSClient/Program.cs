@@ -21,7 +21,11 @@ namespace SUSClient
 
         static void Main(string[] args) 
             => StartUp(args);
-
+        
+        /// <summary>
+        ///     Launches the client, parses all arguments passed at launch.
+        /// </summary>
+        /// <param name="args"></param>
         static void StartUp(string []args)
         {
             foreach (string arg in args)
@@ -32,20 +36,27 @@ namespace SUSClient
                 }
 
 
-            AsynchronousClient.StartClient();
+            AsynchronousClient.StartClient();   // Starts the Client.
             Console.Read();
         }
 
+        /// <summary>
+        ///     Begins the exchange of information, authentication, and further processing of
+        ///     all input to and from the server.
+        /// </summary>
+        /// <param name="server">Socket to communicate to the Server.</param>
         public static void ServerHandler(ref Socket server)
         {
-            ulong id;
-            do {
+            UInt64 id;
+            do {    // Get our User ID, ensure it is valid.
                 Console.Write("Select an ID: ");
-            } while (!ulong.TryParse(Console.ReadLine(), out id));
+            } while (!UInt64.TryParse(Console.ReadLine(), out id));
 
+            // Get our Username.
             Console.Write("Select a Username: ");
             var username = Console.ReadLine();
 
+            // The Socket to communicate over to the server.
             SocketHandler socketHandler = new SocketHandler(server, SocketHandler.Types.Server, debug: DEBUG);
 
             // Authorizing with host.
@@ -80,7 +91,7 @@ namespace SUSClient
                     if (DEBUG)
                         Console.WriteLine(" => Received GameState of Player.\n");
 
-                    Console.WriteLine($" [ Player: {myGS.Account.m_Name}, Location: {myGS.Location.Name} ]\n");
+                    Console.WriteLine($"\nInformation:\n [ Player: {myGS.Account.m_Name}, Location: {myGS.Location.Name} ]");
 
                     ia = new InteractiveConsole(myGS);
                 }
@@ -88,7 +99,6 @@ namespace SUSClient
                 {
                     if (DEBUG)
                         Console.WriteLine(" => Recieved Action!");
-                    ia.Reset();
                 }
                 else if (obj is Request)
                 {
@@ -116,7 +126,7 @@ namespace SUSClient
 
                 if (ia != null)
                 {   // Get an action to perform and send it to the server.
-                    myGS = ia.Core();   // Activates the interactive console to grab the action.
+                    myGS = ia.Core();   // Activates the interactive console to grab the next action desired to be performed.
 
                     if (ia.sendGameState)
                     {   // Send an updated Gamestate to the server.

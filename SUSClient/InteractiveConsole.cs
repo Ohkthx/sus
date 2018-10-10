@@ -21,50 +21,62 @@ namespace SUSClient
 
         private ConsoleActions lastAction = ConsoleActions.none;
         public bool sendGameState = false;
+        public bool fulfilled = true;           // Used for requests made, so the client is aware if the server responded
+                                                // and there is to be no further negotition required.
 
         public InteractiveConsole(GameState gamestate) { gs = gamestate; }
+        private static ulong rounds = 0;        // Amount of turns the client has performed.
 
+
+        /// <summary>
+        ///     Prompts and processes user input.
+        /// </summary>
+        /// <returns>Updated GameState object.</returns>
         public GameState Core()
-        {   // If we requested a location of players, process it first.
+        {   // If we requested a location of Players or NPCs, process it first.
             if (lastAction != ConsoleActions.none)
             {
-                responseHandler();
-                if (this.clientRequest != null)    // Response from server received and no prompt from user required.
-                    return gs;                     //  Returning early to fulfill the initiated action by the user.
+                responseHandler();      // Processes requested information from the server.
+                if (this.clientRequest != null && !fulfilled)   // Requesting information from the server,
+                    return gs;                                  //  Returning early to fulfill the initiated action by the user.
             }
-            this.Reset();       // Reset our bools.
 
-            Dictionary<string, ConsoleActions> ValidActions = new Dictionary<string, ConsoleActions>();
+            this.Reset();       // Reset our bools and make everything default.
+            rounds++;           // Increment our counter for amount of turns we've taken as a client.
 
+            Dictionary<string, ConsoleActions> ValidActions = new Dictionary<string, ConsoleActions>();     // Generate our Valid Actions.
+
+            Console.WriteLine("\n//--------------------------------------//");
             Console.Write("Valid Actions: ");
             foreach (ConsoleActions action in Enum.GetValues(typeof(ConsoleActions)))
-            {
+            {   // Lists all currently accessible actions.
                 string name = Enum.GetName(typeof(ConsoleActions), action);
-                ValidActions.Add(name, action);
+                ValidActions.Add(name, action);             // **IMPORTANT**, adds the action to a list of Valid Actions.
                 Console.Write($"[{name.ToLower()}]  ");
             }
 
-            Console.WriteLine();
-
             while (this.socketKill == null && sendGameState == false && clientRequest == null)
-            {
+            {   // Get our action from the user.
                 ConsoleActions consoleAction = ConsoleActions.none;
                 string act = string.Empty;
 
                 while (true)
                 {
-                    Console.Write("\nChoose an action: ");
+                    Console.Write($"\n > [Round: {rounds}] Choose an action: ");
                     act = Console.ReadLine().ToLower();
 
+                    // Validate the requested action is acceptable to be processed on.
                     if (ValidActions.TryGetValue(act, out consoleAction))
-                    {
+                    {   // If it was a good action, break the while loop early.
                         this.lastAction = consoleAction;
                         break;
                     }
                 }
 
+                Console.WriteLine();    // Blank line to seperate output from input.
+
                 switch (consoleAction)
-                {
+                {   // Process the action by calling the appropriate functions.
                     case ConsoleActions.move:
                         move();
                         break;
@@ -81,7 +93,7 @@ namespace SUSClient
                         getNPCs();
                         break;
                     case ConsoleActions.actions:
-                        actions();
+                        printActions();
                         break;
                     case ConsoleActions.attack:
                         attack();
@@ -98,6 +110,11 @@ namespace SUSClient
             return gs;
         }
 
+        /// <summary>
+        ///     If the last action requested by the client is required
+        ///     information from the server- act and recall the function
+        ///     with the new data provided by the server.
+        /// </summary>
         private void responseHandler()
         {
             switch (lastAction)
@@ -116,28 +133,43 @@ namespace SUSClient
             }
         }
 
+        /// <summary>
+        ///     Sets all of our states, objects, and bools to their default value for a clean reprocessing.
+        /// </summary>
         public void Reset()
         {
             this.lastAction = ConsoleActions.none;
             this.sendGameState = false;
             this.clientRequest = null;
+            this.fulfilled = true;
         }
 
+        /// <summary>
+        ///     Changes the location of the current gamestate to that which is provided.
+        /// </summary>
+        /// <param name="location">New location.</param>
         public void LocationUpdater(Node location)
         {
             gs.Location = location;
         }
 
+        /// <summary>
+        ///     Moves a player to a new location, setting flag to send updated gamestate to server.
+        /// </summary>
         private void move()
         {
             look();
             do
                 Console.Write("Select location: ");
             while (!gs.MoveTo(Console.ReadLine()));
+
             Console.WriteLine($" New Location: {gs.Location.Name}");
-            this.sendGameState = true;
+            this.sendGameState = true;  // Sets the flag to send our gamestate.
         }
 
+        /// <summary>
+        ///     Checks nearby locations.
+        /// </summary>
         private void look()
         {
             Console.WriteLine($" Nearby Locations:");
@@ -150,6 +182,9 @@ namespace SUSClient
             Console.WriteLine();
         }
 
+        /// <summary>
+        ///     Displays the last location the user visited.
+        /// </summary>
         private void lastloc()
         {
             string last = string.Empty;
@@ -161,6 +196,10 @@ namespace SUSClient
             Console.WriteLine($" {last}");
         }
 
+        /// <summary>
+        ///     Parent caller for retrieving either local Players or NPCs.
+        /// </summary>
+        /// <param name="type"></param>
         private void getMobiles(int type)
         {   // Send our request if we haven't.
             if (type == 0)
@@ -169,13 +208,17 @@ namespace SUSClient
                 listNPCs(getNPCs());
         }
 
+        /// <summary>
+        ///     List the Players that are currently in the area. This is updated by 'getPlayers()'.
+        /// </summary>
+        /// <param name="players">List of Players to display.</param>
         private void listPlayers(List<Player> players)
         {
             Console.WriteLine($" Local Players:");
 
             int pos = 0;
-            if (players.Count() > 0)
-            {
+            if (players.Count > 0)
+            {   // Iterate our list of Players.
                 foreach (Player p in players)
                 {
                     if (p.m_ID != gs.ID())
@@ -186,66 +229,81 @@ namespace SUSClient
                 }
             }
 
+            // If not Players found, print 'None'.
             if (pos == 0)
                 Console.WriteLine("    => None.");
-
-            Console.WriteLine();
         }
 
+        /// <summary>
+        ///     Makes a request to the Server for an updated list of players.
+        ///     This function is called again on the list is returned by the server.
+        /// </summary>
+        /// <returns>List of Players from the server.</returns>
         private List<Player> getPlayers()
         {
             if (this.clientRequest == null)
-            {
+            {   // Create a request for the server to respond to.
                 this.clientRequest = new Request(RequestTypes.Location, gs.Location);
                 return null;
             }
 
+            // Return a list of players the server has provided.
             return gs.Location.Players.ToList();
         }
 
+        /// <summary>
+        ///     List the NPCs that are currently in the area. This is updated by 'getNPCs()'.
+        /// </summary>
+        /// <param name="npcs">List of NPCs to display.</param>
         private void listNPCs(List<NPC> npcs)
         {
-            Console.WriteLine($" Local NPcs:");
+            Console.WriteLine($" Local NPCs:");
 
             int pos = 0;
-            if (npcs.Count() > 0)
-            {
+            if (npcs.Count > 0)
+            {   // Iterate our list of NPCs
                 foreach (NPC p in npcs)
                 {
-                    if (p.m_ID != gs.ID())
-                    {
-                        pos++;
-                        Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID.ToInt()}");
-                    }
+                    pos++;
+                    Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID.ToInt()}");
                 }
             }
 
-            if (pos == 0)
+            // No NPCs in the list, print 'None' instead.
+            if (npcs.Count == 0 && pos == 0)
                 Console.WriteLine("    => None.");
-
-            Console.WriteLine();
         }
 
+        /// <summary>
+        ///     Makes a request to the Server for an updated list of NPCs.
+        ///     This function is called again on the list is returned by the server.
+        /// </summary
+        /// <returns>List of NPCs from the server.</returns>
         private List<NPC> getNPCs()
         {
             if (this.clientRequest == null)
-            {
+            {   // Create a request for the server to respond to.
                 this.clientRequest = new Request(RequestTypes.Location, gs.Location);
                 return null;
             }
 
+            // Return a list of NPCs the server has provided.
             return gs.Location.NPCs.ToList();
         }
 
+        /// <summary>
+        ///     Initiates an attack on a mobile.
+        /// </summary>
         private void attack()
         {
             List<NPC> npcs = getNPCs();
             if (npcs == null)
-            {
-                Console.WriteLine("Getting fresh NPCs and returning.");
-                return;         // Haven't made the request, making it now by returning early.
+            {   // Get a fresh batch of local NPCs.
+                fulfilled = false;  // We require a response from the server for updated information.
+                return;             // Haven't made the request, making it now by returning early.
             }
 
+            fulfilled = true;   // We got our response and now processing it.
             // TODO: Get the object to attack from the list of NPCs.
             listNPCs(npcs);
             NPC targetMobile = npcs.First();
@@ -256,17 +314,25 @@ namespace SUSClient
             attackAction.Type = ActionType.Attack;
             attackAction.AddTarget(targetMobile.m_ID);
 
+            // Request to be sent to the server.
             this.clientRequest = new Request(RequestTypes.MobileAction, attackAction);
         }
 
-        private void actions()
+        /// <summary>
+        ///     List valid actions that can be performed by the Interactive Console.
+        /// </summary>
+        private void printActions()
         {
+            Console.WriteLine("\n//--------------------------------------//");
             Console.Write(" Valid Actions: \n  ");
             foreach (string action in Enum.GetNames(typeof(ConsoleActions)))
                 Console.Write($"[{action.ToLower()}]  ");
             Console.WriteLine();
         }
 
+        /// <summary>
+        ///     Exits the client, sends the server a request to kill the socket.
+        /// </summary>
         private void exit()
         {
             socketKill = new SocketKill(true);

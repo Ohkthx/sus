@@ -18,6 +18,9 @@ namespace SUSClient.Client
         private static ManualResetEvent connectDone =
             new ManualResetEvent(false);
 
+        /// <summary>
+        ///     Sets the Client up to begin interacting with the server.
+        /// </summary>
         public static void StartClient()
         {
             // Connect to a remote device.  
@@ -39,6 +42,7 @@ namespace SUSClient.Client
                     new AsyncCallback(ConnectCallback), client);
                 connectDone.WaitOne();
 
+                // CORE of the server. Handles actions made by client and information from the Server.
                 Program.ServerHandler(ref client);
 
                 // Release the socket.  
