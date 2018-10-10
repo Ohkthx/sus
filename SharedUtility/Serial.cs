@@ -9,7 +9,7 @@ namespace SUS.Shared.Utility
     [Serializable]
     public class Serial
     {
-        private readonly UInt64 m_Serial;  // TODO: Perhaps change to UInt64 instead of int.
+        private readonly UInt64 m_Serial;
 
         private static Serial m_LastMobile = new Serial(0);
 
@@ -39,6 +39,21 @@ namespace SUS.Shared.Utility
             return m_Serial;
         }
 
+        #region Overrides
+        public override bool Equals(object obj)
+        {
+            Serial s = obj as Serial;
+            return s.m_Serial == this.m_Serial;
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 37;
+            hash += this.m_Serial.GetHashCode();
+            hash *= 397;
+            return hash;
+        }
+
         public static implicit operator UInt64(Serial a)
         {
             return a.m_Serial;
@@ -48,5 +63,6 @@ namespace SUS.Shared.Utility
         {
             return new Serial(a);
         }
+        #endregion
     }
 }

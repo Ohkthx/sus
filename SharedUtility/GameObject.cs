@@ -16,6 +16,7 @@ namespace SUS
         #region Locks
         private static readonly object padlock = new object();
         private static Mutex gamestatesMutex = new Mutex();
+        private static Mutex mobilesMutex = new Mutex();
         private static Mutex playersMutex = new Mutex();
         private static Mutex locationsMutex = new Mutex();
         private static Mutex clientsMutex = new Mutex();
@@ -136,6 +137,27 @@ namespace SUS
             UpdateNodes(n);
         }
 
+        public static void UpdateMobiles(Mobile mobile, bool remove = false)
+        {
+            Mobile m;
+            if (!m_Mobiles.TryGetValue((Serial)mobile.m_ID, out m))
+            {   // Doesn't exist, add it.
+                mobilesMutex.WaitOne();
+                m_Mobiles.Add(mobile.m_ID, mobile);
+                mobilesMutex.ReleaseMutex();
+                return;
+            }
+
+            mobilesMutex.WaitOne();
+            if (remove)
+                m_Mobiles.Remove(mobile.m_ID);
+            else
+            {
+                m_Mobiles[mobile.m_ID] = mobile;
+            }
+            mobilesMutex.ReleaseMutex();
+        }
+
         public static void UpdateNodes(Node node, bool remove = false)
         {
             locationsMutex.WaitOne();
@@ -192,6 +214,8 @@ namespace SUS
             Node n = FindNode((int)location);
             if (n == null)
                 return false;       // Bad location was provided.
+
+            GameObject.UpdateMobiles(mobile);   // Add our mobile to our list.
 
             if (n.AddMobile(mobile))
             {   // If adding the mobile to the location succeeded, update the Nodes.

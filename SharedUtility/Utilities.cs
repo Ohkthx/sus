@@ -135,15 +135,17 @@ namespace SUS.Shared.Utility
     [Serializable]
     public sealed class Request
     {
-        public RequestTypes Type { get; private set; }
-        public Object Value = null;
+        public RequestTypes Type { get; private set; }  // Type of Request being made.
+        public Object Value = null;                     // Object to be casted based on Type (RequestTypes.)
 
+        // Creates an instance of a Request based on supplied Type and Object.
         public Request(RequestTypes type, Object obj)
         {
             this.Type = type;
             this.Value = obj;
         }
 
+        // Converts the object into a byte array to be passed over the network.
         public byte[] ToByte()
         {
             return Utility.Serialize(this);
