@@ -63,6 +63,11 @@ namespace SUS.Shared.Utility
         {
             return new Serial(a);
         }
+
+        public override string ToString()
+        {
+            return this.m_Serial.ToString();
+        }
         #endregion
     }
 }
