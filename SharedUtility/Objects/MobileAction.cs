@@ -33,6 +33,7 @@ namespace SUS.Shared.Objects
         private UInt64 Initator;
         private List<UInt64> Affected = new List<UInt64>();
         public string Result = string.Empty;
+        public bool Fulfilled = false;
 
         public MobileAction(UInt64 initator)
         {

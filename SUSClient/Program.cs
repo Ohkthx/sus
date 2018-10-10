@@ -88,6 +88,7 @@ namespace SUSClient
                 {
                     if (DEBUG)
                         Console.WriteLine(" => Recieved Action!");
+                    ia.Reset();
                 }
                 else if (obj is Request)
                 {

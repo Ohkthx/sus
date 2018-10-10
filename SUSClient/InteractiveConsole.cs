@@ -27,7 +27,11 @@ namespace SUSClient
         public GameState Core()
         {   // If we requested a location of players, process it first.
             if (lastAction != ConsoleActions.none)
+            {
                 responseHandler();
+                if (this.clientRequest != null)    // Response from server received and no prompt from user required.
+                    return gs;                     //  Returning early to fulfill the initiated action by the user.
+            }
             this.Reset();       // Reset our bools.
 
             Dictionary<string, ConsoleActions> ValidActions = new Dictionary<string, ConsoleActions>();
@@ -211,7 +215,7 @@ namespace SUSClient
                     if (p.m_ID != gs.ID())
                     {
                         pos++;
-                        Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID}");
+                        Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID.ToInt()}");
                     }
                 }
             }
@@ -237,10 +241,22 @@ namespace SUSClient
         {
             List<NPC> npcs = getNPCs();
             if (npcs == null)
+            {
+                Console.WriteLine("Getting fresh NPCs and returning.");
                 return;         // Haven't made the request, making it now by returning early.
+            }
 
-            Console.WriteLine("Performing an attack on self!");
-            this.clientRequest = new Request(RequestTypes.MobileAction, new MobileAction(gs.Account.m_ID));
+            // TODO: Get the object to attack from the list of NPCs.
+            listNPCs(npcs);
+            NPC targetMobile = npcs.First();
+            Console.WriteLine("Performing an attack on {0}.", targetMobile.m_Name);
+
+            // Our newly created action to perform.
+            MobileAction attackAction = new MobileAction(gs.Account.m_ID);
+            attackAction.Type = ActionType.Attack;
+            attackAction.AddTarget(targetMobile.m_ID);
+
+            this.clientRequest = new Request(RequestTypes.MobileAction, attackAction);
         }
 
         private void actions()
