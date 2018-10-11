@@ -95,17 +95,24 @@ namespace SUSClient
 
                     ia = new InteractiveConsole(myGS);
                 }
-                else if (obj is MobileAction && ia != null)
+                else if (obj is MobileAction)
                 {
                     if (DEBUG)
                         Console.WriteLine(" => Recieved Action!");
+
+                    MobileAction ma = obj as MobileAction;
+                    Console.WriteLine($"Server Reponse: {ma.Result}");
+                    List<Mobile> updates = ma.GetUpdates();
+                    NPC npc = updates[1] as NPC;
+                    Console.WriteLine($"Damage to {npc.m_Name}. Health: {npc.GetHealth()}.");
+                    ia.Reset();
                 }
                 else if (obj is Request)
                 {
                     if (DEBUG)
                         Console.WriteLine(" => Recieved Request.");
                 }
-                else if (obj is Node && ia != null)
+                else if (obj is Node) 
                 {
                     if (DEBUG)
                         Console.WriteLine(" => Received node.");
@@ -115,6 +122,11 @@ namespace SUSClient
                 {
                     if (DEBUG)
                         Console.WriteLine(" => Received Player.");
+                }
+                else if (obj is NPC)
+                {
+                    if (DEBUG)
+                        Console.WriteLine(" => Received NPC.");
                 }
                 else if (obj is SocketKill)
                 {

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using SUS.Shared.Utility;
+using SUS.Shared.Objects.Mobiles;
 
 namespace SUS.Shared.Objects
 {
@@ -28,12 +29,12 @@ namespace SUS.Shared.Objects
     [Serializable]
     public class MobileAction
     {
-        public ActionType Type = ActionType.None;
-        public AbilityType Abiltiy = AbilityType.None;
-        private UInt64 Initator;
-        private List<UInt64> Affected = new List<UInt64>();
+        public ActionType Type = ActionType.None;           // Action being performed.
+        public AbilityType Abiltiy = AbilityType.None;      // Ability being used.
+        private UInt64 Initator;                            // ID of Player
+        private List<UInt64> Affected = new List<UInt64>(); // List of Targets
+        private List<Mobile> Updates = new List<Mobile>();  // TODO: Think of a way to reduce overhead of sending Mobile Objects.
         public string Result = string.Empty;
-        public bool Fulfilled = false;
 
         public MobileAction(UInt64 initator)
         {
@@ -52,9 +53,21 @@ namespace SUS.Shared.Objects
             this.Affected.Add(targetId);
         }
 
+        public void AddUpdate(Mobile mobile)
+        {
+            if (this.Updates.Contains(mobile))
+                return;
+            this.Updates.Add(mobile);
+        }
+
         public List<UInt64> GetTargets()
         {
             return this.Affected;
+        }
+
+        public List<Mobile> GetUpdates()
+        {
+            return this.Updates;
         }
 
         public byte[] ToByte()

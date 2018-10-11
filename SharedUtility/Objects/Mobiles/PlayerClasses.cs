@@ -27,7 +27,7 @@ namespace SUS.Shared.Objects.Mobiles
     [Serializable]
     public class PMage : Player
     {
-        public PMage(ulong id, string name) : base(id, name, 40, 10, 50)
+        public PMage(ulong id, string name) : base(id, name, 60, 40, 10, 50)
         {
             this.m_Skills[(int)Skill.Types.Magery].Value = 50.0;
         }

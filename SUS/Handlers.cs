@@ -30,12 +30,12 @@ namespace SUS.Server
         {
             // Client has sent a player, create a proper gamestate and send it to the client.
             GameState newState = new GameState(player);
-            newState.Location = GameObject.GetStartingZone();
-            newState.moved = true;
-            GameObject.UpdateGameStates(ref newState);
+            newState.Location = GameObject.GetStartingZone();               // Assign the Starting Zone Node to the GameState.
+            newState.moved = true;                                          // Player "moved" to the Starting Zone.
+            GameObject.UpdateGameStates(ref newState);                      // Updates the GameObject with the new state that is being tracked.
 
-            // Add this player to our mobiles.
-            GameObject.UpdateMobiles(player);
+            player.Location = GameObject.GetStartingZone().GetLocation();   // Assign the Starting Zone Location to the player.
+            GameObject.UpdateMobiles(player);                               // Update our current Players with new Player.
 
             socketHandler.ToClient(newState.ToByte());
         }
@@ -67,8 +67,7 @@ namespace SUS.Server
                     break;
                 case RequestTypes.MobileAction:
                     MobileAction ma = (MobileAction)req.Value;
-                    MobileActionHandler(ma);
-                    ma.Fulfilled = true;
+                    MobileActionHandler(ref ma);
                     socketHandler.ToClient(ma.ToByte());
                     break;
                 default:
@@ -80,7 +79,7 @@ namespace SUS.Server
         /// <summary>
         ///     Handles actions that a mobile wants to perform. (recieved from client)
         /// </summary>
-        private static void MobileActionHandler(MobileAction mobileAction)
+        private static void MobileActionHandler(ref MobileAction mobileAction)
         {
             Player initator = GameObject.FindMobile(mobileAction.GetInitator()) as Player;
             if (initator == null)
@@ -100,9 +99,21 @@ namespace SUS.Server
                     return;
                 }
 
-                NPC firstTarget = GameObject.FindMobile(targets.ElementAt(0)) as NPC;
-                Console.WriteLine(" [DEBUG] Attack type, Initiator: {0}, Target {1}", 
-                    initator.m_Name, firstTarget.m_Name);
+                Mobile firstT = GameObject.FindMobile(targets.First());
+                initator.Combat(ref firstT);
+
+                if (initator.IsDead())
+                    GameObject.Kill(initator);
+                if (firstT.IsDead())
+                    GameObject.Kill(firstT);
+
+                GameObject.UpdateMobiles(initator);
+                GameObject.UpdateMobiles(firstT);
+
+                mobileAction.AddUpdate(initator);
+                mobileAction.AddUpdate(firstT);
+
+                mobileAction.Result = $"{initator.m_Name} damaged {firstT.m_Name}.";
             }
         }
     }

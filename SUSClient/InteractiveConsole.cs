@@ -14,15 +14,15 @@ namespace SUSClient
     class InteractiveConsole
     {
         private enum ConsoleActions { none, move, look, lastloc, players, npcs, attack, actions, exit }
+        private enum RequestStatus { none, pending, closed }    // Request status, tells if the client is waiting for information.
 
         private static GameState gs = null;
         public SocketKill socketKill = null;
         public Request clientRequest = null;    // Temporary storage for a request sent by the client.
 
+        private RequestStatus status = RequestStatus.none;          // Determines if the client is in the process of requesting information.
         private ConsoleActions lastAction = ConsoleActions.none;
         public bool sendGameState = false;
-        public bool fulfilled = true;           // Used for requests made, so the client is aware if the server responded
-                                                // and there is to be no further negotition required.
 
         public InteractiveConsole(GameState gamestate) { gs = gamestate; }
         private static ulong rounds = 0;        // Amount of turns the client has performed.
@@ -37,8 +37,8 @@ namespace SUSClient
             if (lastAction != ConsoleActions.none)
             {
                 responseHandler();      // Processes requested information from the server.
-                if (this.clientRequest != null && !fulfilled)   // Requesting information from the server,
-                    return gs;                                  //  Returning early to fulfill the initiated action by the user.
+                if (this.clientRequest != null && this.status != RequestStatus.none)    // Requesting information from the server,
+                    return gs;                                                          //  Returning early to fulfill the initiated action by the user.
             }
 
             this.Reset();       // Reset our bools and make everything default.
@@ -138,10 +138,10 @@ namespace SUSClient
         /// </summary>
         public void Reset()
         {
+            this.status = RequestStatus.none;
             this.lastAction = ConsoleActions.none;
             this.sendGameState = false;
             this.clientRequest = null;
-            this.fulfilled = true;
         }
 
         /// <summary>
@@ -299,11 +299,11 @@ namespace SUSClient
             List<NPC> npcs = getNPCs();
             if (npcs == null)
             {   // Get a fresh batch of local NPCs.
-                fulfilled = false;  // We require a response from the server for updated information.
-                return;             // Haven't made the request, making it now by returning early.
+                this.status = RequestStatus.pending;    // We require a response from the server for updated information.
+                return;                                 // Haven't made the request, making it now by returning early.
             }
 
-            fulfilled = true;   // We got our response and now processing it.
+            this.status = RequestStatus.closed;        // We got our response and now processing it.
             // TODO: Get the object to attack from the list of NPCs.
             listNPCs(npcs);
             NPC targetMobile = npcs.First();

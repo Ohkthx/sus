@@ -17,18 +17,28 @@ namespace SUS.Shared.Objects.Mobiles
         void ToInsert(ref SQLiteCommand cmd);
     }
 
+    [Flags, Serializable]
+    public enum TypeOfDamage
+    {
+        Archery = 1,
+        Magic = 2,
+        Melee = 4,
+    };
+
     [Serializable]
     public class Mobile
     {
-        public Serial m_ID { get; set; }
-        public string m_Name { get; set; }
+        public Serial m_ID { get; set; }            // ID of the mobile.
+        public string m_Name { get; set; }          // Name of the mobile.
+        public Locations Location = Locations.None; // Location of the mobile.
 
-        protected int m_Hits;
-        protected int m_HitsMax;
-        protected int m_DamageMin;
-        protected int m_DamageMax;
-        protected Attributes m_Attributes;
-        protected Dictionary<int, Skill> m_Skills;
+        protected int m_Hits;                       // Current hit points.
+        protected int m_HitsMax;                    // Maximum hit points.
+        protected int m_DamageMin;                  // Minimum damage the mobile can do with a normal hit.
+        protected int m_DamageMax;                  // Maximum damage the mobile can do with a normal hit.
+        protected Attributes m_Attributes;          // Strength, Dexterity, Intellect.
+        protected Dictionary<int, Skill> m_Skills;  // Skills possessed by the mobile.
+        protected TypeOfDamage WeaponType = TypeOfDamage.Melee; // Current type of Weapon Damage.
 
         #region Attributes
         [Serializable]
@@ -120,8 +130,11 @@ namespace SUS.Shared.Objects.Mobiles
 
         public override bool Equals(object obj)
         {
-            Player user = obj as Player;
-            return user.m_ID == this.m_ID && user.m_Name == this.m_Name;
+            Mobile mobile = obj as Mobile;
+            if (mobile == null)
+                return false;
+
+            return mobile.m_ID == this.m_ID && mobile.m_Name == this.m_Name;
         }
 
         public override int GetHashCode()
@@ -135,20 +148,61 @@ namespace SUS.Shared.Objects.Mobiles
         }
         #endregion
 
+        public string GetHealth()
+        {
+            return $"{this.m_Hits} / {this.m_HitsMax}";
+        }
+
         public byte[] ToByte()
         {
             return Utility.Utility.Serialize(this);
         }
 
         #region Combat
-        public void Kill()
+        public bool IsDead()
         {
-
+            if (this.m_Hits <= 0)
+            {
+                this.Kill();
+                return true;
+            }
+            return false;
         }
 
-        public void Damage(int amount, Mobile attacker)
+        public void Kill()
         {
+            this.m_Hits = 0;
+        }
 
+        public void Combat(ref Mobile opponent)
+        {
+            opponent.TakeDamage(this.Attack());
+            this.TakeDamage(opponent.Attack());
+        }
+
+        public void TakeDamage(int damage)
+        {
+            this.m_Hits -= damage;
+        }
+
+        public int Attack()
+        {
+            return weaponDamage();
+        }
+
+        private int weaponDamage()
+        {
+            switch (this.WeaponType)
+            {
+                case TypeOfDamage.Archery:
+                    return 4;
+                case TypeOfDamage.Magic:
+                    return 4;
+                case TypeOfDamage.Melee:
+                    return 4;
+                default:
+                    return 4;
+            }
         }
         #endregion
     }

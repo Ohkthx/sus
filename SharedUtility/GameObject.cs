@@ -60,8 +60,9 @@ namespace SUS
             UpdateNodes(Wilderness);
             UpdateNodes(Graveyard);
 
-            if (Spawn(new NPC("Orc", 10, 10, 8, 2), Locations.Britain))
-                Console.WriteLine("Spawned an Orc in Britain.");
+            NPC npc = new NPC("Orc", 10, 10, 8, 2);
+            if (Spawn(npc, Locations.Britain))
+                Console.WriteLine($"Spawned an {npc.m_Name} in {Locations.Britain.ToString()}.");
         }
 
         public static Node GetStartingZone()
@@ -82,16 +83,17 @@ namespace SUS
                 if (gamestate.LocationLast != null)
                 { 
                     // Remove from old location.
-                    UpdateLocationPlayer(gamestate.LocationLast.ID, gamestate.Account, true);
+                    UpdateLocationMobile(gamestate.LocationLast.ID, gamestate.Account, remove: true);
                     gamestate.LocationLast = m_Nodes[(int)gamestate.LocationLast.ID];
                 }
 
                 // Add to new location.
-                UpdateLocationPlayer(gamestate.Location.ID, gamestate.Account);
+                gamestate.Account.Location = gamestate.Location.GetLocation();  // Updates the player's location.
+                UpdateLocationMobile(gamestate.Location.ID, gamestate.Account); // Update the node reflecting the new player.
 
                 // Reflect the updated locations back to the user.
-                gamestate.Location = m_Nodes[(int)gamestate.Location.ID];
-                gamestate.moved = false;
+                gamestate.Location = m_Nodes[(int)gamestate.Location.ID];       // Set the Gamestate's location to the new node.
+                gamestate.moved = false;                                        // Untoggle the move flag.
             }
 
             gamestatesMutex.WaitOne();
@@ -118,9 +120,9 @@ namespace SUS
         }
 
         // Add or Remove a player from a Node.
-        private static void UpdateLocationPlayer(int nodeKey, Player account, bool remove = false)
+        private static void UpdateLocationMobile(int nodeKey, Mobile mobile, bool remove = false)
         {
-            Node n;
+            Node n = null;
             if (!m_Nodes.TryGetValue((int)nodeKey, out n))
             {
                 // Location doesn't exist?!
@@ -128,13 +130,13 @@ namespace SUS
                 return;
             }
 
-            // Edit our node with the new player location and reassign.
+            // Edit our node with the new mobile location and reassign.
             if (remove)
-                n.RemoveMobile(account);
+                n.RemoveMobile(mobile);
             else
-                n.AddMobile(account);
+                n.AddMobile(mobile);
 
-            UpdateNodes(n);
+            UpdateNodes(n); // Update the Nodes list with changes.
         }
 
         public static void UpdateMobiles(Mobile mobile, bool remove = false)
@@ -165,11 +167,18 @@ namespace SUS
                 m_Nodes.Remove(node.ID);
             else
             {
-                // TODO: Combine Location data here (players?, add and remove.
                 m_Nodes[node.ID] = node;
-
             }
             locationsMutex.ReleaseMutex();
+        }
+
+        public static void Kill(Mobile mobile)
+        {
+            mobile.Kill();  // Kill the mobile.
+            UpdateLocationMobile((int)mobile.Location, mobile, remove: true);   // Remove the mobile from the Node.
+
+            if (mobile is NPC)
+                UpdateMobiles(mobile, remove: true);    // Remove the mobile from the list of mobiles.
         }
         #endregion
 
@@ -215,10 +224,10 @@ namespace SUS
             if (n == null)
                 return false;       // Bad location was provided.
 
-            GameObject.UpdateMobiles(mobile);   // Add our mobile to our list.
-
             if (n.AddMobile(mobile))
             {   // If adding the mobile to the location succeeded, update the Nodes.
+                mobile.Location = location;
+                UpdateMobiles(mobile);   // Add our mobile to our list.
                 UpdateNodes(n);         // Update the current list of nodes.
                 return true;
             }

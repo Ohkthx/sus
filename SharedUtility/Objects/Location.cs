@@ -123,6 +123,11 @@ namespace SUS.Shared.Objects
                 return this.NPCs.Add((NPC)mobile);
         }
 
+        /// <summary>
+        ///     Removes the mobile from the correct list (NPCs or Players)
+        /// </summary>
+        /// <param name="mobile">Mobile to remove.</param>
+        /// <returns>Location of the Mobile in the list.</returns>
         public int RemoveMobile(Mobile mobile)
         {
             if (mobile is Player)
@@ -142,6 +147,15 @@ namespace SUS.Shared.Objects
         {
             node.Connections.Add(this);
             Connections.Add(node);
+        }
+
+        /// <summary>
+        ///     Retrieves the internal Location.
+        /// </summary>
+        /// <returns></returns>
+        public Locations GetLocation()
+        {
+            return this.Location;
         }
 
         // Will null out unimportant lists for transferring to server to reduce bandwidth.
