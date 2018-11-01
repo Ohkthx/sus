@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using SUS.Shared.Objects.Mobiles;
+
 namespace SUS.Shared.Utility
 {
     [Serializable]
@@ -27,7 +29,7 @@ namespace SUS.Shared.Utility
         {
             get
             {
-                while (GameObject.FindMobile(m_LastMobile = (m_LastMobile + 1)) != null)
+                while (GameObject.FindMobile(MobileType.Any, m_LastMobile = (m_LastMobile + 1)) != null)
                 { }
 
                 return m_LastMobile;
@@ -44,6 +46,16 @@ namespace SUS.Shared.Utility
         {
             Serial s = obj as Serial;
             return s.m_Serial == this.m_Serial;
+        }
+
+        public static bool operator ==(Serial obj1, Serial obj2)
+        {
+            return obj1.Equals(obj2);
+        }
+
+        public static bool operator !=(Serial obj1, Serial obj2)
+        {
+            return !(obj1 == obj2);
         }
 
         public override int GetHashCode()
