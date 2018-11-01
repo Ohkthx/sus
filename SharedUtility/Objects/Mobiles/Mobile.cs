@@ -25,11 +25,22 @@ namespace SUS.Shared.Objects.Mobiles
         Melee = 4,
     };
 
+    [Flags, Serializable]
+    public enum MobileType
+    {
+        None = 0,
+        Player = 1,
+        NPC = 2,
+
+        Any = Player | NPC,
+    }
+
     [Serializable]
     public class Mobile
     {
         public Serial m_ID { get; set; }            // ID of the mobile.
         public string m_Name { get; set; }          // Name of the mobile.
+        public MobileType m_Type { get; set; }      // Type of Mobile: NPC or Player.
         public Locations Location = Locations.None; // Location of the mobile.
 
         protected int m_Hits;                       // Current hit points.
@@ -97,10 +108,11 @@ namespace SUS.Shared.Objects.Mobiles
         #endregion
 
         #region Contructors
-        public Mobile() : this(0, "Unknown", 100) { }
+        public Mobile() : this(0, "Unknown", MobileType.None, 100) { }
 
-        public Mobile(ulong ID, string name, int hits, int strength = 10, int dexterity = 10, int intelligence = 10)
+        public Mobile(ulong ID, string name, MobileType type, int hits, int strength = 10, int dexterity = 10, int intelligence = 10)
         {
+            this.m_Type = type;
             this.m_Attributes = new Attributes(strength, dexterity, intelligence);
             this.m_Skills = new Dictionary<int, Skill>();
             foreach (int skill in Enum.GetValues(typeof(Skill.Types)))
@@ -134,7 +146,7 @@ namespace SUS.Shared.Objects.Mobiles
             if (mobile == null)
                 return false;
 
-            return mobile.m_ID == this.m_ID && mobile.m_Name == this.m_Name;
+            return mobile.m_ID == this.m_ID && mobile.m_Name == this.m_Name && mobile.m_Type == this.m_Type;
         }
 
         public override int GetHashCode()
@@ -142,9 +154,22 @@ namespace SUS.Shared.Objects.Mobiles
             int hash = 37;
             hash += m_ID.GetHashCode();
             hash *= 397;
+
+            // If the name isn't blank (shouldn't be), factor it.
             if (m_Name != null)
+            {
                 hash += m_Name.GetHashCode();
-            return hash *= 397;
+                hash *= 397;
+            }
+            
+            // If it is an NPC or Player, factor that into the hash.
+            if (m_Type != MobileType.None)
+            {
+                hash += (int)m_Type;
+                hash *= 397;
+            }
+
+            return hash;
         }
         #endregion
 

@@ -115,6 +115,11 @@ namespace SUS.Shared.Objects
             return Utility.Utility.Serialize(this);
         }
 
+        /// <summary>
+        ///     Adds either a Player or NPC to their respective list.
+        /// </summary>
+        /// <param name="mobile">Mobile to be added.</param>
+        /// <returns>Succcess (true), or Failure (false)</returns>
         public bool AddMobile(Mobile mobile)
         {
             if (mobile is Player)
@@ -127,7 +132,7 @@ namespace SUS.Shared.Objects
         ///     Removes the mobile from the correct list (NPCs or Players)
         /// </summary>
         /// <param name="mobile">Mobile to remove.</param>
-        /// <returns>Location of the Mobile in the list.</returns>
+        /// <returns>Number of elements removed.</returns>
         public int RemoveMobile(Mobile mobile)
         {
             if (mobile is Player)
@@ -136,9 +141,14 @@ namespace SUS.Shared.Objects
                 return this.NPCs.RemoveWhere(p => p.m_ID == mobile.m_ID);
         }
 
+        /// <summary>
+        ///     First attempts to remove the mobile, if it fails- it returns early. If removing succeeds, it re-adds the mobile.
+        /// </summary>
+        /// <param name="mobile">Mobile to be updated.</param>
+        /// <returns>Succcess (true), or Failure (false)</returns>
         public bool UpdateMobile(Mobile mobile)
         {   // Remove the mobile, if there is none that are removed- return early, else just readd the new.
-            if (RemoveMobile(mobile) <= 0)
+            if (this.RemoveMobile(mobile) <= 0)
                 return false;
             return AddMobile(mobile);
         }

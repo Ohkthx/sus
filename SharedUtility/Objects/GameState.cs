@@ -62,10 +62,24 @@ namespace SUS.Shared.Objects
             return Account;
         }
 
+        /// <summary>
+        ///     Refreshes the account for the gamestate.
+        /// </summary>
+        /// <param name="player">New mobile</param>
+        /// <returns>True - Success, False - Failure</returns>
+        public bool Refresh(Mobile player)
+        {
+            if (player.m_Name == this.Account.m_Name && player.m_ID == this.Account.m_ID)
+            {
+                this.Account = player as Player;
+                return true;
+            }
+            return false;
+        }
+
         #region User Actions
         public bool MoveTo(string location)
-        {
-            // This can take an integer or a name to move too.
+        {   // This can take an integer or a name to move too.
 
             // Try to get our int.
             int pos;
@@ -105,7 +119,7 @@ namespace SUS.Shared.Objects
             this.moved = true;
         }
 
-        public bool UpdateMobile(Mobile mobile)
+        public bool UpdateMobileLocation(Mobile mobile)
         {   // Attempt updating our current location, if it fails process all connected locations.
             if (this.Location.UpdateMobile(mobile))
                 return true;
@@ -119,5 +133,14 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
+        /// <summary>
+        ///     Removes a mobile from the current Gamestate.
+        /// </summary>
+        /// <param name="mobile">Mobile to remove.</param>
+        public void Kill(Mobile mobile)
+        {
+            if (this.Location.RemoveMobile(mobile) <= 0)    // Attempts to remove from the current location, if it wasn't found/removed...
+                this.LocationLast.RemoveMobile(mobile);     //  it then attempts to remove from the last location.
+        }
     }
 }

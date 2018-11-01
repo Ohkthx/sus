@@ -12,7 +12,7 @@ namespace SUS.Shared.Objects.Mobiles
         #region Constructors
         public NPC() : base() { }
         public NPC(string name, int hits, int strength = 10, int dexterity = 10, int intelligence = 10) :
-            base(0, name, hits, strength, dexterity, intelligence)
+            base(0, name, MobileType.NPC, hits, strength, dexterity, intelligence)
         { }
         #endregion
     }

@@ -81,7 +81,7 @@ namespace SUS.Server
         /// </summary>
         private static void MobileActionHandler(ref MobileAction mobileAction)
         {
-            Player initator = GameObject.FindMobile(mobileAction.GetInitator()) as Player;
+            Player initator = GameObject.FindPlayer(mobileAction.GetInitator()) as Player;
             if (initator == null)
             {
                 Console.WriteLine(" [ERR] Bad MobileAcition recieved. No initiator provided.");
@@ -91,7 +91,7 @@ namespace SUS.Server
 
             if (mobileAction.Type == ActionType.Attack)
             {
-                List<UInt64> targets = mobileAction.GetTargets();
+                List<Tuple<MobileType, UInt64>> targets = mobileAction.GetTargets();
                 if (targets.Count == 0)
                 {
                     Console.WriteLine(" [ERR] Bad MobileAction recieved. No targets supplied.");
@@ -99,21 +99,40 @@ namespace SUS.Server
                     return;
                 }
 
-                Mobile firstT = GameObject.FindMobile(targets.First());
-                initator.Combat(ref firstT);
+                // Iterate each of the affected.
+                foreach (Tuple<MobileType, UInt64> t in targets)
+                {   // Lookup the affected mobile.
+                    Mobile affectee = null;
+                    if (t.Item1 == MobileType.NPC)
+                        affectee = GameObject.FindNPC(t.Item2) as Mobile;
+                    else if (t.Item1 == MobileType.Player)
+                        affectee = GameObject.FindPlayer(t.Item2) as Mobile;
 
-                if (initator.IsDead())
-                    GameObject.Kill(initator);
-                if (firstT.IsDead())
-                    GameObject.Kill(firstT);
+                    if (affectee == null)
+                    {   // Double checks were processing on a correct object.
+                        Console.WriteLine($" [ERR] Bad MobileAction 'affectee': {t.Item1.ToString()}: {t.Item2}.");
+                        continue;
+                    }
 
-                GameObject.UpdateMobiles(initator);
-                GameObject.UpdateMobiles(firstT);
+                    // Combat the two objects.
+                    initator.Combat(ref affectee);
 
-                mobileAction.AddUpdate(initator);
-                mobileAction.AddUpdate(firstT);
+                    // Check if either are dead...
+                    if (initator.IsDead())
+                        GameObject.Kill(initator);
+                    if (affectee.IsDead())
+                        GameObject.Kill(affectee);
 
-                mobileAction.Result = $"{initator.m_Name} damaged {firstT.m_Name}.";
+                    // Update both the player and the affectee for the server.
+                    GameObject.UpdateMobiles(initator);
+                    GameObject.UpdateMobiles(affectee);
+
+                    // Update to pass to the client.
+                    mobileAction.AddUpdate(initator);
+                    mobileAction.AddUpdate(affectee);
+
+                    mobileAction.Result += $"{initator.m_Name} damaged {affectee.m_Name}. ";
+                }
             }
         }
     }

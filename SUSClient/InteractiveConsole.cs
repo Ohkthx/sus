@@ -306,13 +306,20 @@ namespace SUSClient
             this.status = RequestStatus.closed;        // We got our response and now processing it.
             // TODO: Get the object to attack from the list of NPCs.
             listNPCs(npcs);
+
+            if (npcs.Count == 0)
+            {
+                Console.WriteLine("No mobs to attack.");
+                return;
+            }
+
             NPC targetMobile = npcs.First();
             Console.WriteLine("Performing an attack on {0}.", targetMobile.m_Name);
 
             // Our newly created action to perform.
             MobileAction attackAction = new MobileAction(gs.Account.m_ID);
             attackAction.Type = ActionType.Attack;
-            attackAction.AddTarget(targetMobile.m_ID);
+            attackAction.AddTarget(targetMobile.m_Type, targetMobile.m_ID);
 
             // Request to be sent to the server.
             this.clientRequest = new Request(RequestTypes.MobileAction, attackAction);

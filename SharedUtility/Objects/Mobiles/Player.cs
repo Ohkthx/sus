@@ -11,7 +11,7 @@ namespace SUS.Shared.Objects.Mobiles
     {
         #region Constructors
         public Player(ulong id, string name, int hits, int strength = 10, int dexterity = 10, int intelligence = 10) : 
-            base(id, name, hits, strength, dexterity, intelligence) { }
+            base(id, name, MobileType.Player, hits, strength, dexterity, intelligence) { }
         #endregion
     }
 }
