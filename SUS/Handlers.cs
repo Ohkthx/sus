@@ -71,7 +71,7 @@ namespace SUS.Server
                     socketHandler.ToClient(ma.ToByte());
                     break;
                 default:
-                    Console.WriteLine(" [ERR] Bad Request recieved.");
+                    Miscellaneous.ConsoleNotify("Bad Request received.");
                     break;
             }
         }
@@ -84,7 +84,7 @@ namespace SUS.Server
             Player initator = GameObject.FindPlayer(mobileAction.GetInitator()) as Player;
             if (initator == null)
             {
-                Console.WriteLine(" [ERR] Bad MobileAcition recieved. No initiator provided.");
+                Miscellaneous.ConsoleNotify("Bad MobileAcition recieved. No initiator provided.");
                 // TODO: Pass mobileAction by reference? Return an error to the client?
                 return;
             }
@@ -94,7 +94,7 @@ namespace SUS.Server
                 List<Tuple<MobileType, UInt64>> targets = mobileAction.GetTargets();
                 if (targets.Count == 0)
                 {
-                    Console.WriteLine(" [ERR] Bad MobileAction recieved. No targets supplied.");
+                    Miscellaneous.ConsoleNotify("Bad MobileAction recieved. No targets supplied.");
                     // TODO: Pass mobileAction by reference? Return an error to the client?
                     return;
                 }
@@ -110,7 +110,7 @@ namespace SUS.Server
 
                     if (affectee == null)
                     {   // Double checks were processing on a correct object.
-                        Console.WriteLine($" [ERR] Bad MobileAction 'affectee': {t.Item1.ToString()}: {t.Item2}.");
+                        Miscellaneous.ConsoleNotify($"Bad MobileAction 'affectee': {t.Item1.ToString()}: {t.Item2}.");
                         continue;
                     }
 

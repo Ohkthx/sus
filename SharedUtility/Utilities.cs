@@ -12,10 +12,32 @@ namespace SUS.Shared.Utility
 {
     public enum RequestTypes { Location, MobileAction }
 
-    public static class Utility
+    /// <summary>
+    ///     Holds various functions to perform actions.
+    /// </summary>
+    public static class Miscellaneous
     {
-        private const int HeaderSize = sizeof(long);
+        public static void ConsoleNotify(string msg)
+        {
+            ConsoleColor cc = Console.ForegroundColor;          // Save the console's color.
+            Console.ForegroundColor = ConsoleColor.DarkRed;     // Set the color to Dark Red.
+            Console.WriteLine($" !! {msg}");
+            Console.ForegroundColor = cc;                       // Reset the color to the default.
+        }
+    }
 
+    /// <summary>
+    ///     Prepares and deciphers data transferred over the network.
+    /// </summary>
+    public static class Network
+    { 
+        private const int HeaderSize = sizeof(long);    // A constant that stores length that prefixes the byte array.
+
+        /// <summary>
+        ///     Takes an object and converts it to a byte array prefixing its size.
+        /// </summary>
+        /// <param name="obj">Object to be converted.</param>
+        /// <returns>Byte array containing the object.</returns>
         public static byte[] Serialize(object obj)
         {
             using (var memoryStream = new MemoryStream())
@@ -32,6 +54,11 @@ namespace SUS.Shared.Utility
             }
         }
 
+        /// <summary>
+        ///     Takes a byte array and converts to to an object.
+        /// </summary>
+        /// <param name="message">Byte array to process.</param>
+        /// <returns>An object to cast.</returns>
         public static Object Deserialize(byte[] message)
         {
             Object obj = new Object();
@@ -128,7 +155,7 @@ namespace SUS.Shared.Utility
 
         public byte[] ToByte()
         {
-            return Utility.Serialize(this);
+            return Network.Serialize(this);
         }
     }
 
@@ -148,7 +175,7 @@ namespace SUS.Shared.Utility
         // Converts the object into a byte array to be passed over the network.
         public byte[] ToByte()
         {
-            return Utility.Serialize(this);
+            return Network.Serialize(this);
         }
     }
 
@@ -163,7 +190,7 @@ namespace SUS.Shared.Utility
 
         public byte[] ToByte()
         {
-            return Utility.Serialize(this);
+            return Network.Serialize(this);
         }
     }
 
@@ -237,7 +264,7 @@ namespace SUS.Shared.Utility
                         if (this.DEBUG)
                             Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), this.type)}.");
 
-                        this.response = Utility.Deserialize(state.Value);
+                        this.response = Network.Deserialize(state.Value);
 
                         readDone.Set();
                     }
@@ -250,7 +277,7 @@ namespace SUS.Shared.Utility
                         if (DEBUG)
                             Console.WriteLine($" => {state.Value.Length + sizeof(long)} read from {Enum.GetName(typeof(Types), this.type)}.");
 
-                        this.response = Utility.Deserialize(state.Value);
+                        this.response = Network.Deserialize(state.Value);
                     }
 
                     // Signal that all bytes have been received.  
@@ -294,7 +321,7 @@ namespace SUS.Shared.Utility
                     if (this.DEBUG)
                         Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), this.type)}.");
 
-                    this.response = Utility.Deserialize(state.Value);
+                    this.response = Network.Deserialize(state.Value);
                     readDone.Set();
                 }
                 else

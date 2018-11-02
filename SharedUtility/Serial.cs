@@ -29,7 +29,7 @@ namespace SUS.Shared.Utility
         {
             get
             {
-                while (GameObject.FindMobile(MobileType.Any, m_LastMobile = (m_LastMobile + 1)) != null)
+                while (GameObject.FindMobile(MobileType.Mobile, m_LastMobile = (m_LastMobile + 1)) != null)
                 { }
 
                 return m_LastMobile;

@@ -75,7 +75,7 @@ namespace SUS.Shared.Objects
 
         public byte[] ToByte()
         {
-            return Utility.Utility.Serialize(this);
+            return Utility.Network.Serialize(this);
         }
     }
 }

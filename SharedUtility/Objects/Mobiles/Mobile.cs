@@ -32,7 +32,7 @@ namespace SUS.Shared.Objects.Mobiles
         Player = 1,
         NPC = 2,
 
-        Any = Player | NPC,
+        Mobile = Player | NPC,
     }
 
     [Serializable]
@@ -92,7 +92,7 @@ namespace SUS.Shared.Objects.Mobiles
 
             public enum Types { Archery, Magery, Fencing, Healing };
 
-            public Skill(string name, int type, double value = 0 , double max = 120.0)
+            public Skill(string name, int type, double value = 0, double max = 120.0)
             {
                 this.Step = 0.1;
                 if (max > 120.0)
@@ -116,7 +116,7 @@ namespace SUS.Shared.Objects.Mobiles
             this.m_Attributes = new Attributes(strength, dexterity, intelligence);
             this.m_Skills = new Dictionary<int, Skill>();
             foreach (int skill in Enum.GetValues(typeof(Skill.Types)))
-                m_Skills.Add(skill, new Skill(Enum.GetName(typeof(Skill.Types),skill), skill));
+                m_Skills.Add(skill, new Skill(Enum.GetName(typeof(Skill.Types), skill), skill));
 
             if (ID == 0)
                 this.m_ID = Serial.NewObject;
@@ -161,7 +161,7 @@ namespace SUS.Shared.Objects.Mobiles
                 hash += m_Name.GetHashCode();
                 hash *= 397;
             }
-            
+
             // If it is an NPC or Player, factor that into the hash.
             if (m_Type != MobileType.None)
             {
@@ -180,7 +180,7 @@ namespace SUS.Shared.Objects.Mobiles
 
         public byte[] ToByte()
         {
-            return Utility.Utility.Serialize(this);
+            return Network.Serialize(this);
         }
 
         #region Combat
@@ -217,18 +217,29 @@ namespace SUS.Shared.Objects.Mobiles
 
         private int weaponDamage()
         {
+            Attributes attr = m_Attributes;
             switch (this.WeaponType)
             {
                 case TypeOfDamage.Archery:
-                    return 4;
+                    this.m_DamageMax = (attr.Dexterity / 2) + (attr.Strength / 3);
+                    break;
                 case TypeOfDamage.Magic:
-                    return 4;
+                    this.m_DamageMax = (int)((double)attr.Intelligence / 1.5);
+                    break;
                 case TypeOfDamage.Melee:
-                    return 4;
+                    this.m_DamageMax = (attr.Strength / 2) + (attr.Dexterity / 3);
+                    break;
                 default:
-                    return 4;
+                    this.m_DamageMax = 4;
+                    break;
             }
+
+            this.m_DamageMin = this.m_DamageMax / 2;
+            return RandomImpl.Next(m_DamageMin, m_DamageMax);
         }
+
+        private void statIncrease() { }
+
         #endregion
     }
 }

@@ -41,7 +41,7 @@ namespace SUS.Shared.Objects
             //this.Location.Clean();
 
             // Serialize and convert to bytes for transport.
-            return Utility.Utility.Serialize(this);
+            return Network.Serialize(this);
         }
 
         #region Overrides
@@ -139,8 +139,8 @@ namespace SUS.Shared.Objects
         /// <param name="mobile">Mobile to remove.</param>
         public void Kill(Mobile mobile)
         {
-            if (this.Location.RemoveMobile(mobile) <= 0)    // Attempts to remove from the current location, if it wasn't found/removed...
-                this.LocationLast.RemoveMobile(mobile);     //  it then attempts to remove from the last location.
+            if (this.Location.RemoveMobile(mobile) == false)    // Attempts to remove from the current location, if it wasn't found/removed...
+                this.LocationLast.RemoveMobile(mobile);         //  it then attempts to remove from the last location.
         }
     }
 }

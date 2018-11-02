@@ -69,10 +69,7 @@ namespace SUS
             NPC npc = new NPC("Orc", 10, 10, 8, 2);
             if (Spawn(npc, Locations.Britain))
             {
-                ConsoleColor cc = Console.ForegroundColor;          // Save the console's color.
-                Console.ForegroundColor = ConsoleColor.DarkRed;     // Set the color to Dark Red.
-                Console.WriteLine($" !! Spawned an {npc.m_Name} in {Locations.Britain.ToString()}.");
-                Console.ForegroundColor = cc;                       // Reset the color to the default.
+                Miscellaneous.ConsoleNotify($"Spawned an {npc.m_Name} in {Locations.Britain.ToString()}.");
             }
         }
 
@@ -230,7 +227,7 @@ namespace SUS
         public static Mobile FindMobile(MobileType type, Serial serial)
         {   // Iterate our hashset of mobiles.
             foreach (Mobile m in m_Mobiles)
-                if ((m.m_Type == type && m.m_ID == serial) || type == MobileType.Any)
+                if (((m.m_Type == type) && (m.m_ID == serial)) || type == MobileType.Mobile)
                         return m;   // If the type and serial match, return it. If it is type of 'Any', return it.
 
             return null;    // Nothing was found, return null.

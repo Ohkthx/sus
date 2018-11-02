@@ -49,7 +49,7 @@ namespace SUS.Shared.Utility
             if (values <= 0)
                 return 0;
 
-            return  Next() % values;
+            return Next() % values; // Return the remainder (range based.)
         }
 
         public int Next(int min, int max)
@@ -59,7 +59,7 @@ namespace SUS.Shared.Utility
             if (min >= max)
                 return max;
 
-            return min + Next(max - min);
+            return min + Next(max - min);   // Since it can proc '0', we add the min to it.
         }
 
         public double NextDouble()
