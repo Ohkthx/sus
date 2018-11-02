@@ -13,7 +13,7 @@ namespace SUSClient
 {
     class InteractiveConsole
     {
-        private enum ConsoleActions { none, move, look, lastloc, players, npcs, attack, actions, exit }
+        private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, actions, exit }
         private enum RequestStatus { none, pending, closed }    // Request status, tells if the client is waiting for information.
 
         private static GameState gs = null;
@@ -87,10 +87,13 @@ namespace SUSClient
                         lastloc();
                         break;
                     case ConsoleActions.players:
-                        getPlayers();
+                        listMobiles(MobileType.Player);
                         break;
                     case ConsoleActions.npcs:
-                        getNPCs();
+                        listMobiles(MobileType.NPC);
+                        break;
+                    case ConsoleActions.mobiles:
+                        listMobiles(MobileType.Mobile);
                         break;
                     case ConsoleActions.actions:
                         printActions();
@@ -120,10 +123,13 @@ namespace SUSClient
             switch (lastAction)
             {
                 case ConsoleActions.players:
-                    getMobiles(0);
+                    listMobiles(MobileType.Player);
                     break;
                 case ConsoleActions.npcs:
-                    getMobiles(1);
+                    listMobiles(MobileType.NPC);
+                    break;
+                case ConsoleActions.mobiles:
+                    listMobiles(MobileType.Mobile);
                     break;
                 case ConsoleActions.attack:
                     attack();
@@ -197,34 +203,43 @@ namespace SUSClient
         }
 
         /// <summary>
-        ///     Parent caller for retrieving either local Players or NPCs.
+        ///     Makes a request to the Server for an updated list of players.
+        ///     This function is called again on the list is returned by the server.
         /// </summary>
-        /// <param name="type"></param>
-        private void getMobiles(int type)
-        {   // Send our request if we haven't.
-            if (type == 0)
-                listPlayers(getPlayers());
-            else
-                listNPCs(getNPCs());
+        /// <returns>List of Players from the server.</returns>
+        private List<Mobile> getMobiles()
+        {
+            if (this.clientRequest == null)
+            {   // Create a request for the server to respond to.
+                this.clientRequest = new Request(RequestTypes.Location, gs.Location);
+                return null;
+            }
+
+            // Return a list of players the server has provided.
+            return gs.Location.Mobiles.ToList();
         }
 
         /// <summary>
-        ///     List the Players that are currently in the area. This is updated by 'getPlayers()'.
+        ///     Parent caller for retrieving either local Players or NPCs.
         /// </summary>
-        /// <param name="players">List of Players to display.</param>
-        private void listPlayers(List<Player> players)
+        /// <param name="type"></param>
+        private void listMobiles(MobileType type)
         {
-            Console.WriteLine($" Local Players:");
+            List<Mobile> mobiles = getMobiles();                // Get a fresh list of mobiles from the server.
+            if (mobiles == null && this.clientRequest != null)
+                return; // Return early to process a client request.
+
+            Console.WriteLine($" Local {type.ToString()}s:");
 
             int pos = 0;
-            if (players.Count > 0)
+            if (mobiles.Count > 0)
             {   // Iterate our list of Players.
-                foreach (Player p in players)
+                foreach (Mobile m in mobiles)
                 {
-                    if (p.m_ID != gs.ID())
+                    if ((type & m.m_Type) == m.m_Type)
                     {
                         pos++;
-                        Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID}");
+                        Console.WriteLine($"  [Pos: {pos}] {m.m_Name},  ID: {m.m_ID}");
                     }
                 }
             }
@@ -234,61 +249,27 @@ namespace SUSClient
                 Console.WriteLine("    => None.");
         }
 
-        /// <summary>
-        ///     Makes a request to the Server for an updated list of players.
-        ///     This function is called again on the list is returned by the server.
-        /// </summary>
-        /// <returns>List of Players from the server.</returns>
-        private List<Player> getPlayers()
+        public Mobile SelectMobile(List<Mobile> mobiles)
         {
-            if (this.clientRequest == null)
-            {   // Create a request for the server to respond to.
-                this.clientRequest = new Request(RequestTypes.Location, gs.Location);
-                return null;
-            }
+            listMobiles(MobileType.Mobile);    // Retreives our mobiles.
 
-            // Return a list of players the server has provided.
-            return gs.Location.Players.ToList();
-        }
-
-        /// <summary>
-        ///     List the NPCs that are currently in the area. This is updated by 'getNPCs()'.
-        /// </summary>
-        /// <param name="npcs">List of NPCs to display.</param>
-        private void listNPCs(List<NPC> npcs)
-        {
-            Console.WriteLine($" Local NPCs:");
-
-            int pos = 0;
-            if (npcs.Count > 0)
-            {   // Iterate our list of NPCs
-                foreach (NPC p in npcs)
+            int input = 0;
+            do
+            {
+                Console.Write(" Select a target you wish to attack: ");
+                if (int.TryParse(Console.ReadLine(), out input))
                 {
-                    pos++;
-                    Console.WriteLine($"  [Pos: {pos}] {p.m_Name},  ID: {p.m_ID.ToInt()}");
+                    if (input - 1 >= 0 && input - 1 < mobiles.Count)
+                    {
+                        Miscellaneous.ConsoleNotify($"Mobile Selected: {mobiles[input - 1].m_Name}.");
+                        return mobiles[input - 1];
+                    }
+                    Miscellaneous.ConsoleNotify("Bad option, please try again.");
                 }
-            }
+            } while (input - 1 < 0 || input - 1 >= mobiles.Count);
 
-            // No NPCs in the list, print 'None' instead.
-            if (npcs.Count == 0 && pos == 0)
-                Console.WriteLine("    => None.");
-        }
-
-        /// <summary>
-        ///     Makes a request to the Server for an updated list of NPCs.
-        ///     This function is called again on the list is returned by the server.
-        /// </summary
-        /// <returns>List of NPCs from the server.</returns>
-        private List<NPC> getNPCs()
-        {
-            if (this.clientRequest == null)
-            {   // Create a request for the server to respond to.
-                this.clientRequest = new Request(RequestTypes.Location, gs.Location);
-                return null;
-            }
-
-            // Return a list of NPCs the server has provided.
-            return gs.Location.NPCs.ToList();
+            Miscellaneous.ConsoleNotify($"Something happened? Bad number: {input}.");
+            return null;
         }
 
         /// <summary>
@@ -296,25 +277,24 @@ namespace SUSClient
         /// </summary>
         private void attack()
         {
-            List<NPC> npcs = getNPCs();
-            if (npcs == null)
+            List<Mobile> mobiles = getMobiles();
+            if (mobiles == null)
             {   // Get a fresh batch of local NPCs.
                 this.status = RequestStatus.pending;    // We require a response from the server for updated information.
                 return;                                 // Haven't made the request, making it now by returning early.
             }
 
             this.status = RequestStatus.closed;        // We got our response and now processing it.
-            // TODO: Get the object to attack from the list of NPCs.
-            listNPCs(npcs);
 
-            if (npcs.Count == 0)
+            if (mobiles.Count == 0)
             {
-                Console.WriteLine("No mobs to attack.");
+                Miscellaneous.ConsoleNotify("No mobs to attack.");
                 return;
             }
 
-            NPC targetMobile = npcs.First();
-            Console.WriteLine("Performing an attack on {0}.", targetMobile.m_Name);
+            Mobile targetMobile = SelectMobile(mobiles);
+
+            Console.WriteLine(" Performing an attack on {0}.", targetMobile.m_Name);
 
             // Our newly created action to perform.
             MobileAction attackAction = new MobileAction(gs.Account.m_ID);
@@ -345,6 +325,5 @@ namespace SUSClient
             socketKill = new SocketKill(true);
             Console.WriteLine(" SocketKill is set.");
         }
-
     }
 }

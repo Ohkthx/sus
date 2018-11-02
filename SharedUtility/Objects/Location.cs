@@ -74,8 +74,7 @@ namespace SUS.Shared.Objects
         public string Description = string.Empty;
 
         public HashSet<Node> Connections = new HashSet<Node>();
-        public HashSet<Player> Players = new HashSet<Player>();
-        public HashSet<NPC> NPCs = new HashSet<NPC>();
+        public HashSet<Mobile> Mobiles = new HashSet<Mobile>();
 
         protected Types Type;
         protected Locations Location;
@@ -112,7 +111,7 @@ namespace SUS.Shared.Objects
 
         public byte[] ToByte()
         {
-            return Utility.Utility.Serialize(this);
+            return Utility.Network.Serialize(this);
         }
 
         /// <summary>
@@ -122,10 +121,9 @@ namespace SUS.Shared.Objects
         /// <returns>Succcess (true), or Failure (false)</returns>
         public bool AddMobile(Mobile mobile)
         {
-            if (mobile is Player)
-                return this.Players.Add((Player)mobile);
-            else 
-                return this.NPCs.Add((NPC)mobile);
+            if (this.Mobiles.Contains(mobile))
+                this.Mobiles.Remove(mobile);
+            return this.Mobiles.Add(mobile);
         }
 
         /// <summary>
@@ -133,12 +131,9 @@ namespace SUS.Shared.Objects
         /// </summary>
         /// <param name="mobile">Mobile to remove.</param>
         /// <returns>Number of elements removed.</returns>
-        public int RemoveMobile(Mobile mobile)
+        public bool RemoveMobile(Mobile mobile)
         {
-            if (mobile is Player)
-                return this.Players.RemoveWhere(p => p.m_ID == mobile.m_ID);
-            else
-                return this.NPCs.RemoveWhere(p => p.m_ID == mobile.m_ID);
+            return this.Mobiles.Remove(mobile);
         }
 
         /// <summary>
@@ -148,7 +143,7 @@ namespace SUS.Shared.Objects
         /// <returns>Succcess (true), or Failure (false)</returns>
         public bool UpdateMobile(Mobile mobile)
         {   // Remove the mobile, if there is none that are removed- return early, else just readd the new.
-            if (this.RemoveMobile(mobile) <= 0)
+            if (this.RemoveMobile(mobile) == false)
                 return false;
             return AddMobile(mobile);
         }
@@ -171,8 +166,7 @@ namespace SUS.Shared.Objects
         // Will null out unimportant lists for transferring to server to reduce bandwidth.
         public void Clean()
         {
-            this.Players = null;
-            this.NPCs = null;
+            this.Mobiles = null;
         }
     }
 }

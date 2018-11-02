@@ -101,17 +101,16 @@ namespace SUSClient
                         Console.WriteLine(" => Recieved Action!");
 
                     MobileAction ma = obj as MobileAction;
-                    Console.WriteLine($"Server Reponse: {ma.Result}");
+                    Console.WriteLine($"\n Server Reponse: {ma.Result}");
 
                     foreach (Mobile m in ma.GetUpdates())
                     {   // Attempt to update the gamestate's account if it is in the list of updates.
-                        Console.WriteLine($"Processing: {m.m_Name}");
                         if (!myGS.Refresh(m))
                         {   // Update failed.
                             if (m is NPC)
                             {
                                 NPC npc = m as NPC;
-                                Console.WriteLine($"Damage to {npc.m_Name}. Health: {npc.GetHealth()}.");
+                                Console.WriteLine($" Damage to {npc.m_Name}. Health: {npc.GetHealth()}.");
                             }
                         }
                     }
