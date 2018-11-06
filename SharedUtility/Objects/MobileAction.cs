@@ -33,7 +33,7 @@ namespace SUS.Shared.Objects
         public AbilityType Abiltiy = AbilityType.None;      // Ability being used.
         private UInt64 Initator;                            // ID of Player
         private List<Tuple<MobileType, UInt64>> Affected;   // List of Targets
-        private List<Mobile> Updates = new List<Mobile>();  // TODO: Think of a way to reduce overhead of sending Mobile Objects.
+        private List<MobileModifier> Updates = new List<MobileModifier>();
         public string Result = string.Empty;
 
         public MobileAction(UInt64 initator)
@@ -56,10 +56,16 @@ namespace SUS.Shared.Objects
             this.Affected.Add(new Tuple<MobileType, ulong>(type, targetId));
         }
 
-        public void AddUpdate(Mobile mobile)
+        public void AddUpdate(MobileModifier mobile)
         {
-            if (this.Updates.Contains(mobile))
+            int loc = this.Updates.IndexOf(mobile);
+            if (loc >= 0)
+            {   // Mobile exists in the list, replace it with the new version.
+                this.Updates[loc] = mobile;
                 return;
+            }
+
+            // Loc was -1 indicating it does not exist, add it.
             this.Updates.Add(mobile);
         }
 
@@ -68,7 +74,7 @@ namespace SUS.Shared.Objects
             return this.Affected;
         }
 
-        public List<Mobile> GetUpdates()
+        public List<MobileModifier> GetUpdates()
         {
             return this.Updates;
         }

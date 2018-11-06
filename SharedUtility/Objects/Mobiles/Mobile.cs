@@ -36,6 +36,68 @@ namespace SUS.Shared.Objects.Mobiles
     }
 
     [Serializable]
+    public class MobileModifier
+    {
+        public Serial ID { get; private set; }
+        public string Name { get; private set; }
+        public MobileType Type { get; private set; } = MobileType.None;
+        public bool IsDead { get; private set; } = false;   // Sets it to be false by default.
+        public int ModHits { get; private set; } = 0;
+        public int ModStamina { get; private set; } = 0;
+
+        #region Constructors
+        public MobileModifier(Mobile mobile): this(mobile.m_ID, mobile.m_Name, mobile.m_Type) { }
+
+        public MobileModifier(ulong id, string name, MobileType type)
+        {
+            this.ID = id;
+            this.Name = name;
+            this.Type = type;
+        }
+        #endregion
+
+        #region Overrides
+        public override bool Equals(object obj)
+        {
+            MobileModifier mobile = obj as MobileModifier;
+            if (mobile == null)
+                return false;
+
+            return mobile.ID == this.ID && mobile.Name == this.Name && mobile.Type == this.Type;
+        }
+
+        public override int GetHashCode()
+        {
+            int hash = 37;
+            hash += ID.GetHashCode();
+            hash *= 397;
+
+            // If the name isn't blank (shouldn't be), factor it.
+            if (Name != null)
+            {
+                hash += Name.GetHashCode();
+                hash *= 397;
+            }
+
+            // If it is an NPC or Player, factor that into the hash.
+            if (Type != MobileType.None)
+            {
+                hash += (int)Type;
+                hash *= 397;
+            }
+
+            return hash;
+        }
+        #endregion
+
+        public void HitsModified(int change) { this.ModHits += change; }
+        public void StaminaModified(int change) { this.ModStamina += change; }
+        public void DeathModified(bool dead) { this.IsDead = dead; }
+
+        public byte[] ToByte() { return Network.Serialize(this); }
+    }
+
+    [Serializable]
     public class Mobile
     {
         public Serial m_ID { get; set; }            // ID of the mobile.
@@ -178,10 +240,8 @@ namespace SUS.Shared.Objects.Mobiles
             return $"{this.m_Hits} / {this.m_HitsMax}";
         }
 
-        public byte[] ToByte()
-        {
-            return Network.Serialize(this);
-        }
+        // Prepares the class to be sent over the network.
+        public byte[] ToByte() { return Network.Serialize(this); }
 
         #region Combat
         public bool IsDead()
@@ -199,15 +259,37 @@ namespace SUS.Shared.Objects.Mobiles
             this.m_Hits = 0;
         }
 
-        public void Combat(ref Mobile opponent)
+        public void Combat(ref MobileModifier mm_init, ref Mobile opponent, ref MobileModifier mm_opp)
         {
-            opponent.TakeDamage(this.Attack());
-            this.TakeDamage(opponent.Attack());
+            int initAtk = this.Attack();
+            mm_opp.HitsModified(opponent.TakeDamage(initAtk) * -1);     // Update the MobileModifier. -1 to indicate a loss of health.
+            mm_opp.DeathModified(opponent.IsDead());                    // Make sure the client knows the target is dead.
+
+            if (!opponent.IsDead())                                     // If the opponent isn't dead, let them attack.
+            {
+                int oppAtk = opponent.Attack();
+                mm_init.HitsModified(this.TakeDamage(oppAtk) * -1);     // Update the MobileModifier.
+                mm_init.DeathModified(this.IsDead());
+            }
         }
 
-        public void TakeDamage(int damage)
+        /// <summary>
+        ///     Current mobile takes damage from outside source.
+        /// </summary>
+        /// <param name="damage">Amount of base damage to take.</param>
+        /// <returns>Total amount of damage taken after potential modifiers.</returns>
+        public int TakeDamage(int damage)
         {
+            int originalHP = this.m_Hits;
+
+            if (damage > this.m_Hits)
+            {   
+                this.Kill();
+                return originalHP;  // This is the amount of damage taken (last remaining hp.)
+            }
+
             this.m_Hits -= damage;
+            return damage;          // Damage taken was damage received.
         }
 
         public int Attack()

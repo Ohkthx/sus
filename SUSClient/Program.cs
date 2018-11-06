@@ -103,15 +103,18 @@ namespace SUSClient
                     MobileAction ma = obj as MobileAction;
                     Console.WriteLine($"\n Server Reponse: {ma.Result}");
 
-                    foreach (Mobile m in ma.GetUpdates())
-                    {   // Attempt to update the gamestate's account if it is in the list of updates.
-                        if (!myGS.Refresh(m))
-                        {   // Update failed.
-                            if (m is NPC)
-                            {
-                                NPC npc = m as NPC;
-                                Console.WriteLine($" Damage to {npc.m_Name}. Health: {npc.GetHealth()}.");
-                            }
+                    foreach (MobileModifier mm in ma.GetUpdates())
+                    {   // Attempt to update the gamestate with the modifications to the mobile.
+                        Mobile mobile;
+                        if (myGS.UpdateMobile(mm, out mobile) && mobile != null)
+                        {
+                            if (mobile.m_Type == MobileType.Player)
+                                myGS.Refresh(mobile);   // Update our gamestate with the new player information.
+
+                            Console.WriteLine($"  => {mobile.m_Name}'s health was changed by {mm.ModHits}. " +
+                                $"\n\tStamina was changed by {mm.ModStamina}." +
+                                $"\n\tHealth: {mobile.GetHealth()}." +
+                                $"\n\tDead? {mm.IsDead}");
                         }
                     }
                     ia.Reset();

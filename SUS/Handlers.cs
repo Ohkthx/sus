@@ -91,49 +91,63 @@ namespace SUS.Server
 
             if (mobileAction.Type == ActionType.Attack)
             {
-                List<Tuple<MobileType, UInt64>> targets = mobileAction.GetTargets();
-                if (targets.Count == 0)
-                {
-                    Miscellaneous.ConsoleNotify("Bad MobileAction recieved. No targets supplied.");
-                    // TODO: Pass mobileAction by reference? Return an error to the client?
-                    return;
+                MobileActionHandlerAttack(ref initator, ref mobileAction);
+            }
+        }
+
+        private static void MobileActionHandlerAttack(ref Player initator, ref MobileAction mobileAction)
+        {
+            HashSet<MobileModifier> updates = new HashSet<MobileModifier>();        // Will contain updates to be passed back to client.
+            MobileModifier mm_initiator = new MobileModifier(initator);
+
+            List<Tuple<MobileType, UInt64>> targets = mobileAction.GetTargets();    // List containing <Type, Serial>
+            if (targets.Count == 0)
+            {
+                Miscellaneous.ConsoleNotify("Bad MobileAction recieved. No targets supplied.");
+                // TODO: Pass mobileAction by reference? Return an error to the client?
+                return;
+            }
+
+            // Iterate each of the affected.
+            foreach (Tuple<MobileType, UInt64> t in targets)
+            {   // Lookup the affected mobile.
+                Mobile affectee = null;
+                if (t.Item1 == MobileType.NPC)
+                    affectee = GameObject.FindNPC(t.Item2) as Mobile;
+                else if (t.Item1 == MobileType.Player)
+                    affectee = GameObject.FindPlayer(t.Item2) as Mobile;
+
+                if (affectee == null)
+                {   // Double checks were processing on a correct object.
+                    Miscellaneous.ConsoleNotify($"Bad MobileAction 'affectee': {t.Item1.ToString()}: {t.Item2}.");
+                    continue;
                 }
 
-                // Iterate each of the affected.
-                foreach (Tuple<MobileType, UInt64> t in targets)
-                {   // Lookup the affected mobile.
-                    Mobile affectee = null;
-                    if (t.Item1 == MobileType.NPC)
-                        affectee = GameObject.FindNPC(t.Item2) as Mobile;
-                    else if (t.Item1 == MobileType.Player)
-                        affectee = GameObject.FindPlayer(t.Item2) as Mobile;
+                MobileModifier mm_affectee = new MobileModifier(affectee);
 
-                    if (affectee == null)
-                    {   // Double checks were processing on a correct object.
-                        Miscellaneous.ConsoleNotify($"Bad MobileAction 'affectee': {t.Item1.ToString()}: {t.Item2}.");
-                        continue;
-                    }
+                // Combat the two objects.
+                initator.Combat(ref mm_initiator, ref affectee, ref mm_affectee);
 
-                    // Combat the two objects.
-                    initator.Combat(ref affectee);
-
-                    // Check if either are dead...
-                    if (initator.IsDead())
-                        GameObject.Kill(initator);
-                    if (affectee.IsDead())
-                        GameObject.Kill(affectee);
-
-                    // Update both the player and the affectee for the server.
+                // Update our initiator.
+                if (initator.IsDead())
+                    GameObject.Kill(initator);
+                else
                     GameObject.UpdateMobiles(initator);
+
+                // Update the affectee.
+                if (affectee.IsDead())
+                    GameObject.Kill(affectee);
+                else
                     GameObject.UpdateMobiles(affectee);
 
-                    // Update to pass to the client.
-                    mobileAction.AddUpdate(initator);
-                    mobileAction.AddUpdate(affectee);
+                // Update to pass to the client regarding the affectee.
+                mobileAction.AddUpdate(mm_affectee);
 
-                    mobileAction.Result += $"{initator.m_Name} damaged {affectee.m_Name}. ";
-                }
+                mobileAction.Result += $"{initator.m_Name} attacked {affectee.m_Name}. ";    // TODO: Move this to MobileModifier.
             }
+
+            // Add our updated information for the initiator. After processing all changes.
+            mobileAction.AddUpdate(mm_initiator);
         }
     }
 }

@@ -62,6 +62,7 @@ namespace SUS.Shared.Objects
             return Account;
         }
 
+        #region Client-Side Updating
         /// <summary>
         ///     Refreshes the account for the gamestate.
         /// </summary>
@@ -77,7 +78,52 @@ namespace SUS.Shared.Objects
             return false;
         }
 
-        #region User Actions
+        /// <summary>
+        ///     Takes a MobileModifier and applies the changes to the currently tracked mobiles.
+        /// </summary>
+        /// <param name="moddedMobile">Modifications to apply the local mobile.</param>
+        public bool UpdateMobile(MobileModifier moddedMobile, out Mobile mobile)
+        {
+            mobile = updateNodesMobile(Location, moddedMobile);
+            if (mobile != null)
+                return true;    // Mobile was found and updated, return true.
+
+            mobile = updateNodesMobile(LocationLast, moddedMobile);
+            if (mobile != null)
+                return true;    // Mobile was found and updated, return true.
+
+            return false;       // Mobile was never found, returning false and null.
+        }
+
+        /// <summary>
+        ///     Attempts to find the mobile located in the node, and process the changes.
+        /// </summary>
+        /// <param name="node">Node to be searched.</param>
+        /// <param name="moddedMobile">Modifications to the mobile to be made.</param>
+        /// <returns>Newly updated mobile.</returns>
+        private Mobile updateNodesMobile(Node node, MobileModifier moddedMobile)
+        {
+            foreach (Mobile m in node.Mobiles)
+            {   // Iterate each of our locale mobiles seeing if any match by type and serial.
+                if (m.m_ID == moddedMobile.ID && m.m_Type == moddedMobile.Type)
+                {   // We found a match, process changes.
+                    if (moddedMobile.IsDead)
+                    {   // Server said the mobile is dead, so we kill it.
+                        m.Kill();            // Kill the mobile.
+                        this.Kill(m);        // Kill the mobile in the gamestate.
+                    } else
+                    {
+                        m.TakeDamage(moddedMobile.ModHits * -1);    // The mobile takes the damage provided.
+                        node.AddMobile(m);  // Update the mobile in the node.
+                    }
+
+                    return m;    // Mobile was found and updated. Return it.
+                }
+            }
+
+            return null;   // We never found our mobile.
+        }
+
         public bool MoveTo(string location)
         {   // This can take an integer or a name to move too.
 

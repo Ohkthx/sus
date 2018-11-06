@@ -115,7 +115,7 @@ namespace SUS.Shared.Objects
         }
 
         /// <summary>
-        ///     Adds either a Player or NPC to their respective list.
+        ///     Adds either a Player or NPC. Performs and update if the mobile already exists.
         /// </summary>
         /// <param name="mobile">Mobile to be added.</param>
         /// <returns>Succcess (true), or Failure (false)</returns>

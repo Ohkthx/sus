@@ -16,7 +16,7 @@ namespace SUS
         static void Main(string[] args)
             => StartServer();
 
-        // Initiates the server and it's networking.
+        // Initiates the server and its networking.
         static void StartServer()
         {
             Server.ServerInstance.StartListening();
