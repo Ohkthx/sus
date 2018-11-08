@@ -38,7 +38,6 @@ namespace SUS.Shared.Objects
             // Clean our structure for transportation.
             if (this.LocationLast != null)
                 this.LocationLast.Clean();
-            //this.Location.Clean();
 
             // Serialize and convert to bytes for transport.
             return Network.Serialize(this);
@@ -202,12 +201,18 @@ namespace SUS.Shared.Objects
             return true;
         }
 
+        /// <summary>
+        ///     Swaps the locations between a new and old location.
+        /// </summary>
+        /// <param name="oldLocation">Location to be the last location.</param>
+        /// <param name="newLocation">Location to be the current location.</param>
         private void SwapLocation(Node oldLocation, Node newLocation)
         {
             this.LocationLast = oldLocation;
             this.LocationLast.Clean();
 
             this.Location = newLocation;
+            this.Account.Location = Location.GetLocation();
             this.moved = true;
         }
 

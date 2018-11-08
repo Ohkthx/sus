@@ -37,6 +37,9 @@ namespace SUS.Server
                 case RequestTypes.MobileAction:
                     clientInfo = MobileActionHandler(req.Value as MobileAction);
                     break;
+                case RequestTypes.MobileMove:
+                    clientInfo = MobileMove(req.Value as MobileMove);
+                    break;
                 case RequestTypes.Node:
                     clientInfo = Node(req.Value as Node);
                     break;
@@ -159,6 +162,28 @@ namespace SUS.Server
 
             // Add our updated information for the initiator. After processing all changes.
             mobileAction.AddUpdate(mm_initiator);
+        }
+
+        private static Request MobileMove(MobileMove mm)
+        {
+            if (mm.Mobile.Location != mm.NodeID)
+            {   // Remove the player from the old node.
+                Node old = GameObject.FindNode((int)mm.Mobile.Location);
+                old.RemoveMobile(mm.Mobile);    // Remove the mobile from the node.
+                GameObject.UpdateNodes(old);    // Update the node.
+            }
+
+            Node node = GameObject.FindNode((int)mm.NodeID);
+            if (!node.HasMobile(mm.Mobile))
+            {   // The Node does not contain the mobile.
+                node.AddMobile(mm.Mobile);      // Add the mobile to the Node.
+                GameObject.UpdateNodes(node);   // Update the Node in the GameObject.
+            }
+
+            // Lastly, update the Mobile.
+            GameObject.UpdateMobiles(mm.Mobile);
+
+            return new Request(RequestTypes.None, null);
         }
 
         private static Request Node(Node node)

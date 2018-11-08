@@ -23,7 +23,6 @@ namespace SUSClient
 
         private RequestStatus status = RequestStatus.none;          // Determines if the client is in the process of requesting information.
         private ConsoleActions lastAction = ConsoleActions.none;
-        public bool sendGameState = false;
 
         public InteractiveConsole(GameState gamestate) { gs = gamestate; }
         private static ulong rounds = 0;        // Amount of turns the client has performed.
@@ -34,7 +33,7 @@ namespace SUSClient
         /// </summary>
         /// <returns>Updated GameState object.</returns>
         public GameState Core()
-        {   // If we requested a location of Players or NPCs, process it first.
+        {   // If our last console action required a response, process it.
             if (lastAction != ConsoleActions.none)
             {
                 responseHandler();      // Processes requested information from the server.
@@ -66,7 +65,7 @@ namespace SUSClient
                 Console.Write($"[{name.ToLower()}]  ");
             }
 
-            while (this.socketKill == null && sendGameState == false && clientRequest == null)
+            while (this.socketKill == null && clientRequest == null)
             {   // Get our action from the user.
                 ConsoleActions consoleAction = ConsoleActions.none;
                 string act = string.Empty;
@@ -161,7 +160,6 @@ namespace SUSClient
         {
             this.status = RequestStatus.none;
             this.lastAction = ConsoleActions.none;
-            this.sendGameState = false;
             this.clientRequest = null;
         }
 
@@ -185,7 +183,9 @@ namespace SUSClient
             while (!gs.MoveTo(Console.ReadLine()));
 
             Console.WriteLine($" New Location: {gs.Location.Name}");
-            this.sendGameState = true;  // Sets the flag to send our gamestate.
+
+            MobileMove mm = new MobileMove(gs.Location.GetLocation(), gs.Account);
+            this.clientRequest = new Request(RequestTypes.MobileMove, mm);
         }
 
         /// <summary>

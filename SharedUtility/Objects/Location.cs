@@ -114,6 +114,7 @@ namespace SUS.Shared.Objects
             return Utility.Network.Serialize(this);
         }
 
+        #region Updates and Getters
         /// <summary>
         ///     Adds either a Player or NPC. Performs and update if the mobile already exists.
         /// </summary>
@@ -134,6 +135,11 @@ namespace SUS.Shared.Objects
         public bool RemoveMobile(Mobile mobile)
         {
             return this.Mobiles.Remove(mobile);
+        }
+
+        public bool HasMobile(Mobile mobile)
+        {
+            return this.Mobiles.Contains(mobile);
         }
 
         /// <summary>
@@ -168,5 +174,6 @@ namespace SUS.Shared.Objects
         {
             this.Mobiles = null;
         }
+        #endregion
     }
 }

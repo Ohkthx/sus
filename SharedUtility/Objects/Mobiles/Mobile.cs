@@ -194,42 +194,32 @@ namespace SUS.Shared.Objects.Mobiles
         #region Overrides
         public override string ToString()
         {
-            string paperdoll = string.Format("                  ___________________\n" +
-                "                  [Character Profile]\n" +
-                "  + ---------------------------------------------------+\n" +
-                "  | Character Name: {0}\n" +
-                "  | Title: {1}\n" +
-                "  +-[ Attributes ]\n" +
-                "  | +-- Health: {2}, Max Health: {3}\n" +
-                "  | +-- Strength: {4}\n" +
-                "  | +-- Dexterity: {5}\t\tStamina: {6}\n" +
-                "  | +-- Intelligence: {7}\tMana: {8}\n" +
-                "  |   +-- Attack: {9}\n" +
-                "  |   +-- Defense: {10}\n" +
-                "  |\n" +
-                "  +-[ Items ]\n" +
-                "  | +-- Bandaids: {11}\t\tBandaid Heal Amount: {12}\n" +
-                "  | +-- Arrows: {13}\t\tReagents:{14}\n" +
-                "  | +-- Gold: {15}\n" +
-                "  | +-- Weapon Type: {16}\n" +
-                "  |\n" +
-                "  +-[ Statistics ]\n" +
-                "  | +-- Deaths: {17}\n" +
-                "  | +-- Kill Count: {18}\n" +
-                "  |\n" +
-                "  +-[ Skills ]\n",
-                this.m_Name, "The Player",
-                this.m_Hits, this.m_HitsMax,
-                this.m_Attributes.Strength,
-                this.m_Attributes.Dexterity, this.m_Attributes.Stamina,
-                this.m_Attributes.Intelligence, this.m_Attributes.Mana,
-                0, 0,
-                0, 0,
-                0, 0,
-                0,
-                this.WeaponType.ToString(),
-                this.m_Deaths,
-                this.m_KillCount);
+            string paperdoll = $"                  ___________________\n" +
+                $"                  [Character Profile]\n" +
+                $"  + ---------------------------------------------------+\n" +
+                $"  | Character Name: {m_Name}\n" +
+                $"  | Title: {"The Player"}\n" +
+                $"  | Location: {Location.ToString()}\n" +
+                $"  |\n" +
+                $"  +-[ Attributes ]\n" +
+                $"  | +-- Health: {m_Hits}, Max Health: {m_HitsMax}\n" +
+                $"  | +-- Strength: {m_Attributes.Strength}\n" +
+                $"  | +-- Dexterity: {m_Attributes.Dexterity}\t\tStamina: {m_Attributes.Stamina}\n" +
+                $"  | +-- Intelligence: {m_Attributes.Intelligence}\tMana: {m_Attributes.Mana}\n" +
+                $"  |   +-- Attack: {0}\n" +
+                $"  |   +-- Defense: {0}\n" +
+                $"  |\n" +
+                $"  +-[ Items ]\n" +
+                $"  | +-- Bandaids: {0}\t\tBandaid Heal Amount: {0}\n" +
+                $"  | +-- Arrows: {0}\t\tReagents: {0}\n" +
+                $"  | +-- Gold: {0}\n" +
+                $"  | +-- Weapon Type: {WeaponType.ToString()}\n" +
+                $"  |\n" +
+                $"  +-[ Statistics ]\n" +
+                $"  | +-- Deaths: {m_Deaths}\n" +
+                $"  | +-- Kill Count: {m_KillCount}\n" +
+                $"  |\n" +
+                $"  +-[ Skills ]\n";
 
             foreach (KeyValuePair<int, Skill> skill in m_Skills)
                  paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Max}]\n";
@@ -239,58 +229,50 @@ namespace SUS.Shared.Objects.Mobiles
             return paperdoll;
         }
 
-        public static bool operator ==(Mobile obj1, Mobile obj2)
-        {
-            if (object.ReferenceEquals(obj1, obj2))
-            {
-                return true;
-            }
-
-            if (object.ReferenceEquals(obj1, null) ||
-                object.ReferenceEquals(obj2, null))
-            {
-                return false;
-            }
-
-            return obj1.Equals(obj2);
-        }
-
-        public override bool Equals(object other)
-        {
-            return this == (other as Mobile);
-        }
-
-        public bool Equals(Mobile other)
-        {
-            return this == other;
-        }
-
-        public static bool operator !=(Mobile obj1, Mobile obj2)
-        {
-            return !(obj1 == obj2);
-        }
-
         public override int GetHashCode()
         {
-            int hash = 37;
-            hash += m_ID.GetHashCode();
-            hash *= 397;
-
-            // If the name isn't blank (shouldn't be), factor it.
-            if (m_Name != null)
+            unchecked
             {
-                hash += m_Name.GetHashCode();
-                hash *= 397;
+                int hash = 13;
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_ID) ? m_ID.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Name) ? m_Name.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Type) ? m_Type.GetHashCode() : 0);
+                return hash;
             }
+        }
 
-            // If it is an NPC or Player, factor that into the hash.
-            if (m_Type != MobileType.None)
-            {
-                hash += (int)m_Type;
-                hash *= 397;
-            }
+        public static bool operator ==(Mobile m1, Mobile m2)
+        {
+            if (Object.ReferenceEquals(m1, m2)) return true;
+            if (Object.ReferenceEquals(null, m1)) return false;
+            return (m1.Equals(m2));
+        }
 
-            return hash;
+        public static bool operator !=(Mobile m1, Mobile m2)
+        {
+            return !(m1 == m2);
+        }
+
+        public override bool Equals(object value)
+        {
+            if (Object.ReferenceEquals(null, value)) return false;
+            if (Object.ReferenceEquals(this, value)) return true;
+            if (value.GetType() != this.GetType()) return false;
+            return IsEqual((Mobile)value);
+        }
+
+        public bool Equals(Mobile mobile)
+        {
+            if (Object.ReferenceEquals(null, mobile)) return false;
+            if (Object.ReferenceEquals(this, mobile)) return true;
+            return IsEqual(mobile);
+        }
+
+        private bool IsEqual(Mobile value)
+        {
+            return (value != null)
+                && (m_Type == value.m_Type)
+                && (m_ID == value.m_ID);
         }
         #endregion
 

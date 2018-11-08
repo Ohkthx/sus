@@ -84,6 +84,9 @@ namespace SUSClient
 
                 switch (req.Type)
                 {
+                    case RequestTypes.None:
+                        ia.Reset();
+                        break;  // Server sent back empty information.
                     case RequestTypes.Authenticate:
                         Player player = new Player(id, username, 100, 105, 35, 10);
                         creq = new Request(RequestTypes.Player, player);
@@ -118,9 +121,7 @@ namespace SUSClient
                 {   // Get an action to perform and send it to the server.
                     gamestate = ia.Core();   // Activates the interactive console to grab the next action desired to be performed.
 
-                    if (ia.sendGameState)
-                        creq = new Request(RequestTypes.GameState, gamestate);
-                    else if (ia.clientRequest != null)
+                    if (ia.clientRequest != null)
                         creq = ia.clientRequest;
                     else
                     {   // Send a SocketKill to the server to close the socket down peacefully.
