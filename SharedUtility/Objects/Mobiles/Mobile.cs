@@ -112,6 +112,8 @@ namespace SUS.Shared.Objects.Mobiles
         protected Attributes m_Attributes;          // Strength, Dexterity, Intellect.
         protected Dictionary<int, Skill> m_Skills;  // Skills possessed by the mobile.
         protected TypeOfDamage WeaponType = TypeOfDamage.Melee; // Current type of Weapon Damage.
+        protected int m_Deaths;                     // Amount of Player Deaths.
+        protected int m_KillCount;                  // Amount of Player Kills.
 
         #region Attributes
         [Serializable]
@@ -192,23 +194,80 @@ namespace SUS.Shared.Objects.Mobiles
         #region Overrides
         public override string ToString()
         {
-            string whoami = $"ID: {this.m_ID}\n Username: {this.m_Name}\n Health: {this.m_Hits} / {this.m_HitsMax}\n";
-            whoami += $"Stats:\n Strength: {this.m_Attributes.Strength}\n Dexterity: {this.m_Attributes.Dexterity}\n Intelligence: {this.m_Attributes.Intelligence}\n";
-            whoami += "Skills:\n";
+            string paperdoll = string.Format("                  ___________________\n" +
+                "                  [Character Profile]\n" +
+                "  + ---------------------------------------------------+\n" +
+                "  | Character Name: {0}\n" +
+                "  | Title: {1}\n" +
+                "  +-[ Attributes ]\n" +
+                "  | +-- Health: {2}, Max Health: {3}\n" +
+                "  | +-- Strength: {4}\n" +
+                "  | +-- Dexterity: {5}\t\tStamina: {6}\n" +
+                "  | +-- Intelligence: {7}\tMana: {8}\n" +
+                "  |   +-- Attack: {9}\n" +
+                "  |   +-- Defense: {10}\n" +
+                "  |\n" +
+                "  +-[ Items ]\n" +
+                "  | +-- Bandaids: {11}\t\tBandaid Heal Amount: {12}\n" +
+                "  | +-- Arrows: {13}\t\tReagents:{14}\n" +
+                "  | +-- Gold: {15}\n" +
+                "  | +-- Weapon Type: {16}\n" +
+                "  |\n" +
+                "  +-[ Statistics ]\n" +
+                "  | +-- Deaths: {17}\n" +
+                "  | +-- Kill Count: {18}\n" +
+                "  |\n" +
+                "  +-[ Skills ]\n",
+                this.m_Name, "The Player",
+                this.m_Hits, this.m_HitsMax,
+                this.m_Attributes.Strength,
+                this.m_Attributes.Dexterity, this.m_Attributes.Stamina,
+                this.m_Attributes.Intelligence, this.m_Attributes.Mana,
+                0, 0,
+                0, 0,
+                0, 0,
+                0,
+                this.WeaponType.ToString(),
+                this.m_Deaths,
+                this.m_KillCount);
 
             foreach (KeyValuePair<int, Skill> skill in m_Skills)
-                whoami += $" Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Max}]\n";
+                 paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Max}]\n";
 
-            return whoami;
+            paperdoll += "  +---------------------------------------------------+";
+
+            return paperdoll;
         }
 
-        public override bool Equals(object obj)
+        public static bool operator ==(Mobile obj1, Mobile obj2)
         {
-            Mobile mobile = obj as Mobile;
-            if (mobile == null)
-                return false;
+            if (object.ReferenceEquals(obj1, obj2))
+            {
+                return true;
+            }
 
-            return mobile.m_ID == this.m_ID && mobile.m_Name == this.m_Name && mobile.m_Type == this.m_Type;
+            if (object.ReferenceEquals(obj1, null) ||
+                object.ReferenceEquals(obj2, null))
+            {
+                return false;
+            }
+
+            return obj1.Equals(obj2);
+        }
+
+        public override bool Equals(object other)
+        {
+            return this == (other as Mobile);
+        }
+
+        public bool Equals(Mobile other)
+        {
+            return this == other;
+        }
+
+        public static bool operator !=(Mobile obj1, Mobile obj2)
+        {
+            return !(obj1 == obj2);
         }
 
         public override int GetHashCode()
@@ -235,10 +294,11 @@ namespace SUS.Shared.Objects.Mobiles
         }
         #endregion
 
-        public string GetHealth()
-        {
-            return $"{this.m_Hits} / {this.m_HitsMax}";
-        }
+        public string GetHealth() { return $"{this.m_Hits} / {this.m_HitsMax}"; }
+
+        public int GetDeaths() { return this.m_Deaths; }
+
+        public int GetKillCount() { return this.m_KillCount; }
 
         // Prepares the class to be sent over the network.
         public byte[] ToByte() { return Network.Serialize(this); }
@@ -247,25 +307,31 @@ namespace SUS.Shared.Objects.Mobiles
         public bool IsDead()
         {
             if (this.m_Hits <= 0)
-            {
-                this.Kill();
                 return true;
-            }
             return false;
         }
 
         public void Kill()
         {
-            this.m_Hits = 0;
+            this.m_Hits = 0;    // Sets health to 0, due to being death.
+            this.m_Deaths++;    // Increase the player's death count by 1.
         }
 
         public void Combat(ref MobileModifier mm_init, ref Mobile opponent, ref MobileModifier mm_opp)
         {
             int initAtk = this.Attack();
+
+            if (this == opponent)
+            {   // Is the initiator attacking theirself? Do the damage and return.
+                mm_init.HitsModified(this.TakeDamage(initAtk) * -1);
+                mm_init.DeathModified(this.IsDead());
+                return;
+            }
+
             mm_opp.HitsModified(opponent.TakeDamage(initAtk) * -1);     // Update the MobileModifier. -1 to indicate a loss of health.
             mm_opp.DeathModified(opponent.IsDead());                    // Make sure the client knows the target is dead.
 
-            if (!opponent.IsDead())                                     // If the opponent isn't dead, let them attack.
+            if (!opponent.IsDead())
             {
                 int oppAtk = opponent.Attack();
                 mm_init.HitsModified(this.TakeDamage(oppAtk) * -1);     // Update the MobileModifier.
@@ -321,7 +387,16 @@ namespace SUS.Shared.Objects.Mobiles
         }
 
         private void statIncrease() { }
-
         #endregion
+
+        /// <summary>
+        ///     Brings the Mobile back to life. Sets health, mana, and stamina to half the max value.
+        /// </summary>
+        public void Ressurrect()
+        {
+            this.m_Hits = this.m_HitsMax / 2;
+            this.m_Attributes.Mana = this.m_Attributes.ManaMax / 2;
+            this.m_Attributes.Stamina = this.m_Attributes.StaminaMax / 2;
+        }
     }
 }

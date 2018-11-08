@@ -43,7 +43,7 @@ namespace SUSClient.Client
                 connectDone.WaitOne();
 
                 // CORE of the server. Handles actions made by client and information from the Server.
-                Program.ServerHandler(ref client);
+                Program.ServerConnect(ref client);
 
                 // Release the socket.  
                 client.Shutdown(SocketShutdown.Both);

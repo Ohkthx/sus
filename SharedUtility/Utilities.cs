@@ -10,7 +10,7 @@ using SUS.Shared.Objects.Mobiles;
 
 namespace SUS.Shared.Utility
 {
-    public enum RequestTypes { Location, MobileAction }
+    public enum RequestTypes { Authenticate, GameState, Mobile, MobileAction, MobileMove, Node, Player, Resurrection, SocketKill }
 
     /// <summary>
     ///     Holds various functions to perform actions.

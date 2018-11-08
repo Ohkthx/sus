@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 using SUS.Shared.Utility;
 using SUS.Shared.Objects;
 using SUS.Shared.Objects.Mobiles;
+using SUSClient.MenuItems;
 using SUS.Shared;
 
 namespace SUSClient
 {
     class InteractiveConsole
     {
-        private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, actions, exit }
+        private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, paperdoll, actions, exit }
         private enum RequestStatus { none, pending, closed }    // Request status, tells if the client is waiting for information.
 
         private static GameState gs = null;
@@ -45,6 +46,16 @@ namespace SUSClient
             rounds++;           // Increment our counter for amount of turns we've taken as a client.
 
             Dictionary<string, ConsoleActions> ValidActions = new Dictionary<string, ConsoleActions>();     // Generate our Valid Actions.
+
+            // If Player is dead, we should send a ressurrection requestion.
+            if (gs.Account.IsDead())
+            {
+                Miscellaneous.ConsoleNotify("Sending ressurrection request.");
+
+                // Request to be sent to the server.
+                this.clientRequest = new Request(RequestTypes.Resurrection, gs.Account);
+                return gs;
+            }
 
             Console.WriteLine("\n//--------------------------------------//");
             Console.Write("Valid Actions: ");
@@ -100,6 +111,10 @@ namespace SUSClient
                         break;
                     case ConsoleActions.attack:
                         attack();
+                        break;
+                    case ConsoleActions.paperdoll:
+                        Paperdoll pd = new Paperdoll(gs.GetPlayer());
+                        pd.Print();
                         break;
                     case ConsoleActions.exit:
                         exit();
@@ -211,7 +226,7 @@ namespace SUSClient
         {
             if (this.clientRequest == null)
             {   // Create a request for the server to respond to.
-                this.clientRequest = new Request(RequestTypes.Location, gs.Location);
+                this.clientRequest = new Request(RequestTypes.Node, gs.Location);
                 return null;
             }
 

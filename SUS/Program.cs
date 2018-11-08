@@ -31,18 +31,15 @@ namespace SUS
             {
                 Object obj = socketHandler.FromClient();
 
-                if (obj is Authenticate)
-                    ServerInstance.Authenticate(socketHandler, (Authenticate)obj);
-                else if (obj is Player)
-                    ServerInstance.Player(socketHandler, (Player)obj);
-                else if (obj is GameState)
-                    ServerInstance.GameState(socketHandler, (GameState)obj);
-                else if (obj is Node)
-                    ServerInstance.Node(socketHandler, (Node)obj);
-                else if (obj is Request)
-                    ServerInstance.Request(socketHandler, (Request)obj);
-                else if (obj is SocketKill)
-                    socketKill = (SocketKill)obj;
+                if (obj is Request)
+                {
+                    Request req = obj as Request;
+
+                    if (req.Type != RequestTypes.SocketKill)
+                        ServerInstance.Request(socketHandler, req); // If it is not a SocketKill, process it.
+                    else
+                        socketKill = req.Value as SocketKill;       // This will lead to termination.
+                }
             }
         }
     }

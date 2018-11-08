@@ -45,10 +45,11 @@ namespace SUSClient
         ///     all input to and from the server.
         /// </summary>
         /// <param name="server">Socket to communicate to the Server.</param>
-        public static void ServerHandler(ref Socket server)
+        public static void ServerConnect(ref Socket server)
         {
             UInt64 id;
-            do {    // Get our User ID, ensure it is valid.
+            do
+            {    // Get our User ID, ensure it is valid.
                 Console.Write("Select an ID: ");
             } while (!UInt64.TryParse(Console.ReadLine(), out id));
 
@@ -62,116 +63,94 @@ namespace SUSClient
             // Authorizing with host.
             Authenticate auth = new Authenticate(id);
 
-            if (DEBUG)
-                Console.WriteLine("\n <= Sending Authentication.");
-
             // Send the authentication to the server.
-            socketHandler.ToServer(auth.ToByte());
+            Request creq = new Request(RequestTypes.Authenticate, auth);
+            socketHandler.ToServer(creq.ToByte());
 
-            GameState myGS = null;
-            InteractiveConsole ia = null;
+            ServerHandler(ref socketHandler, id, username);
+        }
+
+        private static void ServerHandler(ref SocketHandler socketHandler, ulong id, string username)
+        {
+            GameState gamestate = null;     // Gamestate of this client.
+            InteractiveConsole ia = null;   // Interactive console tracks user actions and sends data.
+            Request creq = null;            // Client REQuest. Used by functions not called in interactive console. 
 
             // While we are recieving information from the server, continue to decipher and process it.
-            for (object obj = null; (obj = socketHandler.FromClient()) != null; )
+            for (object obj = null; (obj = socketHandler.FromClient()) != null;)
             {
-                if (obj is Authenticate)
-                {
-                    if (DEBUG)
-                        Console.WriteLine(" => Received Authenticate.");
-                    Player player = new Player(id, username, 100);
+                creq = null;
+                Request req = obj as Request;
 
-                    if (DEBUG)
-                        Console.WriteLine("\n <= Sending New Player.");
-                    socketHandler.ToServer(player.ToByte());
-                }
-                else if (obj is GameState)
+                switch (req.Type)
                 {
-                    myGS = (GameState)obj;
+                    case RequestTypes.Authenticate:
+                        Player player = new Player(id, username, 100, 105, 35, 10);
+                        creq = new Request(RequestTypes.Player, player);
+                        break;
+                    case RequestTypes.GameState:
+                        ia = new InteractiveConsole(req.Value as GameState);
+                        break;
+                    case RequestTypes.Mobile:
+                        gamestate.UpdateMobile(req.Value as Mobile);
+                        ia.Reset();
+                        break;
+                    case RequestTypes.MobileAction:
+                        MobileActionHandler(ref gamestate, req.Value as MobileAction);
+                        ia.Reset();
+                        break;
+                    case RequestTypes.Node:
+                        ia.LocationUpdater(req.Value as Node);
+                        break;
+                    case RequestTypes.Resurrection:
+                    case RequestTypes.SocketKill:
+                        socketHandler.Kill();
+                        break;
+                }
 
-                    if (DEBUG)
-                        Console.WriteLine(" => Received GameState of Player.\n");
-
-                    Console.WriteLine($"\nInformation:\n [ Player: {myGS.Account.m_Name}, Location: {myGS.Location.Name} ]");
-
-                    ia = new InteractiveConsole(myGS);
-                }
-                else if (obj is MobileAction)
-                {
-                    if (DEBUG)
-                        Console.WriteLine(" => Recieved Action!");
-
-                    MobileAction ma = obj as MobileAction;
-                    Console.WriteLine($"\n Server Reponse: {ma.Result}");
-
-                    foreach (MobileModifier mm in ma.GetUpdates())
-                    {   // Attempt to update the gamestate with the modifications to the mobile.
-                        Mobile mobile;
-                        if (myGS.UpdateMobile(mm, out mobile) && mobile != null)
-                        {
-                            if (mobile.m_Type == MobileType.Player)
-                                myGS.Refresh(mobile);   // Update our gamestate with the new player information.
-
-                            Console.WriteLine($"  => {mobile.m_Name}'s health was changed by {mm.ModHits}. " +
-                                $"\n\tStamina was changed by {mm.ModStamina}." +
-                                $"\n\tHealth: {mobile.GetHealth()}." +
-                                $"\n\tDead? {mm.IsDead}");
-                        }
-                    }
-                    ia.Reset();
-                }
-                else if (obj is Request)
-                {
-                    if (DEBUG)
-                        Console.WriteLine(" => Recieved Request.");
-                }
-                else if (obj is Node) 
-                {
-                    if (DEBUG)
-                        Console.WriteLine(" => Received node.");
-                    ia.LocationUpdater((Node)obj);
-                }
-                else if (obj is Player)
-                {
-                    if (DEBUG)
-                        Console.WriteLine(" => Received Player.");
-                }
-                else if (obj is NPC)
-                {
-                    if (DEBUG)
-                        Console.WriteLine(" => Received NPC.");
-                }
-                else if (obj is SocketKill)
-                {
-                    if (DEBUG)
-                        Console.WriteLine(" => Received SocketKill.");
-                    socketHandler.Kill();
-                    break;
+                if (creq != null)
+                {   // If creq was assigned early, send it and reloop.
+                    socketHandler.ToServer(creq.ToByte());
+                    continue;
                 }
 
                 if (ia != null)
                 {   // Get an action to perform and send it to the server.
-                    myGS = ia.Core();   // Activates the interactive console to grab the next action desired to be performed.
+                    gamestate = ia.Core();   // Activates the interactive console to grab the next action desired to be performed.
 
                     if (ia.sendGameState)
-                    {   // Send an updated Gamestate to the server.
-                        if (DEBUG)
-                            Console.WriteLine(" <= Sending Updated Gamestate.");
-                        socketHandler.ToServer(myGS.ToByte());
-                    }
+                        creq = new Request(RequestTypes.GameState, gamestate);
                     else if (ia.clientRequest != null)
-                    {   // Send an updated Request for information to the server.
-                        if (DEBUG)
-                            Console.WriteLine(" <= Sending request for current location.");
-
-                        socketHandler.ToServer(ia.clientRequest.ToByte());
-                    }
+                        creq = ia.clientRequest;
                     else
                     {   // Send a SocketKill to the server to close the socket down peacefully.
                         // TODO: Add in catches for signal interrupts and run this.
-                        if (DEBUG)
-                            Console.WriteLine(" <= Sending SocketKill.");
-                        socketHandler.ToServer(ia.socketKill.ToByte());
+                        creq = new Request(RequestTypes.SocketKill, ia.socketKill);
                     }
+
+                    // Check creq again for material to send to the server.
+                    if (creq != null)
+                        socketHandler.ToServer(creq.ToByte());
+                }
+            }
+        }
+
+        private static void MobileActionHandler(ref GameState gs, MobileAction ma)
+        {
+            Console.WriteLine($"\n Server Reponse: {ma.Result}");
+
+            foreach (MobileModifier mm in ma.GetUpdates())
+            {   // Attempt to update the gamestate with the modifications to the mobile.
+                Mobile mobile;
+                if (gs.UpdateMobile(mm, out mobile) && mobile != null)
+                {
+                    if (mobile.m_Type == MobileType.Player)
+                        gs.Refresh(mobile);   // Update our gamestate with the new player information.
+
+                    Console.WriteLine($"  => {mobile.m_Name}'s health was changed by {mm.ModHits}. " +
+                        $"\n\tStamina was changed by {mm.ModStamina}." +
+                        $"\n\tHealth: {mobile.GetHealth()}." +
+                        $"\n\tDead? {mm.IsDead}");
                 }
             }
         }

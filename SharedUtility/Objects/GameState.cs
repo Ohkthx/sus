@@ -79,6 +79,22 @@ namespace SUS.Shared.Objects
         }
 
         /// <summary>
+        ///     Updates a mobile with the current provided mobile.
+        /// </summary>
+        /// <param name="mobile">Mobile to update.</param>
+        /// <returns></returns>
+        public bool UpdateMobile(Mobile mobile)
+        {
+            if (this.Account.m_ID == mobile.m_ID && mobile.m_Type == MobileType.Player)
+                this.Account = mobile as Player;    // Updates the Gamestate's account.
+
+            if (updateNodesMobile(this.Location, mobile))
+                return true;
+
+            return updateNodesMobile(this.LocationLast, mobile);
+        }
+
+        /// <summary>
         ///     Takes a MobileModifier and applies the changes to the currently tracked mobiles.
         /// </summary>
         /// <param name="moddedMobile">Modifications to apply the local mobile.</param>
@@ -99,6 +115,34 @@ namespace SUS.Shared.Objects
         ///     Attempts to find the mobile located in the node, and process the changes.
         /// </summary>
         /// <param name="node">Node to be searched.</param>
+        /// <param name="mobile">Mobile to be update.</param>
+        /// <returns>Newly updated mobile.</returns>
+        private bool updateNodesMobile(Node node, Mobile mobile)
+        {
+            foreach (Mobile m in node.Mobiles)
+            {   // Iterate each of our locale mobiles seeing if any match by type and serial.
+                if (m.m_ID == mobile.m_ID && m.m_Type == mobile.m_Type)
+                {   // We found a match, process changes.
+                    if (mobile.IsDead())
+                    {   // Server said the mobile is dead, so we kill it.
+                        m.Kill();            // Kill the mobile.
+                        if (m.m_Type != MobileType.Player)
+                            this.Kill(m);        // Remove the mobile from the GameState (if it is not a player.)
+                    }
+                    else
+                        node.AddMobile(m);  // Update the mobile in the node.
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        ///     Attempts to find the mobile located in the node, and process the changes.
+        /// </summary>
+        /// <param name="node">Node to be searched.</param>
         /// <param name="moddedMobile">Modifications to the mobile to be made.</param>
         /// <returns>Newly updated mobile.</returns>
         private Mobile updateNodesMobile(Node node, MobileModifier moddedMobile)
@@ -110,8 +154,10 @@ namespace SUS.Shared.Objects
                     if (moddedMobile.IsDead)
                     {   // Server said the mobile is dead, so we kill it.
                         m.Kill();            // Kill the mobile.
-                        this.Kill(m);        // Kill the mobile in the gamestate.
-                    } else
+                        if (m.m_Type != MobileType.Player)
+                            this.Kill(m);        // Remove the mobile from the GameState (if it is not a player.)
+                    }
+                    else
                     {
                         m.TakeDamage(moddedMobile.ModHits * -1);    // The mobile takes the damage provided.
                         node.AddMobile(m);  // Update the mobile in the node.
