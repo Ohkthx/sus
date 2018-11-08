@@ -84,9 +84,13 @@ namespace SUSClient
 
                 switch (req.Type)
                 {
-                    case RequestTypes.None:
+                    case RequestTypes.OK:
                         ia.Reset();
                         break;  // Server sent back empty information.
+                    case RequestTypes.Error:
+                        Miscellaneous.ConsoleNotify(req.Value as string);
+                        ia.Reset();
+                        break;
                     case RequestTypes.Authenticate:
                         Player player = new Player(id, username, 100, 105, 35, 10);
                         creq = new Request(RequestTypes.Player, player);
@@ -106,6 +110,9 @@ namespace SUSClient
                         ia.LocationUpdater(req.Value as Node);
                         break;
                     case RequestTypes.Resurrection:
+                        gamestate.Ressurrect(req.Value as Ressurrect);
+                        ia.Reset();
+                        break;
                     case RequestTypes.SocketKill:
                         socketHandler.Kill();
                         break;
@@ -148,8 +155,18 @@ namespace SUSClient
                     if (mobile.m_Type == MobileType.Player)
                         gs.Refresh(mobile);   // Update our gamestate with the new player information.
 
+                    string attr = string.Empty;
+                    if (mm.ModStrength != 0)
+                        attr += $"\n\tStrength: {mm.ModStrength}";
+                    if (mm.ModDexterity != 0)
+                        attr += $"\n\tDexterity: {mm.ModDexterity}";
+                    if (mm.ModIntelligence != 0)
+                        attr += $"\n\tIntelligence: {mm.ModIntelligence}";
+
+
                     Console.WriteLine($"  => {mobile.m_Name}'s health was changed by {mm.ModHits}. " +
                         $"\n\tStamina was changed by {mm.ModStamina}." +
+                        $"{attr}" +
                         $"\n\tHealth: {mobile.GetHealth()}." +
                         $"\n\tDead? {mm.IsDead}");
                 }

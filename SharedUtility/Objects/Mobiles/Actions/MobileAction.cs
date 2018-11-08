@@ -79,6 +79,11 @@ namespace SUS.Shared.Objects
             return this.Updates;
         }
 
+        public void CleanClientInfo()
+        {
+            this.Affected = null;
+        }
+
         public byte[] ToByte() { return Network.Serialize(this); }
     }
 }

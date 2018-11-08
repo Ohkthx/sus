@@ -44,6 +44,9 @@ namespace SUS.Shared.Objects.Mobiles
         public bool IsDead { get; private set; } = false;   // Sets it to be false by default.
         public int ModHits { get; private set; } = 0;
         public int ModStamina { get; private set; } = 0;
+        public int ModStrength { get; set; } = 0;
+        public int ModDexterity { get; set; } = 0;
+        public int ModIntelligence { get; set; } = 0;
 
         #region Constructors
         public MobileModifier(Mobile mobile): this(mobile.m_ID, mobile.m_Name, mobile.m_Type) { }
@@ -276,11 +279,13 @@ namespace SUS.Shared.Objects.Mobiles
         }
         #endregion
 
+        #region Getters
         public string GetHealth() { return $"{this.m_Hits} / {this.m_HitsMax}"; }
 
         public int GetDeaths() { return this.m_Deaths; }
 
         public int GetKillCount() { return this.m_KillCount; }
+        #endregion
 
         // Prepares the class to be sent over the network.
         public byte[] ToByte() { return Network.Serialize(this); }
@@ -305,6 +310,7 @@ namespace SUS.Shared.Objects.Mobiles
 
             if (this == opponent)
             {   // Is the initiator attacking theirself? Do the damage and return.
+                statIncrease(ref mm_init);
                 mm_init.HitsModified(this.TakeDamage(initAtk) * -1);
                 mm_init.DeathModified(this.IsDead());
                 return;
@@ -316,6 +322,7 @@ namespace SUS.Shared.Objects.Mobiles
             if (!opponent.IsDead())
             {
                 int oppAtk = opponent.Attack();
+                statIncrease(ref mm_opp);
                 mm_init.HitsModified(this.TakeDamage(oppAtk) * -1);     // Update the MobileModifier.
                 mm_init.DeathModified(this.IsDead());
             }
@@ -368,7 +375,30 @@ namespace SUS.Shared.Objects.Mobiles
             return RandomImpl.Next(m_DamageMin, m_DamageMax);
         }
 
-        private void statIncrease() { }
+        private void statIncrease(ref MobileModifier mm)
+        {
+            int rng = RandomImpl.Next() % 100;
+            if (rng > 5)
+                return;
+
+            switch (WeaponType)
+            {
+                case TypeOfDamage.Archery:
+                    m_Attributes.Dexterity++;
+                    mm.ModDexterity++;
+                    break;
+                case TypeOfDamage.Magic:
+                    m_Attributes.Intelligence++;
+                    mm.ModIntelligence++;
+                    break;
+                case TypeOfDamage.Melee:
+                    m_Attributes.Strength++;
+                    mm.ModStrength++;
+                    break;
+            }
+        }
+
+        private void skillIncrease() { }
         #endregion
 
         /// <summary>

@@ -239,5 +239,14 @@ namespace SUS.Shared.Objects
             if (this.Location.RemoveMobile(mobile) == false)    // Attempts to remove from the current location, if it wasn't found/removed...
                 this.LocationLast.RemoveMobile(mobile);         //  it then attempts to remove from the last location.
         }
+
+        public void Ressurrect(Ressurrect rez)
+        {
+            Location = rez.Node;    // Change our current location to this location.
+            LocationLast = null;    // Blank out the last spot.
+
+            Location.AddMobile(rez.Mobile); // Readd the mobile to the node.
+            Account = rez.Mobile as Player; // Reassign the Gamestate's Account to that which is provided.
+        }
     }
 }

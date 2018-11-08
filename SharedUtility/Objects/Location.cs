@@ -169,7 +169,9 @@ namespace SUS.Shared.Objects
             return this.Location;
         }
 
-        // Will null out unimportant lists for transferring to server to reduce bandwidth.
+        /// <summary>
+        ///     Nulls out lists to reduce bandwidth when sending data.
+        /// </summary>
         public void Clean()
         {
             this.Mobiles = null;

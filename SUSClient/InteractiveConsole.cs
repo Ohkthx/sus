@@ -56,14 +56,19 @@ namespace SUSClient
                 return gs;
             }
 
-            Console.WriteLine("\n//--------------------------------------//");
-            Console.Write("Valid Actions: ");
+            Console.WriteLine("\nValid Actions: ");
+            int c = 0;
             foreach (ConsoleActions action in Enum.GetValues(typeof(ConsoleActions)))
             {   // Lists all currently accessible actions.
                 string name = Enum.GetName(typeof(ConsoleActions), action);
                 ValidActions.Add(name, action);             // **IMPORTANT**, adds the action to a list of Valid Actions.
+                if (c != 0 && (c % 6) == 0)
+                    Console.Write("\n");
                 Console.Write($"[{name.ToLower()}]  ");
+                c++;
             }
+
+            Console.WriteLine();
 
             while (this.socketKill == null && clientRequest == null)
             {   // Get our action from the user.
@@ -226,7 +231,7 @@ namespace SUSClient
         {
             if (this.clientRequest == null)
             {   // Create a request for the server to respond to.
-                this.clientRequest = new Request(RequestTypes.Node, gs.Location);
+                this.clientRequest = new Request(RequestTypes.Node, gs.Location.ID);
                 return null;
             }
 
@@ -325,10 +330,15 @@ namespace SUSClient
         /// </summary>
         private void printActions()
         {
-            Console.WriteLine("\n//--------------------------------------//");
-            Console.Write(" Valid Actions: \n  ");
+            Console.WriteLine("\nValid Actions:");
+            int c = 0;
             foreach (string action in Enum.GetNames(typeof(ConsoleActions)))
+            {
+                if (c != 0 && (c % 6) == 0)
+                    Console.Write("\n");
                 Console.Write($"[{action.ToLower()}]  ");
+                c++;
+            }
             Console.WriteLine();
         }
 

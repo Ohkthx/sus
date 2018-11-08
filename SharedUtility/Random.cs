@@ -16,6 +16,11 @@ namespace SUS.Shared.Utility
             _Random = new CSPRandom();
         }
 
+        public static int Next()
+        {
+            return _Random.Next();
+        }
+
         public static int Next(int values)
         {
             return _Random.Next(values);

@@ -41,7 +41,7 @@ namespace SUS.Server
                     clientInfo = MobileMove(req.Value as MobileMove);
                     break;
                 case RequestTypes.Node:
-                    clientInfo = Node(req.Value as Node);
+                    clientInfo = Node((int)req.Value);
                     break;
                 case RequestTypes.Player:
                     clientInfo = Player(req.Value as Player);
@@ -51,8 +51,7 @@ namespace SUS.Server
                     break;
                 default:
                     // Perhaps use "error" RequestType here.
-                    clientInfo = null;
-                    Miscellaneous.ConsoleNotify("Bad Request received.");
+                    clientInfo = new Request(RequestTypes.Error, "Server: Bad request received.");
                     break;
             }
 
@@ -91,39 +90,38 @@ namespace SUS.Server
         {
             Player initator = GameObject.FindPlayer(mobileAction.GetInitator()) as Player;
             if (initator == null)
-            {
-                Miscellaneous.ConsoleNotify("Bad MobileAcition recieved. No initiator provided.");
-                // TODO: Pass mobileAction by reference? Return an error to the client?
-                return null;
-            }
+                return new Request(RequestTypes.Error, "Server: Bad initiator provided for action.");
 
             if (mobileAction.Type == ActionType.Attack)
             {
-                MobileActionHandlerAttack(initator, ref mobileAction);
-                return new Request(RequestTypes.MobileAction, mobileAction);
+                Request req = MobileActionHandlerAttack(initator, ref mobileAction);
+                if (req != null)    // If Request is not null, that means an error occured in MobileActionHandlerAttack.
+                    return req;     // Return the error to the client.
+                return new Request(RequestTypes.MobileAction, mobileAction);    // Create a new Request with updated information.
             }
+
             return null;
         }
 
-        private static void MobileActionHandlerAttack(Player initiator, ref MobileAction mobileAction)
+        /// <summary>
+        ///     Performs the lookup and combating of mobiles.
+        /// </summary>
+        /// <param name="initiator">Initiating Mobile.</param>
+        /// <param name="mobileAction">Reference to the MobileAction to send back.</param>
+        /// <returns>Packaged Error if occurred, otherwise should normally return null.</returns>
+        private static Request MobileActionHandlerAttack(Player initiator, ref MobileAction mobileAction)
         {
             HashSet<MobileModifier> updates = new HashSet<MobileModifier>();        // Will contain updates to be passed back to client.
             MobileModifier mm_initiator = new MobileModifier(initiator);
 
+            List<Mobile> mobiles = new List<Mobile>();                              // This will hold all good mobiles.
             List<Tuple<MobileType, UInt64>> targets = mobileAction.GetTargets();    // List containing <Type, Serial>
             if (targets.Count == 0)
-            {
-                Miscellaneous.ConsoleNotify("Bad MobileAction recieved. No targets supplied.");
-                // TODO: Pass mobileAction by reference? Return an error to the client?
-                return;
-            }
+                return new Request(RequestTypes.Error, "Server: No targets provided for attacking.");
 
-            // Iterate each of the affected.
+            // Iterate each of the affected, adding it to our list of Mobiles.
             foreach (Tuple<MobileType, UInt64> t in targets)
             {
-                if (initiator.IsDead())
-                    break;  // Break early because the initiator is dead.
-
                 // Lookup the affected mobile.
                 Mobile affectee = null;
                 if (t.Item1 == MobileType.NPC)
@@ -132,15 +130,20 @@ namespace SUS.Server
                     affectee = GameObject.FindPlayer(t.Item2) as Mobile;
 
                 if (affectee == null)
-                {   // Double checks were processing on a correct object.
-                    Miscellaneous.ConsoleNotify($"Bad MobileAction 'affectee': {t.Item1.ToString()}: {t.Item2}.");
-                    continue;
-                }
+                    return new Request(RequestTypes.Error, "Server: That target is already dead.");
 
-                MobileModifier mm_affectee = new MobileModifier(affectee);
+                mobiles.Add(affectee);  // Add it to our list of known "good" mobiles.
+            }
+
+            // Iterate our mobiles and perform combat.
+            foreach (Mobile m in mobiles)
+            {
+                Mobile target = m;
+
+                MobileModifier mm_affectee = new MobileModifier(target);
 
                 // Combat the two objects.
-                initiator.Combat(ref mm_initiator, ref affectee, ref mm_affectee);
+                initiator.Combat(ref mm_initiator, ref target, ref mm_affectee);
 
                 // Update our initiator.
                 if (initiator.IsDead())
@@ -149,32 +152,43 @@ namespace SUS.Server
                     GameObject.UpdateMobiles(initiator);
 
                 // Update the affectee.
-                if (affectee.IsDead())
-                    GameObject.Kill(affectee);
+                if (target.IsDead())
+                    GameObject.Kill(m);
                 else
-                    GameObject.UpdateMobiles(affectee);
+                    GameObject.UpdateMobiles(target);
 
                 // Update to pass to the client regarding the affectee.
                 mobileAction.AddUpdate(mm_affectee);
 
-                mobileAction.Result += $"{initiator.m_Name} attacked {affectee.m_Name}. ";    // TODO: Move this to MobileModifier.
+                mobileAction.Result += $"{initiator.m_Name} attacked {target.m_Name}. ";    // TODO: Move this to MobileModifier.
             }
 
             // Add our updated information for the initiator. After processing all changes.
             mobileAction.AddUpdate(mm_initiator);
+            mobileAction.CleanClientInfo();         // Remove worthless data so it isn't retransmitted.
+            return null;
         }
 
+        /// <summary>
+        ///     Moves a Mobile from one Node to another Node.
+        /// </summary>
+        /// <param name="mm">Node / Mobile pair to move.</param>
+        /// <returns>Packed "OK" server response.</returns>
         private static Request MobileMove(MobileMove mm)
         {
             if (mm.Mobile.Location != mm.NodeID)
             {   // Remove the player from the old node.
                 Node old = GameObject.FindNode((int)mm.Mobile.Location);
+                if (old == null)
+                    return new Request(RequestTypes.Error, "Server: Bad node requested.");
                 old.RemoveMobile(mm.Mobile);    // Remove the mobile from the node.
                 GameObject.UpdateNodes(old);    // Update the node.
             }
 
             Node node = GameObject.FindNode((int)mm.NodeID);
-            if (!node.HasMobile(mm.Mobile))
+            if (node == null)
+                return new Request(RequestTypes.Error, "Server: Bad node requested.");
+            else if (!node.HasMobile(mm.Mobile))
             {   // The Node does not contain the mobile.
                 node.AddMobile(mm.Mobile);      // Add the mobile to the Node.
                 GameObject.UpdateNodes(node);   // Update the Node in the GameObject.
@@ -183,15 +197,28 @@ namespace SUS.Server
             // Lastly, update the Mobile.
             GameObject.UpdateMobiles(mm.Mobile);
 
-            return new Request(RequestTypes.None, null);
+            return new Request(RequestTypes.OK, null);
         }
 
-        private static Request Node(Node node)
+        /// <summary>
+        ///     Returns a Node to the client.
+        /// </summary>
+        /// <param name="node">ID of the Node to retrieve.</param>
+        /// <returns>Packaged Node.</returns>
+        private static Request Node(int node)
         {
-            Node n = GameObject.FindNode(node.ID);  // Fetch a new or updated node.
+            Node n = GameObject.FindNode(node);  // Fetch a new or updated node.
+            if (n == null)
+                return new Request(RequestTypes.Error, "Server: Bad node requested.");
+
             return new Request(RequestTypes.Node, n);
         }
 
+        /// <summary>
+        ///     Receives a Player type from a client for authentication.
+        /// </summary>
+        /// <param name="player"></param>
+        /// <returns>Packaged GameState.</returns>
         private static Request Player(Player player)
         {
             // Client has sent a player, create a proper gamestate and send it to the client.
@@ -201,23 +228,34 @@ namespace SUS.Server
             GameObject.UpdateGameStates(ref newState);                      // Updates the GameObject with the new state that is being tracked.
 
             player.Location = GameObject.GetStartingZone().GetLocation();   // Assign the Starting Zone Location to the player.
-            GameObject.UpdateMobiles(player);                               // Update our current Players with new Player.
+            GameObject.UpdateMobiles(player);                               // Update our tracked Mobiles with the new Player.
 
             return new Request(RequestTypes.GameState, newState);
         }
 
+        /// <summary>
+        ///     Brings a Mobile back to life and returns it to the client.
+        /// </summary>
+        /// <param name="mobile">Mobile to return to life.</param>
+        /// <returns>Packaged Mobile.</returns>
         private static Request Ressurrect(Mobile mobile)
         {
             if (mobile == null)
-            {
-                Miscellaneous.ConsoleNotify("Ressurrection received a null mobile.");
-                return null;
-            }
+                return new Request(RequestTypes.Error, "Server: Ressurrection target not provided.");
+
+            Node sz = GameObject.GetStartingZone(); // Gets our starting zone.
 
             mobile.Ressurrect();
-            mobile.Location = GameObject.GetStartingZone().GetLocation();
+            mobile.Location = sz.GetLocation();
 
-            Ressurrect r = new Ressurrect(GameObject.GetStartingZone(), mobile);
+            Node n = GameObject.FindNode(sz.ID);  // Fetch a new or updated node.
+            if (n == null)
+                return new Request(RequestTypes.Error, "Server: Bad starting zone.");
+
+            n.AddMobile(mobile);
+            GameObject.UpdateNodes(n);          // Update our node locally on the server.
+
+            Ressurrect r = new Ressurrect(n, mobile);
             return new Request(RequestTypes.Resurrection, r);
         }
     }
