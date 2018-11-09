@@ -8,15 +8,8 @@ using SUS.Shared.Objects.Mobiles;
 
 namespace SUSClient.MenuItems
 {
-    class Paperdoll
+    class Paperdoll : Menu
     {
-        private Menu menu;
-
-        public Paperdoll(Mobile mobile)
-        {
-            this.menu = new Menu(mobile.ToString());
-        }
-
-        public void Print() { menu.Display(); }
+        public Paperdoll(Mobile mobile) : base (mobile.ToString()) { }
     }
 }

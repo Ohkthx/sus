@@ -117,7 +117,7 @@ namespace SUSClient
                         break;
                     case ConsoleActions.paperdoll:
                         Paperdoll pd = new Paperdoll(gs.GetPlayer());
-                        pd.Print();
+                        pd.Display();
                         break;
                     case ConsoleActions.exit:
                         exit();
