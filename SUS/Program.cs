@@ -19,12 +19,12 @@ namespace SUS
         // Initiates the server and its networking.
         static void StartServer()
         {
-            Server.ServerInstance.StartListening();
+            ServerInstance.StartListening();
         }
 
         public static void ClientHandler(ref Socket client)
         {
-            SocketKill socketKill = new SocketKill(false);
+            SocketKill socketKill = new SocketKill(null, false);
             SocketHandler socketHandler = new SocketHandler(client, SocketHandler.Types.Client, debug: true);
 
             while (socketKill.killme == false)
@@ -35,9 +35,8 @@ namespace SUS
                 {
                     Request req = obj as Request;
 
-                    if (req.Type != RequestTypes.SocketKill)
-                        ServerInstance.Request(socketHandler, req); // If it is not a SocketKill, process it.
-                    else
+                    ServerInstance.Request(socketHandler, req); // If it is not a SocketKill, process it.
+                    if (req.Type == RequestTypes.SocketKill)
                         socketKill = req.Value as SocketKill;       // This will lead to termination.
                 }
             }

@@ -49,6 +49,52 @@ namespace SUS.Shared.Objects
             cmd.Parameters.Add(new SQLiteParameter("@p1", this.Account.m_ID));
             cmd.Parameters.Add(new SQLiteParameter("@p2", this.ToByte()));
         }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 13;
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, Account.m_ID) ? Account.m_ID.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, Account.m_Type) ? Account.m_Type.GetHashCode() : 0);
+                return hash;
+            }
+        }
+
+        public static bool operator ==(GameState gs1, GameState gs2)
+        {
+            if (Object.ReferenceEquals(gs1, gs2)) return true;
+            if (Object.ReferenceEquals(null, gs1)) return false;
+            return (gs1.Equals(gs2));
+        }
+
+        public static bool operator !=(GameState gs1, GameState gs2)
+        {
+            return !(gs1 == gs2);
+        }
+
+        public override bool Equals(object value)
+        {
+            if (Object.ReferenceEquals(null, value)) return false;
+            if (Object.ReferenceEquals(this, value)) return true;
+            if (value.GetType() != this.GetType()) return false;
+            return IsEqual((GameState)value);
+        }
+
+        public bool Equals(GameState gamestate)
+        {
+            if (Object.ReferenceEquals(null, gamestate)) return false;
+            if (Object.ReferenceEquals(this, gamestate)) return true;
+            return IsEqual(gamestate);
+        }
+
+        private bool IsEqual(GameState value)
+        {
+            return (value != null)
+                && (value.Account != null)
+                && (Account.m_Type == value.Account.m_Type)
+                && (Account.m_ID == value.Account.m_ID);
+        }
         #endregion
 
         public UInt64 ID()

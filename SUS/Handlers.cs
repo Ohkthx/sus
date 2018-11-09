@@ -49,6 +49,10 @@ namespace SUS.Server
                 case RequestTypes.Resurrection:
                     clientInfo = Ressurrect(req.Value as Mobile);
                     break;
+                case RequestTypes.SocketKill:
+                    Logout(req.Value as SocketKill);
+                    clientInfo = null;
+                    break;
                 default:
                     // Perhaps use "error" RequestType here.
                     clientInfo = new Request(RequestTypes.Error, "Server: Bad request received.");
@@ -79,6 +83,31 @@ namespace SUS.Server
             GameObject.UpdateGameStates(ref gameState);
 
             return new Request(RequestTypes.Node, gameState.Location);
+        }
+
+        /// <summary>
+        ///     Looks up the Mobile and Node, removes the Mobile, updates our lists.
+        /// </summary>
+        /// <param name="sk">Socket Kill containing the User ID.</param>
+        private static void Logout(SocketKill sk)
+        {
+            if (sk.UserID == null)
+                return;             // No User ID? Just return.
+
+            GameState gs = GameObject.FindGameState(sk.UserID);
+            if (gs == null)
+                return;             // No mobile by that User ID? Just return.
+
+            Node n = GameObject.FindNode((int)gs.Account.Location);
+            if (n == null)
+                return;             // Mobile's current Node does not exist? Just return.
+
+            gs.Account.Logout();
+
+            n.RemoveMobile(gs.Account);     // Remove the Mobile from the Node.
+            GameObject.UpdateNodes(n);      // Update our local (server) Node list with changes.
+            GameObject.UpdateMobiles(gs.Account);
+            GameObject.UpdateGameStates(ref gs, remove: true);
         }
 
         private static Request Mobile(Mobile mobile) { return null; }
@@ -130,7 +159,15 @@ namespace SUS.Server
                     affectee = GameObject.FindPlayer(t.Item2) as Mobile;
 
                 if (affectee == null)
-                    return new Request(RequestTypes.Error, "Server: That target is already dead.");
+                    return new Request(RequestTypes.Error, "Server: That target has moved or died recently.");
+                else if (initiator.Location != affectee.Location)
+                    return new Request(RequestTypes.Error, "Server: That target is no longer in the area.");
+                else if (affectee.m_Type == MobileType.Player && affectee is Player)
+                {
+                    Player p = affectee as Player;  
+                    if (!p.isLoggedIn)
+                        return new Request(RequestTypes.Error, "Server: That target has logged out recently.");
+                }
 
                 mobiles.Add(affectee);  // Add it to our list of known "good" mobiles.
             }
@@ -221,14 +258,18 @@ namespace SUS.Server
         /// <returns>Packaged GameState.</returns>
         private static Request Player(Player player)
         {
+            Node sz = GameObject.GetStartingZone();
+
+            player.Location = sz.GetLocation(); // Assign the Starting Zone Location to the player.
+            player.Login();                     // Log the player in.
+
             // Client has sent a player, create a proper gamestate and send it to the client.
             GameState newState = new GameState(player);
-            newState.Location = GameObject.GetStartingZone();               // Assign the Starting Zone Node to the GameState.
-            newState.moved = true;                                          // Player "moved" to the Starting Zone.
-            GameObject.UpdateGameStates(ref newState);                      // Updates the GameObject with the new state that is being tracked.
+            newState.Location = sz;                         // Assign the Starting Zone Node to the GameState.
+            newState.moved = true;                          // Player "moved" to the Starting Zone.
 
-            player.Location = GameObject.GetStartingZone().GetLocation();   // Assign the Starting Zone Location to the player.
-            GameObject.UpdateMobiles(player);                               // Update our tracked Mobiles with the new Player.
+            GameObject.UpdateGameStates(ref newState);      // Updates the GameObject with the new state that is being tracked.
+            GameObject.UpdateMobiles(player);               // Update our tracked Mobiles with the new Player.
 
             return new Request(RequestTypes.GameState, newState);
         }
@@ -246,14 +287,25 @@ namespace SUS.Server
             Node sz = GameObject.GetStartingZone(); // Gets our starting zone.
 
             mobile.Ressurrect();
-            mobile.Location = sz.GetLocation();
 
+            // Remove the player from the original Node.
+            if (sz.GetLocation() != mobile.Location)
+            {
+                Node old = GameObject.FindNode((int)mobile.Location);
+                if (old == null)
+                    return new Request(RequestTypes.Error, "Server: Bad node requested.");
+                old.RemoveMobile(mobile);
+                GameObject.UpdateNodes(old);
+            }
+
+            // Add the player to the new Node.
             Node n = GameObject.FindNode(sz.ID);  // Fetch a new or updated node.
             if (n == null)
                 return new Request(RequestTypes.Error, "Server: Bad starting zone.");
-
             n.AddMobile(mobile);
             GameObject.UpdateNodes(n);          // Update our node locally on the server.
+
+            mobile.Location = sz.GetLocation(); // Update the mobiles Location to be sent.
 
             Ressurrect r = new Ressurrect(n, mobile);
             return new Request(RequestTypes.Resurrection, r);

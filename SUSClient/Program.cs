@@ -130,15 +130,15 @@ namespace SUSClient
 
                     if (ia.clientRequest != null)
                         creq = ia.clientRequest;
-                    else
-                    {   // Send a SocketKill to the server to close the socket down peacefully.
-                        // TODO: Add in catches for signal interrupts and run this.
-                        creq = new Request(RequestTypes.SocketKill, ia.socketKill);
-                    }
 
                     // Check creq again for material to send to the server.
                     if (creq != null)
+                    {
                         socketHandler.ToServer(creq.ToByte());
+                        if (creq.Type == RequestTypes.SocketKill)
+                            Environment.Exit(0); // Kill the application after informing the server.
+                    }
+
                 }
             }
         }

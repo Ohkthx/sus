@@ -183,15 +183,14 @@ namespace SUS.Shared.Utility
     public sealed class SocketKill
     {
         public bool killme { get; private set; }
-        public SocketKill(bool kill = true)
+        public Serial UserID { get; private set; }
+        public SocketKill(Serial id, bool kill = true)
         {
+            this.UserID = id;
             this.killme = kill;
         }
 
-        public byte[] ToByte()
-        {
-            return Network.Serialize(this);
-        }
+        public byte[] ToByte() { return Network.Serialize(this); }
     }
 
     public class SocketHandler
@@ -456,7 +455,7 @@ namespace SUS.Shared.Utility
 
         public void Kill()
         {
-            this.Send(new SocketKill(true).ToByte());
+            this.Send(new SocketKill(null, true).ToByte());
             sendDone.WaitOne();
             //socket.Shutdown(SocketShutdown.Both);
             //socket.Close();

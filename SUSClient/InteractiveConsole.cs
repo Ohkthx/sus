@@ -18,7 +18,6 @@ namespace SUSClient
         private enum RequestStatus { none, pending, closed }    // Request status, tells if the client is waiting for information.
 
         private static GameState gs = null;
-        public SocketKill socketKill = null;
         public Request clientRequest = null;    // Temporary storage for a request sent by the client.
 
         private RequestStatus status = RequestStatus.none;          // Determines if the client is in the process of requesting information.
@@ -70,7 +69,7 @@ namespace SUSClient
 
             Console.WriteLine();
 
-            while (this.socketKill == null && clientRequest == null)
+            while (clientRequest == null)
             {   // Get our action from the user.
                 ConsoleActions consoleAction = ConsoleActions.none;
                 string act = string.Empty;
@@ -347,8 +346,8 @@ namespace SUSClient
         /// </summary>
         private void exit()
         {
-            socketKill = new SocketKill(true);
-            Console.WriteLine(" SocketKill is set.");
+            SocketKill sk = new SocketKill(gs.Account.m_ID, true);
+            clientRequest = new Request(RequestTypes.SocketKill, sk);
         }
     }
 }

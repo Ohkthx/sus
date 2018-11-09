@@ -72,6 +72,7 @@ namespace SUS.Shared.Objects
         public int ID;
         public string Name = string.Empty;
         public string Description = string.Empty;
+        public bool isSpawnable { get; private set; } = false;
 
         public HashSet<Node> Connections = new HashSet<Node>();
         public HashSet<Mobile> Mobiles = new HashSet<Mobile>();
@@ -87,6 +88,11 @@ namespace SUS.Shared.Objects
             this.Name = Enum.GetName(typeof(Locations), location);
             this.Type = type;
             this.Description = description;
+
+            if ((type & Types.Dungeon) == Types.Dungeon)
+                isSpawnable = true;
+            else if ((type & Types.OpenWorld) == Types.OpenWorld)
+                isSpawnable = true;
         }
         #endregion
 
