@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using SUS.Shared.Utility;
+using SUS.Shared.Utilities;
 using SUS.Shared.Objects.Mobiles;
 
 namespace SUS.Shared.Objects
@@ -39,7 +35,7 @@ namespace SUS.Shared.Objects
         public MobileAction(UInt64 initator)
         {
             this.Initator = initator;
-            this.Affected = new List<Tuple<MobileType, ulong>>();   // Initialize our Affected.
+            this.Affected = new List<Tuple<MobileType, UInt64>>();   // Initialize our Affected.
         }
 
         public Serial GetInitator()
@@ -53,7 +49,7 @@ namespace SUS.Shared.Objects
                 if (t.Item1 == type && t.Item2 == targetId)
                     return;
 
-            this.Affected.Add(new Tuple<MobileType, ulong>(type, targetId));
+            this.Affected.Add(new Tuple<MobileType, UInt64>(type, targetId));
         }
 
         public void AddUpdate(MobileModifier mobile)

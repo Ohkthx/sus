@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SUSClient
 {
-    class Menu
+    public class Menu
     {
         private string Header = string.Empty;   // Presented at the top of the Body.
         private string Body = string.Empty;     // Information to be read.

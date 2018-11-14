@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using SUS.Shared.Utility;
+using SUS.Shared.Utilities;
 using SUS.Shared.Objects;
 using SUS.Shared.Objects.Mobiles;
 using SUSClient.MenuItems;
-using SUS.Shared;
 
 namespace SUSClient
 {
@@ -36,7 +32,7 @@ namespace SUSClient
             if (lastAction != ConsoleActions.none)
             {
                 responseHandler();      // Processes requested information from the server.
-                if (this.clientRequest != null && this.status != RequestStatus.none)    // Requesting information from the server,
+                if (this.clientRequest != null)    // Requesting information from the server,
                     return gs;                                                          //  Returning early to fulfill the initiated action by the user.
             }
 
@@ -48,7 +44,7 @@ namespace SUSClient
             // If Player is dead, we should send a ressurrection requestion.
             if (gs.Account.IsDead())
             {
-                Miscellaneous.ConsoleNotify("Sending ressurrection request.");
+                Utility.ConsoleNotify("Sending ressurrection request.");
 
                 // Request to be sent to the server.
                 this.clientRequest = new Request(RequestTypes.Resurrection, gs.Account);
@@ -255,10 +251,10 @@ namespace SUSClient
             {   // Iterate our list of Players.
                 foreach (Mobile m in mobiles)
                 {
-                    if ((type & m.m_Type) == m.m_Type)
+                    if ((type & m.Type) == m.Type)
                     {
                         pos++;
-                        Console.WriteLine($"  [Pos: {pos}] {m.m_Name},  ID: {m.m_ID}");
+                        Console.WriteLine($"  [Pos: {pos}] {m.Name},  ID: {m.ID}");
                     }
                 }
             }
@@ -266,6 +262,8 @@ namespace SUSClient
             // If not Players found, print 'None'.
             if (pos == 0)
                 Console.WriteLine("    => None.");
+
+            this.Reset();
         }
 
         public Mobile SelectMobile(List<Mobile> mobiles)
@@ -280,14 +278,14 @@ namespace SUSClient
                 {
                     if (input - 1 >= 0 && input - 1 < mobiles.Count)
                     {
-                        Miscellaneous.ConsoleNotify($"Mobile Selected: {mobiles[input - 1].m_Name}.");
+                        Utility.ConsoleNotify($"Mobile Selected: {mobiles[input - 1].Name}.");
                         return mobiles[input - 1];
                     }
-                    Miscellaneous.ConsoleNotify("Bad option, please try again.");
+                    Utility.ConsoleNotify("Bad option, please try again.");
                 }
             } while (input - 1 < 0 || input - 1 >= mobiles.Count);
 
-            Miscellaneous.ConsoleNotify($"Something happened? Bad number: {input}.");
+            Utility.ConsoleNotify($"Something happened? Bad number: {input}.");
             return null;
         }
 
@@ -307,18 +305,18 @@ namespace SUSClient
 
             if (mobiles.Count == 0)
             {
-                Miscellaneous.ConsoleNotify("No mobs to attack.");
+                Utility.ConsoleNotify("No mobs to attack.");
                 return;
             }
 
             Mobile targetMobile = SelectMobile(mobiles);
 
-            Console.WriteLine(" Performing an attack on {0}.", targetMobile.m_Name);
+            Console.WriteLine(" Performing an attack on {0}.", targetMobile.Name);
 
             // Our newly created action to perform.
-            MobileAction attackAction = new MobileAction(gs.Account.m_ID);
+            MobileAction attackAction = new MobileAction(gs.Account.ID);
             attackAction.Type = ActionType.Attack;
-            attackAction.AddTarget(targetMobile.m_Type, targetMobile.m_ID);
+            attackAction.AddTarget(targetMobile.Type, targetMobile.ID);
 
             // Request to be sent to the server.
             this.clientRequest = new Request(RequestTypes.MobileAction, attackAction);
@@ -346,7 +344,7 @@ namespace SUSClient
         /// </summary>
         private void exit()
         {
-            SocketKill sk = new SocketKill(gs.Account.m_ID, true);
+            SocketKill sk = new SocketKill(gs.Account.ID, true);
             clientRequest = new Request(RequestTypes.SocketKill, sk);
         }
     }

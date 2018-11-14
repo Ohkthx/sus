@@ -44,6 +44,8 @@
   <ItemGroup>
     <Compile Include="Client.cs" />
     <Compile Include="InteractiveConsole.cs" />
+    <Compile Include="Menus\Menu.cs" />
+    <Compile Include="Menus\Paperdoll.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -56,5 +58,6 @@
       <Name>SharedUtility</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

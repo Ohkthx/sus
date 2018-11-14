@@ -1,13 +1,8 @@
-﻿using SUS.Shared.Utility;
+﻿using System;
+using System.Collections.Generic;
+using SUS.Shared.Utilities;
 using SUS.Shared.Objects;
 using SUS.Shared.Objects.Mobiles;
-using SUS.Shared.SQLite;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SUS.Server
 {
@@ -162,7 +157,7 @@ namespace SUS.Server
                     return new Request(RequestTypes.Error, "Server: That target has moved or died recently.");
                 else if (initiator.Location != affectee.Location)
                     return new Request(RequestTypes.Error, "Server: That target is no longer in the area.");
-                else if (affectee.m_Type == MobileType.Player && affectee is Player)
+                else if (affectee.IsPlayer())
                 {
                     Player p = affectee as Player;  
                     if (!p.isLoggedIn)
@@ -197,7 +192,7 @@ namespace SUS.Server
                 // Update to pass to the client regarding the affectee.
                 mobileAction.AddUpdate(mm_affectee);
 
-                mobileAction.Result += $"{initiator.m_Name} attacked {target.m_Name}. ";    // TODO: Move this to MobileModifier.
+                mobileAction.Result += $"{initiator.Name} attacked {target.Name}. ";    // TODO: Move this to MobileModifier.
             }
 
             // Add our updated information for the initiator. After processing all changes.

@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using SUS.Shared.Objects.Mobiles;
 
-namespace SUS.Shared.Utility
+namespace SUS.Shared.Utilities
 {
     [Serializable]
     public class Serial

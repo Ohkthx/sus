@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SUS.Shared.Utility;
+using SUS.Shared.Utilities;
 using SUS.Shared.Objects.Mobiles;
-using SUS.Shared.Objects;
 
 namespace SUS.Shared.Objects
 {
@@ -72,6 +68,7 @@ namespace SUS.Shared.Objects
         public int ID;
         public string Name = string.Empty;
         public string Description = string.Empty;
+
         public bool isSpawnable { get; private set; } = false;
 
         public HashSet<Node> Connections = new HashSet<Node>();
@@ -115,10 +112,7 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
-        public byte[] ToByte()
-        {
-            return Utility.Network.Serialize(this);
-        }
+        public byte[] ToByte() { return Network.Serialize(this); }
 
         #region Updates and Getters
         /// <summary>

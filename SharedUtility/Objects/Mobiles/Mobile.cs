@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SUS.Shared.SQLite;
-using SUS.Shared.Utility;
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects.Mobiles
 {
@@ -49,7 +45,7 @@ namespace SUS.Shared.Objects.Mobiles
         public int ModIntelligence { get; set; } = 0;
 
         #region Constructors
-        public MobileModifier(Mobile mobile): this(mobile.m_ID, mobile.m_Name, mobile.m_Type) { }
+        public MobileModifier(Mobile mobile): this(mobile.ID, mobile.Name, mobile.Type) { }
 
         public MobileModifier(ulong id, string name, MobileType type)
         {
@@ -97,100 +93,35 @@ namespace SUS.Shared.Objects.Mobiles
         public void StaminaModified(int change) { this.ModStamina += change; }
         public void DeathModified(bool dead) { this.IsDead = dead; }
 
+        public bool IsPlayer() { return Type == MobileType.Player; }
+
         public byte[] ToByte() { return Network.Serialize(this); }
     }
 
     [Serializable]
-    public class Mobile
+    public abstract class Mobile
     {
-        public Serial m_ID { get; set; }            // ID of the mobile.
-        public string m_Name { get; set; }          // Name of the mobile.
-        public MobileType m_Type { get; set; }      // Type of Mobile: NPC or Player.
-        public Locations Location = Locations.None; // Location of the mobile.
+        private Serial m_ID { get; set; }               // ID of the mobile.
+        private string m_Name { get; set; }             // Name of the mobile.
+        private MobileType m_Type { get; set; }         // Type of Mobile: NPC or Player.
+        private Locations m_Location = Locations.None;    // Location of the mobile.
 
-        protected int m_Hits;                       // Current hit points.
-        protected int m_HitsMax;                    // Maximum hit points.
-        protected int m_DamageMin;                  // Minimum damage the mobile can do with a normal hit.
-        protected int m_DamageMax;                  // Maximum damage the mobile can do with a normal hit.
-        protected Attributes m_Attributes;          // Strength, Dexterity, Intellect.
-        protected Dictionary<int, Skill> m_Skills;  // Skills possessed by the mobile.
-        protected TypeOfDamage WeaponType = TypeOfDamage.Melee; // Current type of Weapon Damage.
-        protected int m_Deaths;                     // Amount of Player Deaths.
-        protected int m_KillCount;                  // Amount of Player Kills.
+        private int m_StatCap;
+        //private int m_StrCap, m_DexCap, m_IntCap;
+        //private int m_StrMaxCap, m_DexMaxCap, m_IntMaxCap;
+        private int m_Str, m_Dex, m_Int;
+        private int m_Hits, m_Stam, m_Mana;
 
-        #region Attributes
-        [Serializable]
-        public class Attributes
-        {
-            public int Strength { get; set; }
-            public int Dexterity { get; set; }
-            public int Intelligence { get; set; }
-
-            public int Stamina { get; set; }
-            public int StaminaMax { get; set; }
-            public int Mana { get; set; }
-            public int ManaMax { get; set; }
-
-            public Attributes() : this(10, 10, 10) { }
-
-            public Attributes(int str, int dex, int intellect)
-            {
-                this.Strength = str;
-                this.Dexterity = dex;
-                this.Intelligence = intellect;
-
-                this.StaminaMax = this.Stamina = dex;
-                this.ManaMax = this.Mana = intellect;
-            }
-
-            public int Total() { return Strength + Dexterity + Intelligence; }
-        }
-        #endregion
-
-        #region Skills
-        [Serializable]
-        public class Skill
-        {
-            public string Name { get; set; }
-            public int Type { get; set; }
-            public double Value { get; set; }
-            public double Max { get; set; }
-            public double Step { get; }
-
-            public enum Types { Archery, Magery, Fencing, Healing };
-
-            public Skill(string name, int type, double value = 0, double max = 120.0)
-            {
-                this.Step = 0.1;
-                if (max > 120.0)
-                    this.Max = max;
-                else
-                    this.Max = 120.0;
-
-                this.Name = name;
-                this.Type = type;
-                this.Value = value;
-            }
-        }
-        #endregion
+        private Dictionary<int, Skill> m_Skills;  // Skills possessed by the mobile.
 
         #region Contructors
-        public Mobile() : this(0, "Unknown", MobileType.None, 100) { }
-
-        public Mobile(ulong ID, string name, MobileType type, int hits, int strength = 10, int dexterity = 10, int intelligence = 10)
+        public Mobile(MobileType type)
         {
             this.m_Type = type;
-            this.m_Attributes = new Attributes(strength, dexterity, intelligence);
+
             this.m_Skills = new Dictionary<int, Skill>();
             foreach (int skill in Enum.GetValues(typeof(Skill.Types)))
                 m_Skills.Add(skill, new Skill(Enum.GetName(typeof(Skill.Types), skill), skill));
-
-            if (ID == 0)
-                this.m_ID = Serial.NewObject;
-            else
-                this.m_ID = new Serial(ID);
-            this.m_Name = name;
-            this.m_HitsMax = m_Hits = hits;
         }
         #endregion
 
@@ -200,15 +131,15 @@ namespace SUS.Shared.Objects.Mobiles
             string paperdoll = $"                  ___________________\n" +
                 $"                  [Character Profile]\n" +
                 $"  + ---------------------------------------------------+\n" +
-                $"  | Character Name: {m_Name}\n" +
+                $"  | Character Name: {Name}\n" +
                 $"  | Title: {"The Player"}\n" +
                 $"  | Location: {Location.ToString()}\n" +
                 $"  |\n" +
                 $"  +-[ Attributes ]\n" +
-                $"  | +-- Health: {m_Hits}, Max Health: {m_HitsMax}\n" +
-                $"  | +-- Strength: {m_Attributes.Strength}\n" +
-                $"  | +-- Dexterity: {m_Attributes.Dexterity}\t\tStamina: {m_Attributes.Stamina}\n" +
-                $"  | +-- Intelligence: {m_Attributes.Intelligence}\tMana: {m_Attributes.Mana}\n" +
+                $"  | +-- Health: {Hits}, Max Health: {HitsMax}\n" +
+                $"  | +-- Strength: {Str}\n" +
+                $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam}\n" +
+                $"  | +-- Intelligence: {Int}\tMana: {Mana}\n" +
                 $"  |   +-- Attack: {0}\n" +
                 $"  |   +-- Defense: {0}\n" +
                 $"  |\n" +
@@ -216,11 +147,6 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  | +-- Bandaids: {0}\t\tBandaid Heal Amount: {0}\n" +
                 $"  | +-- Arrows: {0}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {0}\n" +
-                $"  | +-- Weapon Type: {WeaponType.ToString()}\n" +
-                $"  |\n" +
-                $"  +-[ Statistics ]\n" +
-                $"  | +-- Deaths: {m_Deaths}\n" +
-                $"  | +-- Kill Count: {m_KillCount}\n" +
                 $"  |\n" +
                 $"  +-[ Skills ]\n";
 
@@ -279,38 +205,248 @@ namespace SUS.Shared.Objects.Mobiles
         }
         #endregion
 
-        #region Getters
-        public string GetHealth() { return $"{this.m_Hits} / {this.m_HitsMax}"; }
+        #region Getters / Setters
+        public Serial ID
+        {
+            get { return m_ID; }
+            set
+            {
+                if (value != null && value != m_ID)
+                    m_ID = value;
+            }
+        }
 
-        public int GetDeaths() { return this.m_Deaths; }
+        public string Name
+        {
+            get
+            {
+                if (m_Name != null)
+                    return m_Name;
+                else
+                    return "Unknown";
+            }
+            set
+            {
+                if (value != m_Name)
+                    m_Name = value;
+            }
+        }
+   
+        public Locations Location
+        {
+            get { return m_Location; }
+            set
+            {
+                if (m_Location != value)
+                    m_Location = value;
+            }
+        }
 
-        public int GetKillCount() { return this.m_KillCount; }
+        public MobileType Type
+        { get { return m_Type; } }
+
+        public string GetHealth() { return $"{Hits} / {HitsMax}"; }
+
+        public bool IsPlayer() { return m_Type == MobileType.Player; }
+
+        public bool IsDead() { return Hits <= 0; }
         #endregion
 
-        // Prepares the class to be sent over the network.
-        public byte[] ToByte() { return Network.Serialize(this); }
+        #region Stats
+        public void InitStats(int rawStr, int rawDex, int rawInt)
+        {
+            m_Str = rawStr;
+            m_Dex = rawDex;
+            m_Int = rawInt;
+
+            Hits = HitsMax;
+            Stam = StamMax;
+            Mana = ManaMax;
+        }
+
+        public int RawStr
+        {
+            get { return m_Str; }
+            set
+            {
+                if (value < 1)
+                    value = 1;
+                else if (value > 65000)
+                    value = 65000;
+
+                if (m_Str != value)
+                {
+                    m_Str = value;
+
+                    if (Hits > HitsMax)
+                        Hits = HitsMax;
+                }
+            }
+        }
+
+        public virtual int Str
+        {
+            get
+            {
+                int value = m_Str;
+
+                if (value < 1)
+                    value = 1;
+                else if (value > 65000)
+                    value = 65000;
+
+                return value;
+            }
+            set { RawStr = value; }
+        }
+
+        public int RawDex
+        {
+            get { return m_Dex; }
+            set
+            {
+                if (value < 1)
+                    value = 1;
+                else if (value > 65000)
+                    value = 65000;
+
+                if (m_Dex != value)
+                {
+                    m_Dex = value;
+
+                    if (Stam > StamMax)
+                        Stam = StamMax;
+                }
+            }
+        }
+
+        public virtual int Dex
+        {
+            get
+            {
+                int value = m_Dex;
+
+                if (value < 1)
+                    value = 1;
+                else if (value > 65000)
+                    value = 65000;
+
+                return value;
+            }
+            set { RawDex = value; }
+        }
+
+        public int RawInt
+        {
+            get { return m_Int; }
+            set
+            {
+                if (value < 1)
+                    value = 1;
+                else if (value > 65000)
+                    value = 65000;
+
+                if (m_Int != value)
+                {
+                    m_Int = value;
+
+                    if (Mana > ManaMax)
+                        Mana = ManaMax;
+                }
+            }
+        }
+
+        public virtual int Int
+        {
+            get
+            {
+                int value = m_Int;
+
+                if (value < 1)
+                    value = 1;
+                else if (value > 65000)
+                    value = 65000;
+
+                return value;
+            }
+            set { RawInt = value; }
+        }
+
+        public int Hits
+        {
+            get { return m_Hits; }
+            set
+            {
+                if (value < 0)
+                    m_Hits = 0;
+                else if (value > HitsMax)
+                    m_Hits = HitsMax;
+                else
+                    m_Hits = value;
+            }
+        }
+
+        public virtual int HitsMax { get { return 50 + (Str / 2); } }
+
+        public int Stam
+        {
+            get { return m_Stam; }
+            set
+            {
+                if (value < 0)
+                    value = 0;
+                else if (value >= StamMax)
+                    value = StamMax;
+
+                if (m_Stam != value)
+                    m_Stam = value;
+            }
+        }
+
+        public virtual int StamMax { get { return Dex; } }
+
+        public int Mana
+        {
+            get { return m_Mana; }
+            set
+            {
+                if (value < 0)
+                    value = 0;
+                else if (value >= ManaMax)
+                    value = ManaMax;
+
+                if (m_Mana != value)
+                    m_Mana = value;
+            }
+        }
+
+        public virtual int ManaMax { get { return Int; } }
+
+        public int StatCap
+        {
+            get { return m_StatCap; }
+            set
+            {
+                if (m_StatCap != value)
+                    m_StatCap = value;
+            }
+        }
+        #endregion
+
+        #region Skills
+        public Dictionary<int, Skill> Skills
+        {
+            get { return m_Skills; }
+        }
+        #endregion
 
         #region Combat
-        public bool IsDead()
-        {
-            if (this.m_Hits <= 0)
-                return true;
-            return false;
-        }
-
-        public void Kill()
-        {
-            this.m_Hits = 0;    // Sets health to 0, due to being death.
-            this.m_Deaths++;    // Increase the player's death count by 1.
-        }
-
         public void Combat(ref MobileModifier mm_init, ref Mobile opponent, ref MobileModifier mm_opp)
         {
             int initAtk = this.Attack();
 
             if (this == opponent)
             {   // Is the initiator attacking theirself? Do the damage and return.
-                statIncrease(ref mm_init);
                 mm_init.HitsModified(this.TakeDamage(initAtk) * -1);
                 mm_init.DeathModified(this.IsDead());
                 return;
@@ -322,7 +458,6 @@ namespace SUS.Shared.Objects.Mobiles
             if (!opponent.IsDead())
             {
                 int oppAtk = opponent.Attack();
-                statIncrease(ref mm_opp);
                 mm_init.HitsModified(this.TakeDamage(oppAtk) * -1);     // Update the MobileModifier.
                 mm_init.DeathModified(this.IsDead());
             }
@@ -347,68 +482,14 @@ namespace SUS.Shared.Objects.Mobiles
             return damage;          // Damage taken was damage received.
         }
 
-        public int Attack()
-        {
-            return weaponDamage();
-        }
-
-        private int weaponDamage()
-        {
-            Attributes attr = m_Attributes;
-            switch (this.WeaponType)
-            {
-                case TypeOfDamage.Archery:
-                    this.m_DamageMax = (attr.Dexterity / 2) + (attr.Strength / 3);
-                    break;
-                case TypeOfDamage.Magic:
-                    this.m_DamageMax = (int)((double)attr.Intelligence / 1.5);
-                    break;
-                case TypeOfDamage.Melee:
-                    this.m_DamageMax = (attr.Strength / 2) + (attr.Dexterity / 3);
-                    break;
-                default:
-                    this.m_DamageMax = 4;
-                    break;
-            }
-
-            this.m_DamageMin = this.m_DamageMax / 2;
-            return RandomImpl.Next(m_DamageMin, m_DamageMax);
-        }
-
-        private void statIncrease(ref MobileModifier mm)
-        {
-            int rng = RandomImpl.Next() % 100;
-            if (rng > 5)
-                return;
-
-            switch (WeaponType)
-            {
-                case TypeOfDamage.Archery:
-                    m_Attributes.Dexterity++;
-                    mm.ModDexterity++;
-                    break;
-                case TypeOfDamage.Magic:
-                    m_Attributes.Intelligence++;
-                    mm.ModIntelligence++;
-                    break;
-                case TypeOfDamage.Melee:
-                    m_Attributes.Strength++;
-                    mm.ModStrength++;
-                    break;
-            }
-        }
-
-        private void skillIncrease() { }
+        public abstract int Attack();
         #endregion
 
-        /// <summary>
-        ///     Brings the Mobile back to life. Sets health, mana, and stamina to half the max value.
-        /// </summary>
-        public void Ressurrect()
-        {
-            this.m_Hits = this.m_HitsMax / 2;
-            this.m_Attributes.Mana = this.m_Attributes.ManaMax / 2;
-            this.m_Attributes.Stamina = this.m_Attributes.StaminaMax / 2;
-        }
+        public abstract void Kill();
+
+        public abstract void Ressurrect();
+
+        // Prepares the class to be sent over the network.
+        public byte[] ToByte() { return Network.Serialize(this); }
     }
 }

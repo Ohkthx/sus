@@ -1,21 +1,19 @@
 ﻿using System;
 using System.IO;
-using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using SUS.Shared.Objects.Mobiles;
 
-
-namespace SUS.Shared.Utility
+namespace SUS.Shared.Utilities
 {
     public enum RequestTypes { OK, Error, Authenticate, GameState, Mobile, MobileAction, MobileMove, Node, Player, Resurrection, SocketKill }
 
     /// <summary>
     ///     Holds various functions to perform actions.
     /// </summary>
-    public static class Miscellaneous
+    public static class Utility
     {
         public static void ConsoleNotify(string msg)
         {
@@ -24,6 +22,60 @@ namespace SUS.Shared.Utility
             Console.WriteLine($" !! {msg}");
             Console.ForegroundColor = cc;                       // Reset the color to the default.
         }
+
+        public static double RandomMinMax(double min, double max)
+        {
+            if (min > max)
+            {
+                double copy = min;
+                min = max;
+                max = copy;
+            }
+            else if (min == max)
+                return min;
+
+            return min + (RandomImpl.NextDouble() * (max - min));
+        }
+
+        public static int RandomMinMax(int min, int max)
+        {
+            if (min > max)
+            {
+                int copy = min;
+                min = max;
+                max = copy;
+            }
+            else if (min == max)
+                return min;
+
+            return min + RandomImpl.Next((max - min) + 1);
+        }
+
+        public static int Random(int from, int count)
+        {
+            if (count == 0)
+                return from;
+            else if (count > 0)
+                return from + RandomImpl.Next(count);
+            else
+                return from - RandomImpl.Next(-count);
+        }
+
+        public static int Random(int count)
+        {
+            return RandomImpl.Next(count);
+        }
+
+        public static double RandomDouble()
+        {
+            return RandomImpl.NextDouble();
+        }
+
+        public static int RandomInt()
+        {
+            return RandomImpl.Next();
+        }
+
     }
 
     /// <summary>
@@ -480,6 +532,4 @@ namespace SUS.Shared.Utility
             return typeToDeserialize;
         }
     }
-
-
 }

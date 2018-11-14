@@ -1,12 +1,13 @@
-﻿using SUS.Shared.Utility;
-using SUS.Shared.Objects;
-using SUS.Shared.Objects.Mobiles;
-using SUSClient.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+
+using SUS.Shared.Utilities;
+using SUS.Shared.Objects;
+using SUS.Shared.Objects.Mobiles;
+using SUSClient.Client;
 
 namespace SUSClient
 {
@@ -88,11 +89,11 @@ namespace SUSClient
                         ia.Reset();
                         break;  // Server sent back empty information.
                     case RequestTypes.Error:
-                        Miscellaneous.ConsoleNotify(req.Value as string);
+                        Utility.ConsoleNotify(req.Value as string);
                         ia.Reset();
                         break;
                     case RequestTypes.Authenticate:
-                        Player player = new Player(id, username, 100, 105, 35, 10);
+                        Player player = new Player(id, username, 50, 35, 20);
                         creq = new Request(RequestTypes.Player, player);
                         break;
                     case RequestTypes.GameState:
@@ -152,7 +153,7 @@ namespace SUSClient
                 Mobile mobile;
                 if (gs.UpdateMobile(mm, out mobile) && mobile != null)
                 {
-                    if (mobile.m_Type == MobileType.Player)
+                    if (mobile.Type == MobileType.Player)
                         gs.Refresh(mobile);   // Update our gamestate with the new player information.
 
                     string attr = string.Empty;
@@ -164,7 +165,7 @@ namespace SUSClient
                         attr += $"\n\tIntelligence: {mm.ModIntelligence}";
 
 
-                    Console.WriteLine($"  => {mobile.m_Name}'s health was changed by {mm.ModHits}. " +
+                    Console.WriteLine($"  => {mobile.Name}'s health was changed by {mm.ModHits}. " +
                         $"\n\tStamina was changed by {mm.ModStamina}." +
                         $"{attr}" +
                         $"\n\tHealth: {mobile.GetHealth()}." +

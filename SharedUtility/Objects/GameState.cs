@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Data.SQLite;
 using SUS.Shared.Objects.Mobiles;
 using SUS.Shared.SQLite;
-using SUS.Shared.Utility;
-using System.Data.SQLite;
-
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects
 {
@@ -46,7 +42,7 @@ namespace SUS.Shared.Objects
         #region Overrides
         public void ToInsert(ref SQLiteCommand cmd)
         {
-            cmd.Parameters.Add(new SQLiteParameter("@p1", this.Account.m_ID));
+            cmd.Parameters.Add(new SQLiteParameter("@p1", this.Account.ID));
             cmd.Parameters.Add(new SQLiteParameter("@p2", this.ToByte()));
         }
 
@@ -55,8 +51,8 @@ namespace SUS.Shared.Objects
             unchecked
             {
                 int hash = 13;
-                hash = (hash * 7) + (!Object.ReferenceEquals(null, Account.m_ID) ? Account.m_ID.GetHashCode() : 0);
-                hash = (hash * 7) + (!Object.ReferenceEquals(null, Account.m_Type) ? Account.m_Type.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, Account.ID) ? Account.ID.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, Account.Type) ? Account.Type.GetHashCode() : 0);
                 return hash;
             }
         }
@@ -92,14 +88,14 @@ namespace SUS.Shared.Objects
         {
             return (value != null)
                 && (value.Account != null)
-                && (Account.m_Type == value.Account.m_Type)
-                && (Account.m_ID == value.Account.m_ID);
+                && (Account.Type == value.Account.Type)
+                && (Account.ID == value.Account.ID);
         }
         #endregion
 
         public UInt64 ID()
         {
-            return Account.m_ID.ToInt();
+            return Account.ID.ToInt();
         }
 
         public Player GetPlayer()
@@ -115,7 +111,7 @@ namespace SUS.Shared.Objects
         /// <returns>True - Success, False - Failure</returns>
         public bool Refresh(Mobile player)
         {
-            if (player.m_Name == this.Account.m_Name && player.m_ID == this.Account.m_ID)
+            if (player.Name == this.Account.Name && player.ID == this.Account.ID)
             {
                 this.Account = player as Player;
                 return true;
@@ -130,7 +126,7 @@ namespace SUS.Shared.Objects
         /// <returns></returns>
         public bool UpdateMobile(Mobile mobile)
         {
-            if (this.Account.m_ID == mobile.m_ID && mobile.m_Type == MobileType.Player)
+            if (this.Account.ID == mobile.ID && mobile.IsPlayer())
                 this.Account = mobile as Player;    // Updates the Gamestate's account.
 
             if (updateNodesMobile(this.Location, mobile))
@@ -166,12 +162,12 @@ namespace SUS.Shared.Objects
         {
             foreach (Mobile m in node.Mobiles)
             {   // Iterate each of our locale mobiles seeing if any match by type and serial.
-                if (m.m_ID == mobile.m_ID && m.m_Type == mobile.m_Type)
+                if (m.ID == mobile.ID && m.Type == mobile.Type)
                 {   // We found a match, process changes.
                     if (mobile.IsDead())
                     {   // Server said the mobile is dead, so we kill it.
                         m.Kill();            // Kill the mobile.
-                        if (m.m_Type != MobileType.Player)
+                        if (!m.IsPlayer())
                             this.Kill(m);        // Remove the mobile from the GameState (if it is not a player.)
                     }
                     else
@@ -194,12 +190,12 @@ namespace SUS.Shared.Objects
         {
             foreach (Mobile m in node.Mobiles)
             {   // Iterate each of our locale mobiles seeing if any match by type and serial.
-                if (m.m_ID == moddedMobile.ID && m.m_Type == moddedMobile.Type)
+                if (m.ID == moddedMobile.ID && m.Type == moddedMobile.Type)
                 {   // We found a match, process changes.
                     if (moddedMobile.IsDead)
                     {   // Server said the mobile is dead, so we kill it.
                         m.Kill();            // Kill the mobile.
-                        if (m.m_Type != MobileType.Player)
+                        if (!m.IsPlayer())
                             this.Kill(m);        // Remove the mobile from the GameState (if it is not a player.)
                     }
                     else

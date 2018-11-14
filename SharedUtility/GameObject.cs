@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using SUS.Shared.Objects;
 using SUS.Shared.Objects.Mobiles;
-using SUS.Shared.Utility;
+using SUS.Shared.Objects.Mobiles.Spawns;
+using SUS.Shared.Utilities;
 
 namespace SUS
 {
@@ -66,11 +65,15 @@ namespace SUS
             UpdateNodes(Graveyard);
 
             // Spawn a test Orc in Britain.
-            NPC npc = new NPC("Orc", 10, 10, 8, 2);
-            if (Spawn(npc, Locations.Britain))
-            {
-                Miscellaneous.ConsoleNotify($"Spawned an {npc.m_Name} in {Locations.Britain.ToString()}.");
-            }
+            Orc orc = new Orc();
+            Cyclops cyclops = new Cyclops();
+            Skeleton skeleton = new Skeleton();
+            if (Spawn(orc, Locations.Britain))
+                Utility.ConsoleNotify($"Spawned {orc.Name} in {Locations.Britain.ToString()}.");
+            if (Spawn(cyclops, Locations.Britain))
+                Utility.ConsoleNotify($"Spawned {cyclops.Name} in {Locations.Britain.ToString()}.");
+            if (Spawn(skeleton, Locations.Graveyard))
+                Utility.ConsoleNotify($"Spawned {skeleton.Name} in {Locations.Graveyard.ToString()}.");
         }
 
         /// <summary>
@@ -134,7 +137,7 @@ namespace SUS
         private static void UpdatePlayers(Player player, bool remove = false)
         {
             playersMutex.WaitOne();                 // (Wait / Lock) 
-            UInt64 pUint64 = player.m_ID.ToInt();   // Get the interger.
+            UInt64 pUint64 = player.ID.ToInt();   // Get the interger.
             if (remove)
                 m_Players.Remove(pUint64);          // Remove the player.
             else
@@ -227,7 +230,7 @@ namespace SUS
         public static Mobile FindMobile(MobileType type, Serial serial)
         {   // Iterate our hashset of mobiles.
             foreach (Mobile m in m_Mobiles)
-                if (((m.m_Type == type) && (m.m_ID == serial)) || type == MobileType.Mobile)
+                if (((m.Type == type) && (m.ID == serial)) || type == MobileType.Mobile)
                         return m;   // If the type and serial match, return it. If it is type of 'Any', return it.
 
             return null;    // Nothing was found, return null.

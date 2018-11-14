@@ -1,19 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects.Mobiles
 {
     [Serializable]
-    public class NPC : Mobile
+    public abstract class NPC : Mobile
     {
         #region Constructors
-        public NPC() : base() { }
-        public NPC(string name, int hits, int strength = 10, int dexterity = 10, int intelligence = 10) :
-            base(0, name, MobileType.NPC, hits, strength, dexterity, intelligence)
-        { }
+        public NPC(): base(MobileType.NPC) { ID = Serial.NewObject; }
+        #endregion
+
+        #region Combat
+        public override void Kill() { Hits = 0; }
+
+        public override void Ressurrect()
+        {
+            Hits = HitsMax / 2;
+            Mana = ManaMax / 2;
+            Stam = StamMax / 2;
+        }
         #endregion
     }
 }

@@ -61,7 +61,6 @@
     <Compile Include="GameObject.cs" />
     <Compile Include="Objects\GameState.cs" />
     <Compile Include="Objects\Item.cs" />
-    <Compile Include="Objects\Location.cs" />
     <Compile Include="Objects\Mobiles\Actions\MobileAction.cs" />
     <Compile Include="Objects\Mobiles\Actions\Move.cs" />
     <Compile Include="Objects\Mobiles\Actions\Ressurrect.cs" />
@@ -69,10 +68,16 @@
     <Compile Include="Objects\Mobiles\NPC.cs" />
     <Compile Include="Objects\Mobiles\Mobile.cs" />
     <Compile Include="Objects\Mobiles\Player.cs" />
-    <Compile Include="Objects\Mobiles\PlayerClasses.cs" />
+    <Compile Include="Objects\Mobiles\Spawns\Cyclops.cs" />
+    <Compile Include="Objects\Mobiles\Spawns\Orc.cs" />
+    <Compile Include="Objects\Mobiles\Spawns\Skeleton.cs" />
+    <Compile Include="Objects\Nodes\Node.cs" />
+    <Compile Include="Objects\Nodes\Sewer.cs" />
+    <Compile Include="Objects\Nodes\Spawnable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Random.cs" />
     <Compile Include="Serial.cs" />
+    <Compile Include="Skill.cs" />
     <Compile Include="SQLite.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>

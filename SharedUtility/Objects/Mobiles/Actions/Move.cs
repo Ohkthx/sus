@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using SUS.Shared.Utility;
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects.Mobiles
 {

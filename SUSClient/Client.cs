@@ -2,11 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Text;
-using SUS.Shared.Objects.Mobiles;
-using SUS.Shared.Utility;
 
-// State object for receiving data from remote device.  
 namespace SUSClient.Client
 {
    public class AsynchronousClient
