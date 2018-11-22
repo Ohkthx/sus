@@ -4,18 +4,19 @@ using System.Data.SQLite;
 using SUS.Shared.Objects.Mobiles;
 using SUS.Shared.SQLite;
 using SUS.Shared.Utilities;
+using System.Collections.Generic;
 
 namespace SUS.Shared.Objects
 {
     [Serializable]
     public class GameState : ISQLCompatibility
     {
-        public double _version = 1.0;
-        public Player Account { get; private set; } = null;
-        public Node Location { get; set; } = null;
-        public Node LocationLast { get; set; } = null;
-        public int Unlocked = (int)Locations.None;
-        public bool moved { get; set; } = false;
+        private static readonly double m_Version = 1.0;
+        private Player m_Account = null;
+        private Node m_Location = null;
+        private Node m_LocationLast = null;
+        private int m_Unlocked = (int)Locations.None;
+        private HashSet<MobileTag> m_Mobiles;
 
         #region Constructors
         public GameState(Player account) : this(account, null, (int)Locations.Basic) { }
@@ -23,21 +24,10 @@ namespace SUS.Shared.Objects
         public GameState(Player account, Node location, int unlocked)
         {
             this.Account = account;
-            this.Location = location;
-            this.Unlocked |= unlocked;
+            this.NodeCurrent = location;
+            this.m_Unlocked |= unlocked;
         }
         #endregion
-
-        // Serialize and convert to Byte[] to be sent over a socket.
-        public byte[] ToByte()
-        {
-            // Clean our structure for transportation.
-            if (this.LocationLast != null)
-                this.LocationLast.Clean();
-
-            // Serialize and convert to bytes for transport.
-            return Network.Serialize(this);
-        }
 
         #region Overrides
         public void ToInsert(ref SQLiteCommand cmd)
@@ -93,184 +83,208 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
-        public UInt64 ID()
-        {
-            return Account.ID.ToInt();
-        }
+        #region Getters / Setters
+        public static double Version { get { return m_Version; } }
 
-        public Player GetPlayer()
-        {
-            return Account;
-        }
+        public UInt64 ID { get { return Account.ID.ToInt(); } }
 
-        #region Client-Side Updating
-        /// <summary>
-        ///     Refreshes the account for the gamestate.
-        /// </summary>
-        /// <param name="player">New mobile</param>
-        /// <returns>True - Success, False - Failure</returns>
-        public bool Refresh(Mobile player)
+        public Player Account
         {
-            if (player.Name == this.Account.Name && player.ID == this.Account.ID)
+            get { return m_Account; }
+            set
             {
-                this.Account = player as Player;
-                return true;
+                if (value == null || !value.IsPlayer)
+                    return;
+
+                m_Account = value;
             }
-            return false;
         }
 
+        public Node NodeCurrent
+        {
+            get { return m_Location; }
+            set
+            {
+                if (value == null)
+                    return;
+
+                if (NodeCurrent == null)
+                    m_Location = value;
+                else if (value.ID == NodeCurrent.ID)
+                    return;
+
+                NodeLast = NodeCurrent; // Swap the Node.
+                m_Location = value;     // Assign the new
+            }
+        }
+
+        public Node NodeLast
+        {
+            get { return m_LocationLast; }
+            set
+            {
+                if (value == null)
+                    return;
+
+                if (NodeLast == null)
+                    m_LocationLast = value;
+                else if (value.ID == NodeLast.ID)
+                    return;
+
+                m_LocationLast = value;     // Updates our Last Node accessed.
+            }
+        }
+
+        public HashSet<MobileTag> Mobiles
+        {
+            get
+            {
+                if (m_Mobiles == null)
+                    m_Mobiles = new HashSet<MobileTag>();
+
+                return m_Mobiles;
+            }
+            set
+            {
+                if (value == null)
+                    return;
+
+                m_Mobiles = value;
+            }
+        }
+        #endregion
+
+        #region Finding
         /// <summary>
-        ///     Updates a mobile with the current provided mobile.
+        ///     Find a mobile based on it's type.
         /// </summary>
-        /// <param name="mobile">Mobile to update.</param>
+        /// <param name="type">Type of a mobile.</param>
+        /// <param name="serial">Serial of the mobile to find.</param>
         /// <returns></returns>
-        public bool UpdateMobile(Mobile mobile)
-        {
-            if (this.Account.ID == mobile.ID && mobile.IsPlayer())
-                this.Account = mobile as Player;    // Updates the Gamestate's account.
+        private MobileTag FindMobile(MobileType type, Serial serial)
+        {   // Iterate our hashset of mobiles.
+            foreach (MobileTag m in Mobiles)
+                if (m.Type == type && m.ID == serial)
+                    return m;   // If the type and serial match, return it. If it is type of 'Any', return it.
 
-            if (updateNodesMobile(this.Location, mobile))
-                return true;
-
-            return updateNodesMobile(this.LocationLast, mobile);
+            return null;    // Nothing was found, return null.
         }
+        #endregion
 
-        /// <summary>
-        ///     Takes a MobileModifier and applies the changes to the currently tracked mobiles.
-        /// </summary>
-        /// <param name="moddedMobile">Modifications to apply the local mobile.</param>
-        public bool UpdateMobile(MobileModifier moddedMobile, out Mobile mobile)
+        #region Mobile Actions
+        public bool UpdateMobile(MobileTag mobile, bool remove = false)
         {
-            mobile = updateNodesMobile(Location, moddedMobile);
-            if (mobile != null)
-                return true;    // Mobile was found and updated, return true.
+            if (mobile == null)
+                return false;
 
-            mobile = updateNodesMobile(LocationLast, moddedMobile);
-            if (mobile != null)
-                return true;    // Mobile was found and updated, return true.
-
-            return false;       // Mobile was never found, returning false and null.
-        }
-
-        /// <summary>
-        ///     Attempts to find the mobile located in the node, and process the changes.
-        /// </summary>
-        /// <param name="node">Node to be searched.</param>
-        /// <param name="mobile">Mobile to be update.</param>
-        /// <returns>Newly updated mobile.</returns>
-        private bool updateNodesMobile(Node node, Mobile mobile)
-        {
-            foreach (Mobile m in node.Mobiles)
-            {   // Iterate each of our locale mobiles seeing if any match by type and serial.
-                if (m.ID == mobile.ID && m.Type == mobile.Type)
-                {   // We found a match, process changes.
-                    if (mobile.IsDead())
-                    {   // Server said the mobile is dead, so we kill it.
-                        m.Kill();            // Kill the mobile.
-                        if (!m.IsPlayer())
-                            this.Kill(m);        // Remove the mobile from the GameState (if it is not a player.)
-                    }
-                    else
-                        node.AddMobile(m);  // Update the mobile in the node.
-
+            if (remove)
+            {
+                if (mobile.IsPlayer && mobile.ID == Account.ID)
+                {
+                    Account.Kill(); // Kill the player, but skip removal.
                     return true;
                 }
+                else
+                    return RemoveMobile(mobile);    // This case will on pass if it is not the player and is flagged for removal.
             }
+            else
+            {
+                return AddMobile(mobile);       // Add the mobile.
+            }
+        }
+
+        /// <summary>
+        ///     Adds either a Player or NPC. Performs and update if the mobile already exists.
+        /// </summary>
+        /// <param name="mobile">Mobile to be added.</param>
+        /// <returns>Succcess (true), or Failure (false)</returns>
+        private bool AddMobile(MobileTag mobile)
+        {
+            if (Mobiles.Count > 0 && Mobiles.Contains(mobile))
+                Mobiles.Remove(mobile);
+
+            return Mobiles.Add(mobile); // Add the Mobile to the Node's tracked Mobiles.
+        }
+
+        /// <summary>
+        ///     Removes the mobile from the correct list (NPCs or Players)
+        /// </summary>
+        /// <param name="mobile">Mobile to remove.</param>
+        /// <returns>Number of elements removed.</returns>
+        private bool RemoveMobile(MobileTag mobile)
+        {
+            if (Mobiles.Count == 0)
+                return true;
+
+            return Mobiles.Remove(mobile);
+        }
+
+        public bool HasMobile(MobileTag mobile)
+        {
+            if (Mobiles.Count == 0)
+                return false;
+
+            return Mobiles.Contains(mobile);
+        }
+
+        public bool HasMobile(MobileType mobileType, UInt64 mobileID)
+        {
+            if (Mobiles.Count == 0)
+                return false;
+
+            foreach (MobileTag m in Mobiles)
+                if (m.Type == mobileType && m.ID == mobileID)
+                    return true;
 
             return false;
         }
 
         /// <summary>
-        ///     Attempts to find the mobile located in the node, and process the changes.
+        ///     Updates a Node with a mobile.
         /// </summary>
-        /// <param name="node">Node to be searched.</param>
-        /// <param name="moddedMobile">Modifications to the mobile to be made.</param>
-        /// <returns>Newly updated mobile.</returns>
-        private Mobile updateNodesMobile(Node node, MobileModifier moddedMobile)
+        /// <param name="toLocation">Node to move the mobile to.</param>
+        /// <param name="mobile">Mobile to update.</param>
+        public bool MoveMobile(Locations toLocation, Mobile mobile)
         {
-            foreach (Mobile m in node.Mobiles)
-            {   // Iterate each of our locale mobiles seeing if any match by type and serial.
-                if (m.ID == moddedMobile.ID && m.Type == moddedMobile.Type)
-                {   // We found a match, process changes.
-                    if (moddedMobile.IsDead)
-                    {   // Server said the mobile is dead, so we kill it.
-                        m.Kill();            // Kill the mobile.
-                        if (!m.IsPlayer())
-                            this.Kill(m);        // Remove the mobile from the GameState (if it is not a player.)
-                    }
-                    else
-                    {
-                        m.TakeDamage(moddedMobile.ModHits * -1);    // The mobile takes the damage provided.
-                        node.AddMobile(m);  // Update the mobile in the node.
-                    }
-
-                    return m;    // Mobile was found and updated. Return it.
-                }
-            }
-
-            return null;   // We never found our mobile.
-        }
-
-        public bool MoveTo(string location)
-        {   // This can take an integer or a name to move too.
-
-            // Try to get our int.
-            int pos;
-            if (!int.TryParse(location, out pos))
-            {
-                // Couldn't parse integer, try to get by name.
-                foreach (Node node in this.Location.Connections)
-                {   
-                    if (node.Name.ToLower().Contains(location.ToLower()))
-                    {
-                        // Found the right place..
-                        SwapLocation(this.Location, node);
-                        return true;
-                    }
-                }
-
-                // Couldn't find location...
-                return false;
-            }
-
-            // Bad location, we don't accept negative numbers or numbers out of range.
-            if (pos <= 0 || pos > this.Location.Connections.Count())
+            if (mobile != Account)
                 return false;
 
-            var nodes = this.Location.Connections.ToList();
-            SwapLocation(this.Location, nodes[pos - 1]);
+            if (!Node.isValidLocation(toLocation))
+                return false;   // It must be a combination of locations.
+            else if (toLocation == mobile.Location)
+                return false;   // Trying to move within the same location.
 
+            Account.Location = toLocation;
             return true;
         }
 
-        /// <summary>
-        ///     Swaps the locations between a new and old location.
-        /// </summary>
-        /// <param name="oldLocation">Location to be the last location.</param>
-        /// <param name="newLocation">Location to be the current location.</param>
-        private void SwapLocation(Node oldLocation, Node newLocation)
+        public void MobileActionHandler(MobileAction ma)
         {
-            this.LocationLast = oldLocation;
-            this.LocationLast.Clean();
+            Console.WriteLine($"\n Server Reponse: {ma.Result}");
 
-            this.Location = newLocation;
-            this.Account.Location = Location.GetLocation();
-            this.moved = true;
+            foreach (MobileModifier mm in ma.GetUpdates())
+            {   // Attempt to update the gamestate with the modifications to the mobile.
+                string attr = string.Empty;
+                if (mm.ModStrength != 0)
+                    attr += $"\n\tStrength: {mm.ModStrength}";
+                if (mm.ModDexterity != 0)
+                    attr += $"\n\tDexterity: {mm.ModDexterity}";
+                if (mm.ModIntelligence != 0)
+                    attr += $"\n\tIntelligence: {mm.ModIntelligence}";
+
+
+                Console.WriteLine($"  => {mm.Name}'s health was changed by {mm.ModHits}. " +
+                    $"\n\tStamina was changed by {mm.ModStamina}." +
+                    $"{attr}" +
+                    $"\n\tDead? {mm.IsDead}");
+
+                if (mm.IsPlayer && (mm.ID == Account.ID))
+                    Account.ApplyModification(mm);
+
+                if (mm.IsDead)
+                    UpdateMobile(FindMobile(mm.Type, mm.ID), remove: true);
+            }
         }
-
-        public bool UpdateMobileLocation(Mobile mobile)
-        {   // Attempt updating our current location, if it fails process all connected locations.
-            if (this.Location.UpdateMobile(mobile))
-                return true;
-
-            for (int i = 0; i < this.Location.Connections.Count; i++)
-                if (this.Location.Connections.ElementAt(i).UpdateMobile(mobile))
-                    return true;
-
-            // Location + Mobile combination was never found, return false.
-            return false;
-        }
-        #endregion
 
         /// <summary>
         ///     Removes a mobile from the current Gamestate.
@@ -278,17 +292,72 @@ namespace SUS.Shared.Objects
         /// <param name="mobile">Mobile to remove.</param>
         public void Kill(Mobile mobile)
         {
-            if (this.Location.RemoveMobile(mobile) == false)    // Attempts to remove from the current location, if it wasn't found/removed...
-                this.LocationLast.RemoveMobile(mobile);         //  it then attempts to remove from the last location.
+            mobile.Kill();
+            UpdateMobile(mobile.getTag(), remove: true);
         }
 
-        public void Ressurrect(Ressurrect rez)
+        public Request Ressurrect(Ressurrect rez)
         {
-            Location = rez.Node;    // Change our current location to this location.
-            LocationLast = null;    // Blank out the last spot.
+            if (rez.Mobile.IsPlayer && rez.Mobile.ID == ID)
+            {   // If we are talking about our account...
+                if (rez.isSuccessful)
+                {   // And the server reported it was successful...
+                    Account.Ressurrect();               // Ressurrect our account.
+                    MoveMobile(rez.Location, Account);  // Move the Account locally.
+                    return new Request(RequestTypes.Node, (int)rez.Location);   // Fetch our new location.
+                }
+            }
 
-            Location.AddMobile(rez.Mobile); // Readd the mobile to the node.
-            Account = rez.Mobile as Player; // Reassign the Gamestate's Account to that which is provided.
+            return null;
         }
+        #endregion
+
+        #region Node / Location Actions
+        /// <summary>
+        ///     Attempts to convert a string (either integer or location name) to a location that has a connection.
+        /// </summary>
+        /// <param name="location"></param>
+        /// <returns></returns>
+        public Locations StringToLocation(string location)
+        {
+            int pos = -1;
+            if (int.TryParse(location, out pos) && pos <= 0)
+                return Locations.None;
+            else if (pos > NodeCurrent.ConnectionsCount)
+                return Locations.None;
+
+            int count = 0;
+            foreach (Locations loc in Enum.GetValues(typeof(Locations)))
+            {
+                if (loc == Locations.None)          // A connection cannot be 'None'
+                    continue;
+                else if ((loc & (loc - 1)) != 0)                // Check if this is not a power of two (indicating it is a combination location)
+                    continue;                                   //  It was a combination.
+                else if (!NodeCurrent.HasConnection(loc))       // Validate if it is not a connection.
+                    continue;                                   //  It is not a connection, return
+
+                ++count;
+                if (pos > 0)
+                {
+                    if (count == pos)   // Attempts to check the integer conversion
+                    {
+                        return loc;     //  if a match is found, return it.
+                    }
+                }
+                else
+                {
+                    if (NodeCurrent.StringToConnection(Enum.GetName(typeof(Locations), loc)) != Locations.None)
+                    {
+                        return loc;
+                    }
+                }
+            }
+
+            return Locations.None;
+        }
+        #endregion
+
+        // Serialize and convert to Byte[] to be sent over a socket.
+        public byte[] ToByte() { return Network.Serialize(this); }
     }
 }

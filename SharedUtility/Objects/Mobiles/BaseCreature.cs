@@ -4,14 +4,13 @@ using SUS.Shared.Utilities;
 namespace SUS.Shared.Objects.Mobiles
 {
     [Serializable]
-    public class BaseCreature : Mobile
+    public abstract class BaseCreature : Mobile
     {
         private int m_HitsMax = -1;
         private int m_StamMax = -1;
         private int m_ManaMax = -1;
         private int m_DamageMin = -1;
         private int m_DamageMax = -1;
-        private TypeOfDamage DamageType = TypeOfDamage.Melee;
 
         #region Constructors
         public BaseCreature() : base(MobileType.NPC) { ID = Serial.NewObject; }

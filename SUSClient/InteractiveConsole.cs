@@ -11,12 +11,10 @@ namespace SUSClient
     class InteractiveConsole
     {
         private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, paperdoll, actions, exit }
-        private enum RequestStatus { none, pending, closed }    // Request status, tells if the client is waiting for information.
 
         private static GameState gs = null;
         public Request clientRequest = null;    // Temporary storage for a request sent by the client.
 
-        private RequestStatus status = RequestStatus.none;          // Determines if the client is in the process of requesting information.
         private ConsoleActions lastAction = ConsoleActions.none;
 
         public InteractiveConsole(GameState gamestate) { gs = gamestate; }
@@ -42,12 +40,12 @@ namespace SUSClient
             Dictionary<string, ConsoleActions> ValidActions = new Dictionary<string, ConsoleActions>();     // Generate our Valid Actions.
 
             // If Player is dead, we should send a ressurrection requestion.
-            if (gs.Account.IsDead())
+            if (gs.Account.IsDead)
             {
                 Utility.ConsoleNotify("Sending ressurrection request.");
 
                 // Request to be sent to the server.
-                this.clientRequest = new Request(RequestTypes.Resurrection, gs.Account);
+                this.clientRequest = new Request(RequestTypes.Resurrection, gs.Account.getTag());
                 return gs;
             }
 
@@ -112,7 +110,7 @@ namespace SUSClient
                         attack();
                         break;
                     case ConsoleActions.paperdoll:
-                        Paperdoll pd = new Paperdoll(gs.GetPlayer());
+                        Paperdoll pd = new Paperdoll(gs.Account);
                         pd.Display();
                         break;
                     case ConsoleActions.exit:
@@ -158,7 +156,6 @@ namespace SUSClient
         /// </summary>
         public void Reset()
         {
-            this.status = RequestStatus.none;
             this.lastAction = ConsoleActions.none;
             this.clientRequest = null;
         }
@@ -169,7 +166,8 @@ namespace SUSClient
         /// <param name="location">New location.</param>
         public void LocationUpdater(Node location)
         {
-            gs.Location = location;
+            gs.NodeCurrent = location;
+            gs.Account.Location = location.Location;
         }
 
         /// <summary>
@@ -178,13 +176,15 @@ namespace SUSClient
         private void move()
         {
             look();
+
+            Locations newLoc = Locations.None;
             do
                 Console.Write("Select location: ");
-            while (!gs.MoveTo(Console.ReadLine()));
+            while ((newLoc = gs.StringToLocation(Console.ReadLine())) == Locations.None);
 
-            Console.WriteLine($" New Location: {gs.Location.Name}");
+            Console.WriteLine($"Selected: {newLoc.ToString()}");
 
-            MobileMove mm = new MobileMove(gs.Location.GetLocation(), gs.Account);
+            MobileMove mm = new MobileMove(newLoc, gs.Account);
             this.clientRequest = new Request(RequestTypes.MobileMove, mm);
         }
 
@@ -194,11 +194,11 @@ namespace SUSClient
         private void look()
         {
             Console.WriteLine($" Nearby Locations:");
-            int pos = 1;
-            foreach (Node n in gs.Location.Connections)
+            int pos = 0;
+            foreach (Locations n in gs.NodeCurrent.ConnectionsToList())
             {
-                Console.WriteLine($"  [Pos: {pos}] {n.Name} :: [{n.ID}] {n.Description}");
-                pos++;
+                ++pos;
+                Console.WriteLine($"  [Pos: {pos}] {Enum.GetName(typeof(Locations), n)}");
             }
             Console.WriteLine();
         }
@@ -209,10 +209,10 @@ namespace SUSClient
         private void lastloc()
         {
             string last = string.Empty;
-            if (gs.LocationLast == null)
+            if (gs.NodeLast == null)
                 last = "None";
             else
-                last = gs.LocationLast.Name;
+                last = gs.NodeLast.Name;
 
             Console.WriteLine($" {last}");
         }
@@ -222,16 +222,16 @@ namespace SUSClient
         ///     This function is called again on the list is returned by the server.
         /// </summary>
         /// <returns>List of Players from the server.</returns>
-        private List<Mobile> getMobiles()
+        private List<MobileTag> getMobiles()
         {
             if (this.clientRequest == null)
             {   // Create a request for the server to respond to.
-                this.clientRequest = new Request(RequestTypes.Node, gs.Location.ID);
+                this.clientRequest = new Request(RequestTypes.LocalMobiles, gs.NodeCurrent.Location);
                 return null;
             }
 
             // Return a list of players the server has provided.
-            return gs.Location.Mobiles.ToList();
+            return gs.Mobiles.ToList();
         }
 
         /// <summary>
@@ -240,16 +240,18 @@ namespace SUSClient
         /// <param name="type"></param>
         private void listMobiles(MobileType type)
         {
-            List<Mobile> mobiles = getMobiles();                // Get a fresh list of mobiles from the server.
+            List<MobileTag> mobiles = getMobiles();    // Get a fresh list of mobiles from the server.
             if (mobiles == null && this.clientRequest != null)
+            {
                 return; // Return early to process a client request.
+            }
 
             Console.WriteLine($" Local {type.ToString()}s:");
 
             int pos = 0;
             if (mobiles.Count > 0)
             {   // Iterate our list of Players.
-                foreach (Mobile m in mobiles)
+                foreach (MobileTag m in mobiles)
                 {
                     if ((type & m.Type) == m.Type)
                     {
@@ -266,7 +268,7 @@ namespace SUSClient
             this.Reset();
         }
 
-        public Mobile SelectMobile(List<Mobile> mobiles)
+        public MobileTag SelectMobile(List<MobileTag> mobiles)
         {
             listMobiles(MobileType.Mobile);    // Retreives our mobiles.
 
@@ -294,14 +296,11 @@ namespace SUSClient
         /// </summary>
         private void attack()
         {
-            List<Mobile> mobiles = getMobiles();
+            List<MobileTag> mobiles = getMobiles();
             if (mobiles == null)
             {   // Get a fresh batch of local NPCs.
-                this.status = RequestStatus.pending;    // We require a response from the server for updated information.
                 return;                                 // Haven't made the request, making it now by returning early.
             }
-
-            this.status = RequestStatus.closed;        // We got our response and now processing it.
 
             if (mobiles.Count == 0)
             {
@@ -309,7 +308,7 @@ namespace SUSClient
                 return;
             }
 
-            Mobile targetMobile = SelectMobile(mobiles);
+            MobileTag targetMobile = SelectMobile(mobiles);
 
             Console.WriteLine(" Performing an attack on {0}.", targetMobile.Name);
 

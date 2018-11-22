@@ -4,9 +4,9 @@ using SUS.Shared.Objects.Mobiles;
 namespace SUS.Shared.Objects.Nodes
 {
     [Serializable]
-    public class Sewers : Spawnable
+    public class Wilderness : Spawnable
     {
-        public Sewers() : base(Types.Dungeon | Types.PvP, Locations.Sewers, "EW! Sticky!")
+        public Wilderness() : base(Types.OpenWorld | Types.PvP, Locations.Wilderness, "A vast open world.")
         {
             MaxSpawns = 6;
             NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul | Spawnables.Wraith;

@@ -36,6 +36,7 @@ namespace SUSClient
                     DEBUG = true;
                 }
 
+            Console.WriteLine($"Verison: {GameState.Version}");
 
             AsynchronousClient.StartClient();   // Starts the Client.
             Console.Read();
@@ -99,20 +100,25 @@ namespace SUSClient
                     case RequestTypes.GameState:
                         ia = new InteractiveConsole(req.Value as GameState);
                         break;
+                    case RequestTypes.LocalMobiles:
+                        gamestate.Mobiles = req.Value as HashSet<MobileTag>;
+                        break;
                     case RequestTypes.Mobile:
-                        gamestate.UpdateMobile(req.Value as Mobile);
+                        Mobile m = req.Value as Mobile;
+                        Console.WriteLine($"Server sent: {m.Name}");
                         ia.Reset();
                         break;
                     case RequestTypes.MobileAction:
-                        MobileActionHandler(ref gamestate, req.Value as MobileAction);
+                        gamestate.MobileActionHandler(req.Value as MobileAction);
                         ia.Reset();
                         break;
                     case RequestTypes.Node:
                         ia.LocationUpdater(req.Value as Node);
+                        ia.Reset();
                         break;
                     case RequestTypes.Resurrection:
-                        gamestate.Ressurrect(req.Value as Ressurrect);
-                        ia.Reset();
+                        creq = gamestate.Ressurrect(req.Value as Ressurrect);   // If we require a new current node,
+                        ia.Reset();                                             //  the request will be made and sent early.
                         break;
                     case RequestTypes.SocketKill:
                         socketHandler.Kill();
@@ -139,37 +145,6 @@ namespace SUSClient
                         if (creq.Type == RequestTypes.SocketKill)
                             Environment.Exit(0); // Kill the application after informing the server.
                     }
-
-                }
-            }
-        }
-
-        private static void MobileActionHandler(ref GameState gs, MobileAction ma)
-        {
-            Console.WriteLine($"\n Server Reponse: {ma.Result}");
-
-            foreach (MobileModifier mm in ma.GetUpdates())
-            {   // Attempt to update the gamestate with the modifications to the mobile.
-                Mobile mobile;
-                if (gs.UpdateMobile(mm, out mobile) && mobile != null)
-                {
-                    if (mobile.Type == MobileType.Player)
-                        gs.Refresh(mobile);   // Update our gamestate with the new player information.
-
-                    string attr = string.Empty;
-                    if (mm.ModStrength != 0)
-                        attr += $"\n\tStrength: {mm.ModStrength}";
-                    if (mm.ModDexterity != 0)
-                        attr += $"\n\tDexterity: {mm.ModDexterity}";
-                    if (mm.ModIntelligence != 0)
-                        attr += $"\n\tIntelligence: {mm.ModIntelligence}";
-
-
-                    Console.WriteLine($"  => {mobile.Name}'s health was changed by {mm.ModHits}. " +
-                        $"\n\tStamina was changed by {mm.ModStamina}." +
-                        $"{attr}" +
-                        $"\n\tHealth: {mobile.GetHealth()}." +
-                        $"\n\tDead? {mm.IsDead}");
                 }
             }
         }

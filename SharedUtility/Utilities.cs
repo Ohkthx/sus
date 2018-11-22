@@ -8,7 +8,22 @@ using SUS.Shared.Objects.Mobiles;
 
 namespace SUS.Shared.Utilities
 {
-    public enum RequestTypes { OK, Error, Authenticate, GameState, Mobile, MobileAction, MobileMove, Node, Player, Resurrection, SocketKill }
+    [Serializable]
+    public enum RequestTypes
+    {
+        OK,
+        Error,
+        Authenticate,
+        GameState,
+        Mobile,
+        LocalMobiles,
+        MobileAction,
+        MobileMove,
+        Node,
+        Player,
+        Resurrection,
+        SocketKill
+    }
 
     /// <summary>
     ///     Holds various functions to perform actions.

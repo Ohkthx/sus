@@ -89,13 +89,83 @@ namespace SUS.Shared.Objects.Mobiles
         }
         #endregion
 
+        public bool IsPlayer { get { return Type == MobileType.Player; } }
+
         public void HitsModified(int change) { this.ModHits += change; }
         public void StaminaModified(int change) { this.ModStamina += change; }
         public void DeathModified(bool dead) { this.IsDead = dead; }
 
-        public bool IsPlayer() { return Type == MobileType.Player; }
-
         public byte[] ToByte() { return Network.Serialize(this); }
+    }
+
+    [Serializable]
+    public class MobileTag
+    {
+        private Serial m_ID;
+        private string m_Name;
+        private MobileType m_Type;
+
+        #region Constructors
+        public MobileTag(Mobile mobile) : this(mobile.ID, mobile.Type, mobile.Name) { }
+
+        public MobileTag(MobileModifier mobile) : this(mobile.ID, mobile.Type, mobile.Name) { }
+
+        public MobileTag(UInt64 id, MobileType type, string name)
+        {
+            ID = new Serial(id);
+            Type = type;
+            Name = name;
+        }
+        #endregion
+
+        #region Getters/Setters
+        public Serial ID
+        {
+            get { return m_ID; }
+            set
+            {
+                if (value == null)
+                    return;
+                else if (ID == null)
+                    m_ID = value;
+
+                if (ID != value)
+                    m_ID = value;
+            }
+        }
+
+        public MobileType Type
+        {
+            get { return m_Type; }
+            set
+            {
+                if (value == MobileType.None)
+                    return;
+                else if (Type == MobileType.None)
+                    m_Type = value;
+
+                if (Type != value)
+                    m_Type = value;
+            }
+        }
+
+        public string Name
+        {
+            get { return m_Name; }
+            set
+            {
+                if (value == null)
+                    return;
+                else if (Name == null)
+                    m_Name = value;
+
+                if (Name != value)
+                    m_Name = value;
+            }
+        }
+
+        public bool IsPlayer { get { return Type == MobileType.Player; } }
+        #endregion
     }
 
     [Serializable]
@@ -242,14 +312,13 @@ namespace SUS.Shared.Objects.Mobiles
             }
         }
 
-        public MobileType Type
-        { get { return m_Type; } }
+        public MobileType Type { get { return m_Type; } }
+
+        public bool IsPlayer { get { return m_Type == MobileType.Player; } }
+
+        public bool IsDead { get { return Hits <= 0; } }
 
         public string GetHealth() { return $"{Hits} / {HitsMax}"; }
-
-        public bool IsPlayer() { return m_Type == MobileType.Player; }
-
-        public bool IsDead() { return Hits <= 0; }
         #endregion
 
         #region Stats
@@ -448,18 +517,18 @@ namespace SUS.Shared.Objects.Mobiles
             if (this == opponent)
             {   // Is the initiator attacking theirself? Do the damage and return.
                 mm_init.HitsModified(this.TakeDamage(initAtk) * -1);
-                mm_init.DeathModified(this.IsDead());
+                mm_init.DeathModified(this.IsDead);
                 return;
             }
 
             mm_opp.HitsModified(opponent.TakeDamage(initAtk) * -1);     // Update the MobileModifier. -1 to indicate a loss of health.
-            mm_opp.DeathModified(opponent.IsDead());                    // Make sure the client knows the target is dead.
+            mm_opp.DeathModified(opponent.IsDead);                    // Make sure the client knows the target is dead.
 
-            if (!opponent.IsDead())
+            if (!opponent.IsDead)
             {
                 int oppAtk = opponent.Attack();
                 mm_init.HitsModified(this.TakeDamage(oppAtk) * -1);     // Update the MobileModifier.
-                mm_init.DeathModified(this.IsDead());
+                mm_init.DeathModified(this.IsDead);
             }
         }
 
@@ -485,9 +554,29 @@ namespace SUS.Shared.Objects.Mobiles
         public abstract int Attack();
         #endregion
 
+        public void ApplyModification(MobileModifier mod)
+        {
+            if (mod.ID != ID || mod.Type != Type)
+                return;
+
+            Str += mod.ModStrength;
+            Int += mod.ModIntelligence;
+            Dex += mod.ModDexterity;
+
+            if (mod.IsDead)
+                Kill();
+            else
+            {
+                Hits += mod.ModHits;
+                Stam += mod.ModStamina;
+            }
+        }
+
         public abstract void Kill();
 
         public abstract void Ressurrect();
+
+        public MobileTag getTag() { return new MobileTag(this); }
 
         // Prepares the class to be sent over the network.
         public byte[] ToByte() { return Network.Serialize(this); }

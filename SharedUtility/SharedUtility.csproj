@@ -72,6 +72,9 @@
     <Compile Include="Objects\Mobiles\Spawns\Orc.cs" />
     <Compile Include="Objects\Mobiles\Spawns\Skeleton.cs" />
     <Compile Include="Objects\Nodes\Node.cs" />
+    <Compile Include="Objects\Nodes\Britain.cs" />
+    <Compile Include="Objects\Nodes\Graveyard.cs" />
+    <Compile Include="Objects\Nodes\Wilderness.cs" />
     <Compile Include="Objects\Nodes\Sewer.cs" />
     <Compile Include="Objects\Nodes\Spawnable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
