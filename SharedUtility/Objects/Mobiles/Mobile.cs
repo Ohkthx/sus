@@ -101,17 +101,17 @@ namespace SUS.Shared.Objects.Mobiles
     [Serializable]
     public class MobileTag
     {
+        private Guid m_Guid;
         private Serial m_ID;
         private string m_Name;
         private MobileType m_Type;
 
         #region Constructors
-        public MobileTag(Mobile mobile) : this(mobile.ID, mobile.Type, mobile.Name) { }
+        public MobileTag(Mobile mobile) : this(mobile.Guid, mobile.ID, mobile.Type, mobile.Name) { }
 
-        public MobileTag(MobileModifier mobile) : this(mobile.ID, mobile.Type, mobile.Name) { }
-
-        public MobileTag(UInt64 id, MobileType type, string name)
+        public MobileTag(Guid guid, UInt64 id, MobileType type, string name)
         {
+            Guid = guid;
             ID = new Serial(id);
             Type = type;
             Name = name;
@@ -119,6 +119,21 @@ namespace SUS.Shared.Objects.Mobiles
         #endregion
 
         #region Getters/Setters
+        public Guid Guid
+        {
+            get { return m_Guid; }
+            private set
+            {
+                if (value == null)
+                    return;
+                else if (Guid == null)
+                    m_Guid = value;
+
+                if (Guid != value)
+                    m_Guid = value;
+            }
+        }
+
         public Serial ID
         {
             get { return m_ID; }
@@ -166,14 +181,63 @@ namespace SUS.Shared.Objects.Mobiles
 
         public bool IsPlayer { get { return Type == MobileType.Player; } }
         #endregion
+
+        #region Overrides
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 13;
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_ID) ? m_ID.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Name) ? m_Name.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Type) ? m_Type.GetHashCode() : 0);
+                return hash;
+            }
+        }
+
+        public static bool operator ==(MobileTag m1, MobileTag m2)
+        {
+            if (Object.ReferenceEquals(m1, m2)) return true;
+            if (Object.ReferenceEquals(null, m1)) return false;
+            return (m1.Equals(m2));
+        }
+
+        public static bool operator !=(MobileTag m1, MobileTag m2)
+        {
+            return !(m1 == m2);
+        }
+
+        public override bool Equals(object value)
+        {
+            if (Object.ReferenceEquals(null, value)) return false;
+            if (Object.ReferenceEquals(this, value)) return true;
+            if (value.GetType() != this.GetType()) return false;
+            return IsEqual((MobileTag)value);
+        }
+
+        public bool Equals(MobileTag mobile)
+        {
+            if (Object.ReferenceEquals(null, mobile)) return false;
+            if (Object.ReferenceEquals(this, mobile)) return true;
+            return IsEqual(mobile);
+        }
+
+        private bool IsEqual(MobileTag value)
+        {
+            return (value != null)
+                && (m_Type == value.m_Type)
+                && (m_ID == value.m_ID);
+        }
+        #endregion
     }
 
     [Serializable]
     public abstract class Mobile
     {
-        private Serial m_ID { get; set; }               // ID of the mobile.
-        private string m_Name { get; set; }             // Name of the mobile.
-        private MobileType m_Type { get; set; }         // Type of Mobile: NPC or Player.
+        private Guid m_Guid;
+        private Serial m_ID;                // ID of the mobile.
+        private string m_Name;              // Name of the mobile.
+        private MobileType m_Type;          // Type of Mobile: NPC or Player.
         private Locations m_Location = Locations.None;    // Location of the mobile.
 
         private int m_StatCap;
@@ -187,11 +251,13 @@ namespace SUS.Shared.Objects.Mobiles
         #region Contructors
         public Mobile(MobileType type)
         {
-            this.m_Type = type;
+            Type = type;
 
-            this.m_Skills = new Dictionary<int, Skill>();
+            m_Skills = new Dictionary<int, Skill>();
             foreach (int skill in Enum.GetValues(typeof(Skill.Types)))
                 m_Skills.Add(skill, new Skill(Enum.GetName(typeof(Skill.Types), skill), skill));
+
+
         }
         #endregion
 
@@ -276,6 +342,17 @@ namespace SUS.Shared.Objects.Mobiles
         #endregion
 
         #region Getters / Setters
+        public Guid Guid
+        {
+            get
+            {
+                if (m_Guid == null || m_Guid == Guid.Empty)
+                    m_Guid = Guid.NewGuid();
+
+                return m_Guid;
+            }
+        }
+
         public Serial ID
         {
             get { return m_ID; }
@@ -312,7 +389,15 @@ namespace SUS.Shared.Objects.Mobiles
             }
         }
 
-        public MobileType Type { get { return m_Type; } }
+        public MobileType Type
+        {
+            get { return m_Type; }
+            private set
+            {
+                if (value != MobileType.None && value != Type)
+                    m_Type = value;
+            }
+        }
 
         public bool IsPlayer { get { return m_Type == MobileType.Player; } }
 

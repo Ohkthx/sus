@@ -14,11 +14,6 @@ namespace SUS
     [Serializable]
     public static class GameObject
     {
-        #region Locks
-        private static readonly object padlock = new object();
-        private static Mutex mobilesMutex = new Mutex();
-        #endregion
-
         #region Dictionaries, Hashsets, and Lists.
         // Player ID => GameState
         private static ConcurrentDictionary<ulong, GameState> m_Gamestates = new ConcurrentDictionary<ulong, GameState>();
@@ -27,7 +22,7 @@ namespace SUS
         private static ConcurrentDictionary<Locations, Node> m_Nodes = new ConcurrentDictionary<Locations, Node>();
 
         // Contains all currently acitve/alive mobiles.
-        private static HashSet<Mobile> m_Mobiles = new HashSet<Mobile>();
+        private static ConcurrentDictionary<Guid, Mobile> m_Mobiles = new ConcurrentDictionary<Guid, Mobile>();
 
         // Player ID => Client Socket
         private static ConcurrentDictionary<ulong, SocketHandler> m_Clients = new ConcurrentDictionary<ulong, SocketHandler>();
@@ -118,7 +113,7 @@ namespace SUS
         /// <param name="forceMove">Overrides requirements if an admin is performing the action.</param>
         public static bool MoveMobile(Locations toLocation, MobileTag mobile, bool forceMove = false, bool ressurrection = false)
         {
-            Mobile m = FindMobile(mobile.Type, mobile.ID);
+            Mobile m = FindMobile(mobile.Guid);
             if (m == null)
             {   // Our mobile does not appear to exist.
                 Console.WriteLine($" [ ERR ] Mobile missing: '{mobile.ID}::{mobile.Name}::Player:{mobile.IsPlayer}");
@@ -146,24 +141,17 @@ namespace SUS
         /// <param name="mobile">Mobile to be modified.</param>
         /// <param name="remove">Determines if the mobile should be removed or not.</param>
         public static bool UpdateMobiles(Mobile mobile, bool remove = false)
-        {   // Check if the mobile is already in our GameObject's hashset.
-            bool success = false;
+        {   // If the key does not exist and we are not removing, try and add and return.
+            if (!m_Mobiles.ContainsKey(mobile.Guid) && !remove)
+                return m_Mobiles.TryAdd(mobile.Guid, mobile);
 
-            if (!m_Mobiles.Contains(mobile))
-            {   // Mobile is not in the hashset.
-                mobilesMutex.WaitOne();         // Lock the mutex.
-                success = m_Mobiles.Add(mobile);          // Add the mobile to the hashset.
-                mobilesMutex.ReleaseMutex();    // Release the mutex so the hashset can be modified.
-                return success;                         // Return early.
-            }
+            // Attempt to remove the key, returning and ignoring the 'out' requirement.
+            if (remove)
+                return m_Mobiles.TryRemove(mobile.Guid, out _);
 
-            mobilesMutex.WaitOne();                 // Lock the mutex.
-            success = m_Mobiles.Remove(mobile);     // Remove the mobile.
-            if (!remove)
-                success = m_Mobiles.Add(mobile);    // If we are not strictly removing... readd it.
-            mobilesMutex.ReleaseMutex();            // Allow for modification again.
-
-            return success;
+            // Lastly, if the key existed and we are not removing... simply update it.
+            m_Mobiles[mobile.Guid] = mobile;
+            return true;
         }
 
         /// <summary>
@@ -195,6 +183,19 @@ namespace SUS
         #endregion
 
         #region Finding
+        public static Mobile FindMobile(Mobile mobile) { return FindMobile(mobile.Guid); }
+        public static Mobile FindMobile(Guid guid)
+        {
+            if (m_Mobiles.ContainsKey(guid))
+            {
+                Mobile m = null;
+                if (m_Mobiles.TryGetValue(guid, out m))
+                    return m;
+            }
+
+            return null;
+        }
+
         /// <summary>
         ///     Find a mobile based on it's type.
         /// </summary>
@@ -203,9 +204,9 @@ namespace SUS
         /// <returns></returns>
         public static Mobile FindMobile(MobileType type, Serial serial)
         {   // Iterate our hashset of mobiles.
-            foreach (Mobile m in m_Mobiles)
-                if (((m.Type == type) && (m.ID == serial)) || type == MobileType.Mobile)
-                        return m;   // If the type and serial match, return it. If it is type of 'Any', return it.
+            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+                if (((m.Value.Type == type) && (m.Value.ID == serial)) || type == MobileType.Mobile)
+                        return m.Value;   // If the type and serial match, return it. If it is type of 'Any', return it.
 
             return null;    // Nothing was found, return null.
         }
@@ -219,9 +220,13 @@ namespace SUS
         public static HashSet<MobileTag> FindMobiles(Locations loc, MobileType type)
         {
             HashSet<MobileTag> tags = new HashSet<MobileTag>();
-            foreach (Mobile m in m_Mobiles)
-                if (((m.Type == type) && (m.Location == loc)) || (type == MobileType.Mobile && m.Location == loc))
-                    tags.Add(m.getTag());
+            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+            {
+                if (((m.Value.Type == type) && (m.Value.Location == loc)) || (type == MobileType.Mobile && m.Value.Location == loc))
+                {
+                    tags.Add(m.Value.getTag());
+                }
+            }
 
             if (tags.Count > 0)
                 return tags;

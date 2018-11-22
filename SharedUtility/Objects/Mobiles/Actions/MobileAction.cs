@@ -28,51 +28,62 @@ namespace SUS.Shared.Objects
         public ActionType Type = ActionType.None;           // Action being performed.
         public AbilityType Abiltiy = AbilityType.None;      // Ability being used.
         private UInt64 Initator;                            // ID of Player
-        private List<Tuple<MobileType, UInt64>> Affected;   // List of Targets
-        private List<MobileModifier> Updates = new List<MobileModifier>();
+        private List<MobileTag> Affected;                   // List of Targets
+        private List<MobileModifier> Updates;
         public string Result = string.Empty;
 
         public MobileAction(UInt64 initator)
         {
-            this.Initator = initator;
-            this.Affected = new List<Tuple<MobileType, UInt64>>();   // Initialize our Affected.
+            Initator = initator;
         }
 
         public Serial GetInitator()
         {
-            return new Serial(this.Initator);
+            return new Serial(Initator);
         }
 
-        public void AddTarget(MobileType type, UInt64 targetId)
+        public void AddTarget(MobileTag tag)
         {
-            foreach (Tuple<MobileType, UInt64> t in this.Affected)
-                if (t.Item1 == type && t.Item2 == targetId)
-                    return;
-
-            this.Affected.Add(new Tuple<MobileType, UInt64>(type, targetId));
+            if (Affected == null)
+            {   // List is unassigned, create and add.
+                Affected = new List<MobileTag>();
+                Affected.Add(tag);
+                return;
+            }
+            else if (!Affected.Contains(tag))
+            {   // Tag is not already in the list, add.
+                Affected.Add(tag);
+            }
         }
 
         public void AddUpdate(MobileModifier mobile)
         {
-            int loc = this.Updates.IndexOf(mobile);
+            if (Updates == null)
+            {   // List does not exist. Create it, add, and return.
+                Updates = new List<MobileModifier>();
+                Updates.Add(mobile);
+                return;
+            }
+
+            int loc = Updates.IndexOf(mobile);
             if (loc >= 0)
             {   // Mobile exists in the list, replace it with the new version.
-                this.Updates[loc] = mobile;
+                Updates[loc] = mobile;
                 return;
             }
 
             // Loc was -1 indicating it does not exist, add it.
-            this.Updates.Add(mobile);
+            Updates.Add(mobile);
         }
 
-        public List<Tuple<MobileType, UInt64>> GetTargets()
+        public List<MobileTag> GetTargets()
         {
-            return this.Affected;
+            return Affected;
         }
 
         public List<MobileModifier> GetUpdates()
         {
-            return this.Updates;
+            return Updates;
         }
 
         public void CleanClientInfo()

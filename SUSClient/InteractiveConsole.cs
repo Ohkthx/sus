@@ -315,7 +315,7 @@ namespace SUSClient
             // Our newly created action to perform.
             MobileAction attackAction = new MobileAction(gs.Account.ID);
             attackAction.Type = ActionType.Attack;
-            attackAction.AddTarget(targetMobile.Type, targetMobile.ID);
+            attackAction.AddTarget(targetMobile);
 
             // Request to be sent to the server.
             this.clientRequest = new Request(RequestTypes.MobileAction, attackAction);

@@ -281,8 +281,11 @@ namespace SUS.Shared.Objects
                 if (mm.IsPlayer && (mm.ID == Account.ID))
                     Account.ApplyModification(mm);
 
-                if (mm.IsDead)
+                if (mm.IsDead && !(mm.IsPlayer && mm.ID == Account.ID))
+                {
+                    Account.AddKill();
                     UpdateMobile(FindMobile(mm.Type, mm.ID), remove: true);
+                }
             }
         }
 

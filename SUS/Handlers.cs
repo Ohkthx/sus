@@ -116,7 +116,7 @@ namespace SUS.Server
             if (mobile == null)
                 return new Request(RequestTypes.Error, "Server: Bad mobile requested.");
 
-            Mobile reqMobile = GameObject.FindMobile(mobile.Type, mobile.ID);
+            Mobile reqMobile = GameObject.FindMobile(mobile.Guid);
             if (reqMobile == null)
                 return new Request(RequestTypes.Error, "Server: There is no such mobile anymore.");
 
@@ -158,19 +158,16 @@ namespace SUS.Server
             MobileModifier mm_initiator = new MobileModifier(initiator);
 
             List<Mobile> mobiles = new List<Mobile>();                              // This will hold all good mobiles.
-            List<Tuple<MobileType, UInt64>> targets = mobileAction.GetTargets();    // List containing <Type, Serial>
+            List<MobileTag> targets = mobileAction.GetTargets();    // List containing <Type, Serial>
             if (targets.Count == 0)
                 return new Request(RequestTypes.Error, "Server: No targets provided for attacking.");
 
             // Iterate each of the affected, adding it to our list of Mobiles.
-            foreach (Tuple<MobileType, UInt64> t in targets)
+            foreach (MobileTag mt in targets)
             {
                 // Lookup the affected mobile.
                 Mobile affectee = null;
-                if (t.Item1 == MobileType.NPC)
-                    affectee = GameObject.FindNPC(t.Item2) as Mobile;
-                else if (t.Item1 == MobileType.Player)
-                    affectee = GameObject.FindPlayer(t.Item2) as Mobile;
+                    affectee = GameObject.FindMobile(mt.Guid);
 
                 if (affectee == null)
                     return new Request(RequestTypes.Error, "Server: That target has moved or died recently.");
@@ -193,23 +190,31 @@ namespace SUS.Server
                     break;
 
                 Mobile target = m;
-
                 MobileModifier mm_affectee = new MobileModifier(target);
 
                 // Combat the two objects.
                 initiator.Combat(ref mm_initiator, ref target, ref mm_affectee);
 
-                // Update our initiator.
-                if (initiator.IsDead)
-                    GameObject.Kill(initiator);
-                else
-                    GameObject.UpdateMobiles(initiator);
-
                 // Update the affectee.
                 if (target.IsDead)
-                    GameObject.Kill(m);
+                {
+                    initiator.AddKill();
+                    GameObject.Kill(target);
+                }
                 else
+                {
                     GameObject.UpdateMobiles(target);
+                }
+
+                // Update our initiator.
+                if (initiator.IsDead)
+                {
+                    GameObject.Kill(initiator);
+                }
+                else
+                {
+                    GameObject.UpdateMobiles(initiator);
+                }
 
                 // Update to pass to the client regarding the affectee.
                 mobileAction.AddUpdate(mm_affectee);

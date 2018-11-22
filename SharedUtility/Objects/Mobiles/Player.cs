@@ -140,9 +140,11 @@ namespace SUS.Shared.Objects.Mobiles
 
         public void AddKill() { m_Kills++; }
 
-        public void AddDeath() { m_Deaths++; }
-
-        public override void Kill() { Hits = 0; }
+        public override void Kill()
+        {
+            m_Deaths++;
+            Hits = 0;
+        }
 
         public override void Ressurrect()
         {
