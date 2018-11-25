@@ -7,15 +7,15 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Orc() : base()
         {
-            Name = "an Orc";
+            Name = "an orc";
 
-            this.SetStr(96, 120);
-            this.SetDex(81, 105);
-            this.SetInt(36, 60);
+            SetStr(96, 120);
+            SetDex(81, 105);
+            SetInt(36, 60);
 
-            this.SetHits(58, 72);
+            SetHits(58, 72);
 
-            this.SetDamage(5, 7);
+            SetDamage(5, 7);
         }
     }
 }

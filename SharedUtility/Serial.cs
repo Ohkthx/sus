@@ -24,7 +24,7 @@ namespace SUS.Shared.Utilities
         {
             get
             {
-                while (GameObject.FindMobile(MobileType.Mobile, m_LastMobile = (m_LastMobile + 1)) != null)
+                while (GameObject.FindMobile(MobileType.NPC, m_LastMobile = (m_LastMobile + 1)) != null)
                 { }
 
                 return m_LastMobile;

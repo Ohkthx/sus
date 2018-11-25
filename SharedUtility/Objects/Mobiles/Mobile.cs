@@ -257,7 +257,6 @@ namespace SUS.Shared.Objects.Mobiles
             foreach (int skill in Enum.GetValues(typeof(Skill.Types)))
                 m_Skills.Add(skill, new Skill(Enum.GetName(typeof(Skill.Types), skill), skill));
 
-
         }
         #endregion
 

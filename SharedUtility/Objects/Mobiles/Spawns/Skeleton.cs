@@ -7,16 +7,15 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Skeleton() : base()
         {
-            Name = "a Skeleton";
+            Name = "a skeleton";
 
-            this.SetStr(56, 80);
-            this.SetDex(56, 75);
-            this.SetInt(16, 40);
+            SetStr(56, 80);
+            SetDex(56, 75);
+            SetInt(16, 40);
 
-            this.SetHits(34, 48);
+            SetHits(34, 48);
 
-            this.SetDamage(3, 7);
-
+            SetDamage(3, 7);
         }
     }
 }

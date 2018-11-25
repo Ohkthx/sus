@@ -9,7 +9,7 @@ namespace SUS.Shared.Objects.Nodes
         public Sewers() : base(Types.Dungeon | Types.PvP, Locations.Sewers, "EW! Sticky!")
         {
             MaxSpawns = 6;
-            NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul | Spawnables.Wraith;
+            NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul;
         }
     }
 }

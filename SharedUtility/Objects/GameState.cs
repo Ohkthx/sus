@@ -325,9 +325,9 @@ namespace SUS.Shared.Objects
         {
             int pos = -1;
             if (int.TryParse(location, out pos) && pos <= 0)
-                return Locations.None;
+                return Locations.None;                      // User attempted a negative number.
             else if (pos > NodeCurrent.ConnectionsCount)
-                return Locations.None;
+                return Locations.None;                      // User attempted a number out of range.
 
             int count = 0;
             foreach (Locations loc in Enum.GetValues(typeof(Locations)))
@@ -349,7 +349,7 @@ namespace SUS.Shared.Objects
                 }
                 else
                 {
-                    if (NodeCurrent.StringToConnection(Enum.GetName(typeof(Locations), loc)) != Locations.None)
+                    if (NodeCurrent.StringToConnection(location) == loc)
                     {
                         return loc;
                     }

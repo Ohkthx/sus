@@ -9,7 +9,7 @@ namespace SUS.Shared.Objects.Nodes
         public Wilderness() : base(Types.OpenWorld | Types.PvP, Locations.Wilderness, "A vast open world.")
         {
             MaxSpawns = 6;
-            NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul | Spawnables.Wraith;
+            NPCs = Spawnables.Graveyard | Spawnables.Orc | Spawnables.Titan | Spawnables.Cyclops;
         }
     }
 }

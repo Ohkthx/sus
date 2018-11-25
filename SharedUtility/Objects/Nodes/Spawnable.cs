@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using SUS.Shared.Objects.Mobiles;
 using SUS.Shared.Objects.Mobiles.Spawns;
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects
 {
@@ -44,6 +45,8 @@ namespace SUS.Shared.Objects
         Unused22    = 0x10000000,
         Unused23    = 0x20000000,
         Unused24    = 0x40000000,
+
+        Graveyard = Skeleton | Zombie | Ghoul | Wraith,
     };
 
     [Serializable]
@@ -53,5 +56,75 @@ namespace SUS.Shared.Objects
         public Spawnables NPCs = Spawnables.None;
 
         public Spawnable(Types type, Locations loc, string desc) : base(type, loc, desc) { isSpawnable = true; }
+
+        /// <summary>
+        ///     Gets a new Spawn based on the node's ideal spawn-types.
+        /// </summary>
+        /// <returns>Returns either a creature or null.</returns>
+        public BaseCreature GetSpawn()
+        {
+            return rngSpawn(NPCs);
+        }
+
+        protected BaseCreature rngSpawn(Spawnables spawnType)
+        {
+            List<Spawnables> spawns = spawnablesToList(spawnType);
+            if (spawns == null)
+                return null;
+
+            if (spawns.Count == 1)
+            {
+                return spawnOffType(spawns[0]);
+            }
+
+            int pos = Utility.RandomMinMax(0, spawns.Count - 1);
+            return spawnOffType(spawns[pos]);
+        }
+
+        protected List<Spawnables> spawnablesToList(Spawnables spawns)
+        {
+            List<Spawnables> creatures = new List<Spawnables>();
+
+            // While our spawnables passed are not "None", continue to try and build a list of potential creatures.
+            while (spawns != Spawnables.None)
+            {
+                foreach (Spawnables s in Enum.GetValues(typeof(Spawnables)))
+                {
+                    if ((spawns & s) == s && s != Spawnables.None)
+                    {   // Found a match.
+                        creatures.Add(s);    // Spawn based on its type.
+                        spawns &= ~s;                   // Remove our value from spawns.
+                    }
+                }
+            }
+
+            if (creatures.Count == 0)
+                return null;
+
+            return creatures;
+        }
+
+        protected BaseCreature spawnOffType(Spawnables spawn)
+        {
+            switch (spawn)
+            {
+                case Spawnables.Skeleton:
+                    return new Skeleton();
+                case Spawnables.Zombie:
+                    return new Zombie();
+                case Spawnables.Ghoul:
+                    return new Ghoul();
+                case Spawnables.Wraith:
+                    return new Wraith();
+                case Spawnables.Orc:
+                    return new Orc();
+                case Spawnables.Cyclops:
+                    return new Cyclops();
+                case Spawnables.Titan:
+                    return new Titan();
+                default:
+                    return null;
+            }
+        }
     }
 }

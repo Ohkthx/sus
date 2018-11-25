@@ -213,11 +213,14 @@ namespace SUS.Shared.Objects
                     continue;                       //  It was a combination.
                 else if (!HasConnection(loc))       // Validate if it is not a connection.
                     continue;                       //  It is not a connection, return.
-                else if (location.ToLower() == Enum.GetName(typeof(Locations), loc).ToLower())
+
+                if (location.ToLower() == Enum.GetName(typeof(Locations), loc).ToLower())
+                {
                     return loc;
+                }
             }
 
-            // Never found throughn string parsing.
+            // Location never found through string parsing.
             return Locations.None;
         }
 

@@ -2,10 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
+using System.Timers;
 using SUS.Shared.Objects;
 using SUS.Shared.Objects.Mobiles;
-using SUS.Shared.Objects.Mobiles.Spawns;
 using SUS.Shared.Objects.Nodes;
 using SUS.Shared.Utilities;
 
@@ -14,7 +13,10 @@ namespace SUS
     [Serializable]
     public static class GameObject
     {
-        #region Dictionaries, Hashsets, and Lists.
+        #region Dictionaries and Variables.
+        // Timer that calls the world spawner to repopulate the world.
+        private static Timer m_SpawnTimer;
+
         // Player ID => GameState
         private static ConcurrentDictionary<ulong, GameState> m_Gamestates = new ConcurrentDictionary<ulong, GameState>();
 
@@ -34,6 +36,22 @@ namespace SUS
             get { return GetStartingZone().Location; }
         }
         #endregion
+
+        /// <summary>
+        ///     Starts our serials and creates our map. To be called first to initiate things.
+        /// </summary>
+        public static void Initiate()
+        {
+            // Start our serials.
+            Serial s = new Serial(0);
+
+            // Create our map if there are no nodes yet.
+            if (m_Nodes.Count() == 0)
+                CreateMap();
+
+            // Start our timer for spawning creatures.
+            SpawnTimerStart(15000);
+        }
 
         #region Map Data
         /// <summary>
@@ -63,16 +81,8 @@ namespace SUS
             UpdateNodes(Wilderness);
             UpdateNodes(Graveyard);
 
-            // Spawn a test Orc in Britain.
-            Orc orc = new Orc();
-            Cyclops cyclops = new Cyclops();
-            Skeleton skeleton = new Skeleton();
-            if (Spawn(orc, Locations.Britain))
-                Utility.ConsoleNotify($"Spawned {orc.Name} in {Locations.Britain.ToString()}.");
-            if (Spawn(cyclops, Locations.Britain))
-                Utility.ConsoleNotify($"Spawned {cyclops.Name} in {Locations.Britain.ToString()}.");
-            if (Spawn(skeleton, Locations.Graveyard))
-                Utility.ConsoleNotify($"Spawned {skeleton.Name} in {Locations.Graveyard.ToString()}.");
+            // Start our timer for spawning creatures.
+            SpawnTimerStart(15000);
         }
 
         /// <summary>
@@ -281,17 +291,84 @@ namespace SUS
         }
         #endregion
 
+        #region Spawns / Spawnning
         /// <summary>
-        ///     Starts our serials and creates our map. To be called first to initiate things.
+        ///     Starts our spawner with the specified timing..
         /// </summary>
-        public static void Initiate()
+        private static void SpawnTimerStart(int milliseconds)
         {
-            // Start our serials.
-            Serial s = new Serial(0);
+            m_SpawnTimer = new Timer(milliseconds);  // Create the timer with a 15sec counter.
+            m_SpawnTimer.Elapsed += Spawner;            // Calls "CheckSpawns" when it hits the interval.
+            m_SpawnTimer.AutoReset = true;                  // Timer to reset or not once it hits it's limit.
+            m_SpawnTimer.Enabled = true;                    // Enable it.
+        }
 
-            // Create our map if there are no nodes yet.
-            if (m_Nodes.Count() == 0)
-                CreateMap();
+        /// <summary>
+        ///     Stops our spawner from running.
+        /// </summary>
+        private static void SpawnTimerStop()
+        {   
+            if (m_SpawnTimer != null && m_SpawnTimer.Enabled)
+                m_SpawnTimer.Enabled = false;   // Only stop the timer if it is currently assigned to and running.
+        }
+
+        /// <summary>
+        ///     Works to allow for timing and debugging of the spawner.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="e"></param>
+        private static void Spawner(Object source, ElapsedEventArgs e)
+        {
+            System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+            uint npcAdded = CheckSpawns();
+
+            watch.Stop();
+
+            if (npcAdded > 0)
+                Utility.ConsoleNotify($"Checked and Spawned {npcAdded} mobiles in {watch.ElapsedMilliseconds}ms.");
+        }
+
+        /// <summary>
+        ///     Checks all of the local spawns for individual nodes.
+        /// </summary>
+        /// <returns></returns>
+        private static uint CheckSpawns()
+        {
+            Dictionary<Locations, HashSet<Mobile>> LocMobiles = new Dictionary<Locations, HashSet<Mobile>>();
+
+            // Generate our keys and HashSets
+            foreach (KeyValuePair<Locations, Node> n in m_Nodes)
+                LocMobiles.Add(n.Key, new HashSet<Mobile>());
+
+            // Add our mobiles to a Dictionary with their Location being the key.
+            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+            {
+                if (!m.Value.IsPlayer)
+                    LocMobiles[m.Value.Location].Add(m.Value);  // Only add if the creature is not a player.
+            }
+
+            uint npcAdded = 0;
+            // Iterate our new dictionary- getting the needed nodes.
+            foreach (KeyValuePair<Locations, HashSet<Mobile>> kv in LocMobiles)
+            {
+                Node n = FindNode(kv.Key);
+                if (n == null || !n.isSpawnable)
+                    continue;
+
+                Spawnable ns = n as Spawnable;
+                if (kv.Value.Count < ns.MaxSpawns)
+                {
+                    int amount = Utility.RandomMinMax(0, 2);            // Will spawn between 0 and 2 mobs.
+                    if ((kv.Value.Count + amount) > ns.MaxSpawns)       // Check for potential overspawning.
+                        amount = ns.MaxSpawns - kv.Value.Count;         //  Set our amount appropriately to prevent and overspawn.
+
+                    for (int i = 0; i < amount; i++)
+                        if (Spawn(ns.GetSpawn(), ns.Location))          // Spawn based on the amount.
+                            ++npcAdded;
+                }
+            }
+
+            return npcAdded;
         }
 
         /// <summary>
@@ -302,15 +379,22 @@ namespace SUS
         /// <returns></returns>
         public static bool Spawn(Mobile mobile, Locations location)
         {
-            if (!Node.isValidLocation(location))
+            if (mobile == null)
+                return false;
+            else if (!Node.isValidLocation(location))
                 return false;   // If an invalid location is passed, return false.
 
             mobile.Location = location; // Updates the location of the local mobile.
-            UpdateMobiles(mobile);      // Update the mobile in the GameObject.
+            if (UpdateMobiles(mobile))  // Update the mobile in the GameObject.
+            {
+                //Utility.ConsoleNotify($"Spawned {mobile.Name} in {mobile.Location.ToString()}.");
+                return true;
+            }
 
-            return true;                // Success, return true.
+            return false;
         }
-        
+        #endregion
+
         /// <summary>
         ///     Validates that an originating connection (from) as a desired connection (to).
         /// </summary>

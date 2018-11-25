@@ -9,7 +9,7 @@ namespace SUS.Shared.Objects.Nodes
         public Graveyard() : base(Types.OpenWorld | Types.PvP, Locations.Graveyard, "Full of bones and bruises.")
         {
             MaxSpawns = 6;
-            NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul | Spawnables.Wraith;
+            NPCs = Spawnables.Graveyard;
         }
     }
 }

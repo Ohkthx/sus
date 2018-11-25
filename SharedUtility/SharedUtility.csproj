@@ -69,7 +69,11 @@
     <Compile Include="Objects\Mobiles\Mobile.cs" />
     <Compile Include="Objects\Mobiles\Player.cs" />
     <Compile Include="Objects\Mobiles\Spawns\Cyclops.cs" />
+    <Compile Include="Objects\Mobiles\Spawns\Wraith.cs" />
     <Compile Include="Objects\Mobiles\Spawns\Orc.cs" />
+    <Compile Include="Objects\Mobiles\Spawns\Ghoul.cs" />
+    <Compile Include="Objects\Mobiles\Spawns\Titan.cs" />
+    <Compile Include="Objects\Mobiles\Spawns\Zombie.cs" />
     <Compile Include="Objects\Mobiles\Spawns\Skeleton.cs" />
     <Compile Include="Objects\Nodes\Node.cs" />
     <Compile Include="Objects\Nodes\Britain.cs" />
