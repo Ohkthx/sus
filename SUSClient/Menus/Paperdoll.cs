@@ -1,4 +1,4 @@
-﻿using SUS.Shared.Objects.Mobiles;
+﻿using SUS.Shared.Objects;
 
 namespace SUSClient.MenuItems
 {

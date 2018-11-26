@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using SUS.Shared.Utilities;
 
-namespace SUS.Shared.Objects.Mobiles
+namespace SUS.Shared.Objects
 {
     public interface IPlayableClass
     {
@@ -94,8 +94,6 @@ namespace SUS.Shared.Objects.Mobiles
         public void HitsModified(int change) { this.ModHits += change; }
         public void StaminaModified(int change) { this.ModStamina += change; }
         public void DeathModified(bool dead) { this.IsDead = dead; }
-
-        public byte[] ToByte() { return Network.Serialize(this); }
     }
 
     [Serializable]
@@ -792,8 +790,5 @@ namespace SUS.Shared.Objects.Mobiles
         public abstract void Ressurrect();
 
         public MobileTag getTag() { return new MobileTag(this); }
-
-        // Prepares the class to be sent over the network.
-        public byte[] ToByte() { return Network.Serialize(this); }
     }
 }

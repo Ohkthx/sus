@@ -4,27 +4,10 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
-using SUS.Shared.Objects.Mobiles;
+using SUS.Shared.Packets;
 
 namespace SUS.Shared.Utilities
 {
-    [Serializable]
-    public enum RequestTypes
-    {
-        OK,
-        Error,
-        Authenticate,
-        GameState,
-        Mobile,
-        LocalMobiles,
-        MobileAction,
-        MobileMove,
-        Node,
-        Player,
-        Resurrection,
-        SocketKill
-    }
-
     /// <summary>
     ///     Holds various functions to perform actions.
     /// </summary>
@@ -202,58 +185,6 @@ namespace SUS.Shared.Utilities
 
             this.Value = newValue;
         }
-    }
-
-    [Serializable]
-    public sealed class Authenticate
-    {
-        public ulong ID { get; private set; }
-        public Player Account = null;
-
-        #region Constructors
-        public Authenticate(ulong ID) : this(ID, null) { }
-        public Authenticate(ulong ID, Player account)
-        {
-            this.ID = ID;
-            this.Account = account;
-        }
-        #endregion
-
-        public byte[] ToByte()
-        {
-            return Network.Serialize(this);
-        }
-    }
-
-    [Serializable]
-    public sealed class Request
-    {
-        public RequestTypes Type { get; private set; }  // Type of Request being made.
-        public Object Value = null;                     // Object to be casted based on Type (RequestTypes.)
-
-        // Creates an instance of a Request based on supplied Type and Object.
-        public Request(RequestTypes type, Object obj)
-        {
-            this.Type = type;
-            this.Value = obj;
-        }
-
-        // Converts the object into a byte array to be passed over the network.
-        public byte[] ToByte() { return Network.Serialize(this); }
-    }
-
-    [Serializable]
-    public sealed class SocketKill
-    {
-        public bool killme { get; private set; }
-        public Serial UserID { get; private set; }
-        public SocketKill(Serial id, bool kill = true)
-        {
-            this.UserID = id;
-            this.killme = kill;
-        }
-
-        public byte[] ToByte() { return Network.Serialize(this); }
     }
 
     public class SocketHandler
@@ -518,7 +449,7 @@ namespace SUS.Shared.Utilities
 
         public void Kill()
         {
-            this.Send(new SocketKill(null, true).ToByte());
+            Send(new SocketKillPacket(null, true).ToByte());
             sendDone.WaitOne();
             //socket.Shutdown(SocketShutdown.Both);
             //socket.Close();

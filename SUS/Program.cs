@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using SUS.Server;
 using SUS.Shared.Utilities;
+using SUS.Shared.Packets;
 
 namespace SUS
 {
@@ -18,20 +19,20 @@ namespace SUS
 
         public static void ClientHandler(ref Socket client)
         {
-            SocketKill socketKill = new SocketKill(null, false);
+            SocketKillPacket socketKill = new SocketKillPacket(null, false);
             SocketHandler socketHandler = new SocketHandler(client, SocketHandler.Types.Client, debug: true);
 
-            while (socketKill.killme == false)
+            while (socketKill.Kill == false)
             {
                 Object obj = socketHandler.FromClient();
 
-                if (obj is Request)
+                if (obj is Packet)
                 {
-                    Request req = obj as Request;
+                    Packet req = obj as Packet;
 
                     ServerInstance.Request(socketHandler, req); // If it is not a SocketKill, process it.
-                    if (req.Type == RequestTypes.SocketKill)
-                        socketKill = req.Value as SocketKill;       // This will lead to termination.
+                    if (req.Type == PacketTypes.SocketKill)
+                        socketKill = req as SocketKillPacket;       // This will lead to termination.
                 }
             }
         }

@@ -209,28 +209,30 @@ namespace SUS
         /// <param name="toLocation">Node to move the mobile to.</param>
         /// <param name="mobile">Mobile to update.</param>
         /// <param name="forceMove">Overrides requirements if an admin is performing the action.</param>
-        public static bool MoveMobile(Locations toLocation, MobileTag mobile, bool forceMove = false, bool ressurrection = false)
+        public static Node MoveMobile(Locations toLocation, MobileTag mobile, bool forceMove = false, bool ressurrection = false)
         {
             Mobile m = FindMobile(mobile.Guid);
             if (m == null)
             {   // Our mobile does not appear to exist.
                 Console.WriteLine($" [ ERR ] Mobile missing: '{mobile.ID}::{mobile.Name}::Player:{mobile.IsPlayer}");
-                return false;
+                return null;
             }
 
             if (ressurrection)
                 m.Ressurrect(); // Ressurrect if requested.
             else if (toLocation == m.Location)
-                return false;   // Trying to move within the same location.
+                return FindNode(toLocation);   // Trying to move within the same location.
 
             if (!forceMove)                                         // If it is not an admin move...
                 if (!isConnectedLocation(m.Location, toLocation))   //  And it is not a connected location...
-                    return false;                                   //   Return failure.
+                    return null;                                    //   Return failure.
             
 
             m.Location = toLocation;    // Update the local mobile to the new location.
-            UpdateMobiles(m);           // Update the mobile to our tracked mobile
-            return true;
+            if (UpdateMobiles(m))       // Update the mobile to our tracked mobile
+                return FindNode(toLocation);
+
+            return null;
         }
 
         /// <summary>

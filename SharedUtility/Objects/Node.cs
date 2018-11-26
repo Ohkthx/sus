@@ -251,7 +251,5 @@ namespace SUS.Shared.Objects
         {   // Check if it is not a 'None' location. If it is not, verifies that it is a power of 2.
             return loc != Locations.None && (loc & (loc - 1)) == 0;
         }
-
-        public byte[] ToByte() { return Network.Serialize(this); }
     }
 }

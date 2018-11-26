@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SUS.Shared.Utilities;
 using SUS.Shared.Objects;
-using SUS.Shared.Objects.Mobiles;
+using SUS.Shared.Packets;
 using SUSClient.MenuItems;
 
 namespace SUSClient
@@ -13,7 +13,7 @@ namespace SUSClient
         private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, paperdoll, actions, exit }
 
         private static GameState gs = null;
-        public Request clientRequest = null;    // Temporary storage for a request sent by the client.
+        public Packet clientRequest = null;    // Temporary storage for a request sent by the client.
 
         private ConsoleActions lastAction = ConsoleActions.none;
 
@@ -45,7 +45,7 @@ namespace SUSClient
                 Utility.ConsoleNotify("Sending ressurrection request.");
 
                 // Request to be sent to the server.
-                this.clientRequest = new Request(RequestTypes.Resurrection, gs.Account.getTag());
+                this.clientRequest = new RessurrectMobilePacket(gs.Account.Location, gs.Account.getTag());
                 return gs;
             }
 
@@ -166,6 +166,8 @@ namespace SUSClient
         /// <param name="location">New location.</param>
         public void LocationUpdater(Node location)
         {
+            if (location == null)
+                return;
             gs.NodeCurrent = location;
             gs.Account.Location = location.Location;
         }
@@ -184,8 +186,7 @@ namespace SUSClient
 
             Console.WriteLine($"Selected: {newLoc.ToString()}");
 
-            MobileMove mm = new MobileMove(newLoc, gs.Account);
-            this.clientRequest = new Request(RequestTypes.MobileMove, mm);
+            this.clientRequest = new MoveMobilePacket(newLoc, gs.Account);
         }
 
         /// <summary>
@@ -226,7 +227,7 @@ namespace SUSClient
         {
             if (this.clientRequest == null)
             {   // Create a request for the server to respond to.
-                this.clientRequest = new Request(RequestTypes.LocalMobiles, gs.NodeCurrent.Location);
+                this.clientRequest = new GetMobilesPacket(gs.NodeCurrent.Location);
                 return null;
             }
 
@@ -313,12 +314,11 @@ namespace SUSClient
             Console.WriteLine(" Performing an attack on {0}.", targetMobile.Name);
 
             // Our newly created action to perform.
-            MobileAction attackAction = new MobileAction(gs.Account.ID);
-            attackAction.Type = ActionType.Attack;
+            CombatMobilePacket attackAction = new CombatMobilePacket(gs.Account.getTag());
             attackAction.AddTarget(targetMobile);
 
             // Request to be sent to the server.
-            this.clientRequest = new Request(RequestTypes.MobileAction, attackAction);
+            this.clientRequest = attackAction;
         }
 
         /// <summary>
@@ -343,8 +343,7 @@ namespace SUSClient
         /// </summary>
         private void exit()
         {
-            SocketKill sk = new SocketKill(gs.Account.ID, true);
-            clientRequest = new Request(RequestTypes.SocketKill, sk);
+            clientRequest = new SocketKillPacket(gs.Account.getTag(), kill: true);
         }
     }
 }

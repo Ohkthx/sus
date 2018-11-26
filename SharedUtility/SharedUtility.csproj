@@ -7,7 +7,7 @@
     <ProjectGuid>{DEB4D0C9-0E5D-496E-9E59-D41AF8B6B7B8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SUS.Shared.Utility</RootNamespace>
+    <RootNamespace>SUS.Shared</RootNamespace>
     <AssemblyName>SharedUtility</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -64,12 +64,11 @@
     <Compile Include="Objects\Items\Equippable.cs" />
     <Compile Include="Objects\Items\Weapon.cs" />
     <Compile Include="Objects\Items\Armor.cs" />
-    <Compile Include="Objects\Mobiles\Actions\MobileAction.cs" />
-    <Compile Include="Objects\Mobiles\Actions\Move.cs" />
-    <Compile Include="Objects\Mobiles\Actions\Ressurrect.cs" />
+    <Compile Include="Packets\GetInformation.cs" />
+    <Compile Include="Packets\MobileActions.cs" />
     <Compile Include="Objects\Mobiles\BaseCreature.cs" />
     <Compile Include="Objects\Mobiles\NPC.cs" />
-    <Compile Include="Objects\Mobiles\Mobile.cs" />
+    <Compile Include="Objects\Mobile.cs" />
     <Compile Include="Objects\Mobiles\Player.cs" />
     <Compile Include="Objects\Mobiles\Spawns\Cyclops.cs" />
     <Compile Include="Objects\Mobiles\Spawns\Wraith.cs" />
@@ -78,12 +77,15 @@
     <Compile Include="Objects\Mobiles\Spawns\Titan.cs" />
     <Compile Include="Objects\Mobiles\Spawns\Zombie.cs" />
     <Compile Include="Objects\Mobiles\Spawns\Skeleton.cs" />
-    <Compile Include="Objects\Nodes\Node.cs" />
+    <Compile Include="Objects\Node.cs" />
     <Compile Include="Objects\Nodes\Britain.cs" />
     <Compile Include="Objects\Nodes\Graveyard.cs" />
     <Compile Include="Objects\Nodes\Wilderness.cs" />
     <Compile Include="Objects\Nodes\Sewer.cs" />
     <Compile Include="Objects\Nodes\Spawnable.cs" />
+    <Compile Include="Packets\AccountActions.cs" />
+    <Compile Include="Packets\Packet.cs" />
+    <Compile Include="Packets\SocketKill.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Random.cs" />
     <Compile Include="Serial.cs" />

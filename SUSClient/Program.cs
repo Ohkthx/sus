@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Sockets;
-using System.Threading;
-
 using SUS.Shared.Utilities;
 using SUS.Shared.Objects;
 using SUS.Shared.Objects.Mobiles;
+using SUS.Shared.Packets;
 using SUSClient.Client;
 
 namespace SUSClient
@@ -62,12 +60,8 @@ namespace SUSClient
             // The Socket to communicate over to the server.
             SocketHandler socketHandler = new SocketHandler(server, SocketHandler.Types.Server, debug: DEBUG);
 
-            // Authorizing with host.
-            Authenticate auth = new Authenticate(id);
-
             // Send the authentication to the server.
-            Request creq = new Request(RequestTypes.Authenticate, auth);
-            socketHandler.ToServer(creq.ToByte());
+            socketHandler.ToServer(new AccountAuthenticatePacket(id, username).ToByte());
 
             ServerHandler(ref socketHandler, id, username);
         }
@@ -76,52 +70,58 @@ namespace SUSClient
         {
             GameState gamestate = null;     // Gamestate of this client.
             InteractiveConsole ia = null;   // Interactive console tracks user actions and sends data.
-            Request creq = null;            // Client REQuest. Used by functions not called in interactive console. 
+            Packet creq = null;            // Client REQuest. Used by functions not called in interactive console. 
 
             // While we are recieving information from the server, continue to decipher and process it.
             for (object obj = null; (obj = socketHandler.FromClient()) != null;)
             {
                 creq = null;
-                Request req = obj as Request;
+                Packet req = obj as Packet;
 
                 switch (req.Type)
                 {
-                    case RequestTypes.OK:
+                    case PacketTypes.OK:
                         ia.Reset();
                         break;  // Server sent back empty information.
-                    case RequestTypes.Error:
-                        Utility.ConsoleNotify(req.Value as string);
+                    case PacketTypes.Error:
+                        Utility.ConsoleNotify((req as ErrorPacket).Message);
                         ia.Reset();
                         break;
-                    case RequestTypes.Authenticate:
-                        Player player = new Player(id, username, 50, 35, 20);
-                        creq = new Request(RequestTypes.Player, player);
+                    case PacketTypes.Authenticate:
+                        ia = new InteractiveConsole(new GameState((req as AccountAuthenticatePacket).Player));
                         break;
-                    case RequestTypes.GameState:
-                        ia = new InteractiveConsole(req.Value as GameState);
+                    case PacketTypes.GameState:
+                        ia = new InteractiveConsole((req as AccountGameStatePacket).GameState);
                         break;
-                    case RequestTypes.LocalMobiles:
-                        gamestate.Mobiles = req.Value as HashSet<MobileTag>;
-                        break;
-                    case RequestTypes.Mobile:
-                        Mobile m = req.Value as Mobile;
-                        Console.WriteLine($"Server sent: {m.Name}");
-                        ia.Reset();
-                        break;
-                    case RequestTypes.MobileAction:
-                        gamestate.MobileActionHandler(req.Value as MobileAction);
-                        ia.Reset();
-                        break;
-                    case RequestTypes.Node:
-                        ia.LocationUpdater(req.Value as Node);
-                        ia.Reset();
-                        break;
-                    case RequestTypes.Resurrection:
-                        creq = gamestate.Ressurrect(req.Value as Ressurrect);   // If we require a new current node,
-                        ia.Reset();                                             //  the request will be made and sent early.
-                        break;
-                    case RequestTypes.SocketKill:
+                    case PacketTypes.SocketKill:
                         socketHandler.Kill();
+                        break;
+
+
+                    case PacketTypes.GetLocalMobiles:
+                        gamestate.Mobiles = (req as GetMobilesPacket).Mobiles;
+                        break;
+                    case PacketTypes.GetMobile:
+                        Console.WriteLine($"Server sent: {(req as GetMobilePacket).Mobile.Name}");
+                        ia.Reset();
+                        break;
+                    case PacketTypes.GetNode:
+                        ia.LocationUpdater((req as GetNodePacket).NewLocation);
+                        ia.Reset();
+                        break;
+
+
+                    case PacketTypes.MobileCombat:
+                        gamestate.MobileActionHandler(req as CombatMobilePacket);
+                        ia.Reset();
+                        break;
+                    case PacketTypes.MobileMove:
+                        ia.LocationUpdater((req as MoveMobilePacket).NewLocation);
+                        ia.Reset();
+                        break;
+                    case PacketTypes.MobileResurrect:
+                        creq = gamestate.Ressurrect(req as RessurrectMobilePacket);   // If we require a new current node,
+                        ia.Reset();                                             //  the request will be made and sent early.
                         break;
                 }
 
@@ -142,7 +142,7 @@ namespace SUSClient
                     if (creq != null)
                     {
                         socketHandler.ToServer(creq.ToByte());
-                        if (creq.Type == RequestTypes.SocketKill)
+                        if (creq.Type == PacketTypes.SocketKill)
                             Environment.Exit(0); // Kill the application after informing the server.
                     }
                 }

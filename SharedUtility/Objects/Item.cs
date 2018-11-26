@@ -1,5 +1,4 @@
 ﻿using System;
-using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects
 {
@@ -85,7 +84,5 @@ namespace SUS.Shared.Objects
 
         public bool IsDestroyable { get { return m_isDestroyable; } }
         #endregion
-
-        public byte[] ToByte() { return Network.Serialize(this); }
     }
 }

@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Data.SQLite;
 using SUS.Shared.Objects.Mobiles;
 using SUS.Shared.SQLite;
 using SUS.Shared.Utilities;
-using System.Collections.Generic;
+using SUS.Shared.Packets;
+
 
 namespace SUS.Shared.Objects
 {
@@ -258,7 +259,7 @@ namespace SUS.Shared.Objects
             return true;
         }
 
-        public void MobileActionHandler(MobileAction ma)
+        public void MobileActionHandler(CombatMobilePacket ma)
         {
             Console.WriteLine($"\n Server Reponse: {ma.Result}");
 
@@ -299,15 +300,14 @@ namespace SUS.Shared.Objects
             UpdateMobile(mobile.getTag(), remove: true);
         }
 
-        public Request Ressurrect(Ressurrect rez)
+        public Packet Ressurrect(RessurrectMobilePacket rez)
         {
-            if (rez.Mobile.IsPlayer && rez.Mobile.ID == ID)
+            if (rez.Author.IsPlayer && rez.Author.ID == ID)
             {   // If we are talking about our account...
                 if (rez.isSuccessful)
                 {   // And the server reported it was successful...
                     Account.Ressurrect();               // Ressurrect our account.
-                    MoveMobile(rez.Location, Account);  // Move the Account locally.
-                    return new Request(RequestTypes.Node, (int)rez.Location);   // Fetch our new location.
+                    return new MoveMobilePacket(rez.Location, Account);
                 }
             }
 
@@ -360,7 +360,6 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
-        // Serialize and convert to Byte[] to be sent over a socket.
         public byte[] ToByte() { return Network.Serialize(this); }
     }
 }

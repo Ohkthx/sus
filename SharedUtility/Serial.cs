@@ -1,5 +1,5 @@
 ﻿using System;
-using SUS.Shared.Objects.Mobiles;
+using SUS.Shared.Objects;
 
 namespace SUS.Shared.Utilities
 {
