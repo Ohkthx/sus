@@ -19,6 +19,14 @@ namespace SUS.Shared.Objects.Mobiles
             Name = name;
 
             InitStats(rawStr, rawDex, rawInt);
+
+            // Give some basic armor and weapons.
+            EquipmentAdd(new Armor(ItemLayers.Chest, ArmorMaterials.Leather, "Leather Chest"));
+            EquipmentAdd(new Armor(ItemLayers.Legs, ArmorMaterials.Leather, "Leather Leggings"));
+            EquipmentAdd(new Armor(ItemLayers.Feet, ArmorMaterials.Leather, "Leather Boots"));
+
+            EquipmentAdd(new Weapon(ItemLayers.MainHand, WeaponMaterials.Wooden, "Short Sword"));
+            EquipmentAdd(new Armor(ItemLayers.Offhand, ArmorMaterials.Leather, "Leather Shield"));
         }
         #endregion
 
@@ -37,8 +45,8 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  | +-- Strength: {Str}\n" +
                 $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam}\n" +
                 $"  | +-- Intelligence: {Int}\tMana: {Mana}\n" +
-                $"  |   +-- Attack: {0}\n" +
-                $"  |   +-- Defense: {0}\n" +
+                $"  |   +-- Attack: {WeaponRating}\n" +
+                $"  |   +-- Defense: {ArmorRating}\n" +
                 $"  |\n" +
                 $"  +-[ Items ]\n" +
                 $"  | +-- Bandaids: {0}\t\tBandaid Heal Amount: {0}\n" +
@@ -54,6 +62,10 @@ namespace SUS.Shared.Objects.Mobiles
 
             foreach (KeyValuePair<int, Skill> skill in Skills)
                 paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Max}]\n";
+
+            paperdoll += $"  |\n  +-[ Equipment ]\n";
+            foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
+                paperdoll += $"  | +-- Item: {item.Value.Name} => {item.Value.Rating}, {item.Value.Layer.ToString()}\n";
 
             paperdoll += "  +---------------------------------------------------+";
 

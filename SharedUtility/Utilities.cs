@@ -90,7 +90,6 @@ namespace SUS.Shared.Utilities
         {
             return RandomImpl.Next();
         }
-
     }
 
     /// <summary>
@@ -240,10 +239,7 @@ namespace SUS.Shared.Utilities
         }
 
         // Converts the object into a byte array to be passed over the network.
-        public byte[] ToByte()
-        {
-            return Network.Serialize(this);
-        }
+        public byte[] ToByte() { return Network.Serialize(this); }
     }
 
     [Serializable]

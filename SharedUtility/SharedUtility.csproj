@@ -61,6 +61,9 @@
     <Compile Include="GameObject.cs" />
     <Compile Include="Objects\GameState.cs" />
     <Compile Include="Objects\Item.cs" />
+    <Compile Include="Objects\Items\Equippable.cs" />
+    <Compile Include="Objects\Items\Weapon.cs" />
+    <Compile Include="Objects\Items\Armor.cs" />
     <Compile Include="Objects\Mobiles\Actions\MobileAction.cs" />
     <Compile Include="Objects\Mobiles\Actions\Move.cs" />
     <Compile Include="Objects\Mobiles\Actions\Ressurrect.cs" />

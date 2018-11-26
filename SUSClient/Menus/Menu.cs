@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace SUSClient
 {
-    public class Menu
+    public abstract class Menu
     {
         private string Header = string.Empty;   // Presented at the top of the Body.
         private string Body = string.Empty;     // Information to be read.

@@ -99,7 +99,20 @@ namespace SUS
         }
         #endregion
 
-        #region Updating
+        #region Gamestate Actions
+        /// <summary>
+        ///     GameState to locate in GameObject.
+        /// </summary>
+        /// <param name="ID">ID of the GameState.</param>
+        /// <returns>GameState provided by GameObject.</returns>
+        public static GameState FindGameState(ulong ID)
+        {
+            GameState gs;   // Blank Gamestate.
+            if (!m_Gamestates.TryGetValue(ID, out gs))
+                return null;    // Could not find the GameState, return null.
+            return gs;          // Return the found GameState.
+        }
+
         /// <summary>
         ///     Updates GameObject's tracked gamestates.
         /// </summary>
@@ -107,12 +120,87 @@ namespace SUS
         /// <param name="remove">Determines if the gamestate should be permanently removed.</param>
         public static void UpdateGameStates(GameState gamestate, bool remove = false)
         {
+
             if (remove)
                 // Removes if the player DOES exist.
                 m_Gamestates.TryRemove(gamestate.ID, out _);
             else
                 // This will add or update (override current).
                 m_Gamestates[gamestate.ID] = gamestate;
+        }
+        #endregion
+
+        #region Mobile Actions
+        public static Mobile FindMobile(MobileTag mobile) { return FindMobile(mobile.Guid); }
+        public static Mobile FindMobile(Mobile mobile) { return FindMobile(mobile.Guid); }
+        public static Mobile FindMobile(Guid guid)
+        {
+            if (m_Mobiles.ContainsKey(guid))
+            {
+                Mobile m = null;
+                if (m_Mobiles.TryGetValue(guid, out m))
+                    return m;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        ///     Find a mobile based on it's type.
+        /// </summary>
+        /// <param name="type">Type of a mobile.</param>
+        /// <param name="serial">Serial of the mobile to find.</param>
+        /// <returns></returns>
+        public static Mobile FindMobile(MobileType type, Serial serial)
+        {   // Iterate our hashset of mobiles.
+            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+                if (((m.Value.Type == type) && (m.Value.ID == serial)) || type == MobileType.Mobile)
+                    return m.Value;   // If the type and serial match, return it. If it is type of 'Any', return it.
+
+            return null;    // Nothing was found, return null.
+        }
+
+        /// <summary>
+        ///     Gets all of the Mobile Tags for a specific location of a specific type.
+        /// </summary>
+        /// <param name="loc">Location to search.</param>
+        /// <param name="type">Type of mobile."</param>
+        /// <returns>List of Mobile Tags fitting the criteria.</returns>
+        public static HashSet<MobileTag> FindMobiles(Locations loc, MobileType type)
+        {
+            HashSet<MobileTag> tags = new HashSet<MobileTag>();
+            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+            {
+                if (((m.Value.Type == type) && (m.Value.Location == loc)) || (type == MobileType.Mobile && m.Value.Location == loc))
+                {
+                    tags.Add(m.Value.getTag());
+                }
+            }
+
+            if (tags.Count > 0)
+                return tags;
+
+            return null;    // Nothing was found, return null.
+        }
+
+        /// <summary>
+        ///     Finds a player type mobile.
+        /// </summary>
+        /// <param name="serial">Serial to find.</param>
+        /// <returns></returns>
+        public static Mobile FindPlayer(Serial serial)
+        {
+            return FindMobile(MobileType.Player, serial);
+        }
+
+        /// <summary>
+        ///     Finds a NPC type mobile.
+        /// </summary>
+        /// <param name="serial">Serial to find.</param>
+        /// <returns></returns>
+        public static Mobile FindNPC(Serial serial)
+        {
+            return FindMobile(MobileType.NPC, serial);
         }
 
         /// <summary>
@@ -164,17 +252,22 @@ namespace SUS
             return true;
         }
 
-        /// <summary>
-        ///     Update nodes, remove if requested.
-        /// </summary>
-        /// <param name="node">Node to be added or removed.</param>
-        /// <param name="remove">Determines if we need to remove the node.</param>
-        public static void UpdateNodes(Node node, bool remove = false)
+        public static bool SwapMobileEquipment(MobileTag mobile, Guid item)
         {
-            if (remove)
-                m_Nodes.TryRemove(node.Location, out _);    // Removes the node.
-            else
-                m_Nodes[node.Location] = node;    // Reassigns the node.
+            if (mobile == null || item == null || item == Guid.Empty)
+                return false;
+
+            Mobile m = FindMobile(mobile);
+            if (m == null)
+                return false;
+
+            Item i = m.FindItem(item);
+            if (i == null || !i.IsEquippable)
+                return false;
+
+            m.Equip(i as Equippable);
+
+            return UpdateMobiles(m);
         }
 
         /// <summary>
@@ -192,91 +285,7 @@ namespace SUS
         }
         #endregion
 
-        #region Finding
-        public static Mobile FindMobile(Mobile mobile) { return FindMobile(mobile.Guid); }
-        public static Mobile FindMobile(Guid guid)
-        {
-            if (m_Mobiles.ContainsKey(guid))
-            {
-                Mobile m = null;
-                if (m_Mobiles.TryGetValue(guid, out m))
-                    return m;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        ///     Find a mobile based on it's type.
-        /// </summary>
-        /// <param name="type">Type of a mobile.</param>
-        /// <param name="serial">Serial of the mobile to find.</param>
-        /// <returns></returns>
-        public static Mobile FindMobile(MobileType type, Serial serial)
-        {   // Iterate our hashset of mobiles.
-            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
-                if (((m.Value.Type == type) && (m.Value.ID == serial)) || type == MobileType.Mobile)
-                        return m.Value;   // If the type and serial match, return it. If it is type of 'Any', return it.
-
-            return null;    // Nothing was found, return null.
-        }
-
-        /// <summary>
-        ///     Gets all of the Mobile Tags for a specific location of a specific type.
-        /// </summary>
-        /// <param name="loc">Location to search.</param>
-        /// <param name="type">Type of mobile."</param>
-        /// <returns>List of Mobile Tags fitting the criteria.</returns>
-        public static HashSet<MobileTag> FindMobiles(Locations loc, MobileType type)
-        {
-            HashSet<MobileTag> tags = new HashSet<MobileTag>();
-            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
-            {
-                if (((m.Value.Type == type) && (m.Value.Location == loc)) || (type == MobileType.Mobile && m.Value.Location == loc))
-                {
-                    tags.Add(m.Value.getTag());
-                }
-            }
-
-            if (tags.Count > 0)
-                return tags;
-
-            return null;    // Nothing was found, return null.
-        }
-
-        /// <summary>
-        ///     Finds a player type mobile.
-        /// </summary>
-        /// <param name="serial">Serial to find.</param>
-        /// <returns></returns>
-        public static Mobile FindPlayer(Serial serial)
-        {
-            return FindMobile(MobileType.Player, serial);
-        }
-
-        /// <summary>
-        ///     Finds a NPC type mobile.
-        /// </summary>
-        /// <param name="serial">Serial to find.</param>
-        /// <returns></returns>
-        public static Mobile FindNPC(Serial serial)
-        {
-            return FindMobile(MobileType.NPC, serial);
-        }
-
-        /// <summary>
-        ///     GameState to locate in GameObject.
-        /// </summary>
-        /// <param name="ID">ID of the GameState.</param>
-        /// <returns>GameState provided by GameObject.</returns>
-        public static GameState FindGameState(ulong ID)
-        {
-            GameState gs;   // Blank Gamestate.
-            if (!m_Gamestates.TryGetValue(ID, out gs))
-                return null;    // Could not find the GameState, return null.
-            return gs;          // Return the found GameState.
-        }
-        
+        #region Nodes / Locations Actions
         /// <summary>
         ///     Locates a Node based on it's ID.
         /// </summary>
@@ -288,6 +297,38 @@ namespace SUS
             if (!m_Nodes.TryGetValue(loc, out n))
                 return null;    // Could not find the Node, return null.
             return n;           // Return the found Node.
+        }
+
+        /// <summary>
+        ///     Update nodes, remove if requested.
+        /// </summary>
+        /// <param name="node">Node to be added or removed.</param>
+        /// <param name="remove">Determines if we need to remove the node.</param>
+        public static void UpdateNodes(Node node, bool remove = false)
+        {
+            if (remove)
+                m_Nodes.TryRemove(node.Location, out _);    // Removes the node.
+            else
+                m_Nodes[node.Location] = node;    // Reassigns the node.
+        }
+
+        /// <summary>
+        ///     Validates that an originating connection (from) as a desired connection (to).
+        /// </summary>
+        /// <param name="from">Originating connection.</param>
+        /// <param name="to">Connection to validate if exists.</param>
+        /// <returns>True - Connection exists. False - Connection is faulty.</returns>
+        private static bool isConnectedLocation(Locations from, Locations to)
+        {
+            if (!Node.isValidLocation(from) || !Node.isValidLocation(to))
+                return false;   // One of them are not valid locations.
+
+            // Get our originating location
+            Node fromN = FindNode(from);
+            if (fromN == null)
+                return false;   // Not a valid originating location.
+
+            return fromN.HasConnection(to);
         }
         #endregion
 
@@ -394,24 +435,5 @@ namespace SUS
             return false;
         }
         #endregion
-
-        /// <summary>
-        ///     Validates that an originating connection (from) as a desired connection (to).
-        /// </summary>
-        /// <param name="from">Originating connection.</param>
-        /// <param name="to">Connection to validate if exists.</param>
-        /// <returns>True - Connection exists. False - Connection is faulty.</returns>
-        private static bool isConnectedLocation(Locations from, Locations to)
-        {
-            if (!Node.isValidLocation(from) || !Node.isValidLocation(to))
-                return false;   // One of them are not valid locations.
-
-            // Get our originating location
-            Node fromN = FindNode(from);
-            if (fromN == null)
-                return false;   // Not a valid originating location.
-
-            return fromN.HasConnection(to);
-        }
     }
 }

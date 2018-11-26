@@ -238,11 +238,14 @@ namespace SUS.Shared.Objects.Mobiles
         private Serial m_ID;                // ID of the mobile.
         private string m_Name;              // Name of the mobile.
         private MobileType m_Type;          // Type of Mobile: NPC or Player.
-        private Locations m_Location = Locations.None;    // Location of the mobile.
+        private Locations m_Location;       // Location of the mobile.
 
+        // Currently owned and equipped items.
+        protected Dictionary<Guid, Item> m_Items;
+        private Dictionary<ItemLayers, Equippable> m_Equipped;
+
+        // Mobile Stats.
         private int m_StatCap;
-        //private int m_StrCap, m_DexCap, m_IntCap;
-        //private int m_StrMaxCap, m_DexMaxCap, m_IntMaxCap;
         private int m_Str, m_Dex, m_Int;
         private int m_Hits, m_Stam, m_Mana;
 
@@ -252,6 +255,8 @@ namespace SUS.Shared.Objects.Mobiles
         public Mobile(MobileType type)
         {
             Type = type;
+
+            m_Equipped = new Dictionary<ItemLayers, Equippable>();
 
             m_Skills = new Dictionary<int, Skill>();
             foreach (int skill in Enum.GetValues(typeof(Skill.Types)))
@@ -275,18 +280,22 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  | +-- Strength: {Str}\n" +
                 $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam}\n" +
                 $"  | +-- Intelligence: {Int}\tMana: {Mana}\n" +
-                $"  |   +-- Attack: {0}\n" +
-                $"  |   +-- Defense: {0}\n" +
+                $"  |   +-- Attack: {WeaponRating}\n" +
+                $"  |   +-- Defense: {ArmorRating}\n" +
                 $"  |\n" +
                 $"  +-[ Items ]\n" +
                 $"  | +-- Bandaids: {0}\t\tBandaid Heal Amount: {0}\n" +
                 $"  | +-- Arrows: {0}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {0}\n" +
                 $"  |\n" +
-                $"  +-[ Skills ]\n";
 
+                $"  +-[ Skills ]\n";
             foreach (KeyValuePair<int, Skill> skill in m_Skills)
                  paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Max}]\n";
+
+            paperdoll += $"  +-[ Equipment ]\n";
+            foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
+                paperdoll += $"  | +-- Item: {item.Value.Name} => {item.Value.Rating}, {item.Value.Type.ToString()} {item.Value.Layer.ToString()}\n";
 
             paperdoll += "  +---------------------------------------------------+";
 
@@ -403,6 +412,54 @@ namespace SUS.Shared.Objects.Mobiles
         public bool IsDead { get { return Hits <= 0; } }
 
         public string GetHealth() { return $"{Hits} / {HitsMax}"; }
+
+        public Dictionary<Guid, Item> Items
+        {
+            get
+            {
+                if (m_Items == null)
+                    m_Items = new Dictionary<Guid, Item>();
+                return m_Items;
+            }
+        }
+
+        public Dictionary<ItemLayers, Equippable> Equipment
+        {
+            get
+            {
+                if (m_Equipped == null)
+                    m_Equipped = new Dictionary<ItemLayers, Equippable>();
+                return m_Equipped;
+            }
+        }
+
+        public int ArmorRating
+        {
+            get
+            {
+                int rating = 0;
+                foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
+                {
+                    if (item.Value.IsArmor)
+                        rating += item.Value.Rating;
+                }
+                return rating;
+            }
+        }
+
+        public int WeaponRating
+        {
+            get
+            {
+                int rating = 0;
+                foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
+                {
+                    if (item.Value.IsWeapon)
+                        rating += item.Value.Rating;
+                }
+                return rating;
+            }
+        }
         #endregion
 
         #region Stats
@@ -590,6 +647,80 @@ namespace SUS.Shared.Objects.Mobiles
         public Dictionary<int, Skill> Skills
         {
             get { return m_Skills; }
+        }
+        #endregion
+
+        #region Items / Equippables
+        public void EquipmentAdd(Equippable item)
+        {
+            if (item == null || !item.IsEquippable)
+                return;
+
+            if(ItemAdd(item))
+                Equip(item);
+        }
+
+        public void Equip(Equippable item)
+        {
+            if (item == null || !item.IsEquippable)
+                return;
+
+            // Check to see if we need to remove our Main-Hand and Off-Hand
+            if (item.Layer == ItemLayers.TwoHanded)
+            {
+                m_Equipped.Remove(ItemLayers.MainHand);
+                m_Equipped.Remove(ItemLayers.Offhand);
+            }
+            else if (item.IsWeapon && m_Equipped.ContainsKey(ItemLayers.TwoHanded))
+            {
+                m_Equipped.Remove(ItemLayers.TwoHanded);
+            }
+
+            m_Equipped[item.Layer] = item;
+        }
+
+        public void Unequip(ItemLayers item)
+        {
+            m_Equipped.Remove(item);
+        }
+
+        public Item FindItem(Guid item)
+        {
+            if (item == null || item == Guid.Empty)
+                return null;
+            else if (!HasItem(item))
+                return null;
+
+            return Items[item];
+        }
+        
+        public bool HasItem(Guid item)
+        {
+            if (item == null || item == Guid.Empty)
+                return false;
+
+            return Items.ContainsKey(item);
+        }
+
+        public bool ItemAdd(Item item)
+        {
+            if (item == null)
+                return false;
+
+            if (!HasItem(item.Guid))
+                m_Items[item.Guid] = item;
+
+            return true;
+        }
+
+        public bool ItemRemove(Guid item)
+        {
+            if (item == null || item == Guid.Empty)
+                return false;
+            else if (!HasItem(item))
+                return true;
+
+            return m_Items.Remove(item);
         }
         #endregion
 
