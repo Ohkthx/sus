@@ -6,10 +6,11 @@ namespace SUS.Shared.Objects.Nodes
     [Serializable]
     public class Graveyard : Spawnable
     {
-        public Graveyard() : base(Types.OpenWorld | Types.PvP, Locations.Graveyard, "Full of bones and bruises.")
+        public Graveyard() : base(LocationTypes.OpenWorld | LocationTypes.PvP, Locations.Graveyard, "Full of bones and bruises.", 45, 60)
         {
-            MaxSpawns = 6;
             NPCs = Spawnables.Graveyard;
+
+            SpawnerAdd(22, 30, 21, 15);
         }
     }
 }

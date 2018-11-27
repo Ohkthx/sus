@@ -1,130 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
-using SUS.Shared.Objects.Mobiles;
-using SUS.Shared.Objects.Mobiles.Spawns;
-using SUS.Shared.Utilities;
+﻿using SUS.Shared.Utilities;
+using System;
+using System.Collections.Concurrent;
 
 namespace SUS.Shared.Objects
 {
-    [Flags, Serializable]
-    public enum Spawnables
-    {
-        None        = 0x00000000,
-
-        Skeleton    = 0x00000001,
-        Zombie      = 0x00000002,
-        Ghoul       = 0x00000004,
-        Wraith      = 0x00000008,
-
-        Unused1     = 0x00000010,
-
-        Orc         = 0x00000020,
-        Cyclops     = 0x00000040,
-        Titan       = 0x00000080,
-
-        Unused2     = 0x00000100,
-        Unused3     = 0x00000200,
-        Unused4     = 0x00000400,
-        Unused5     = 0x00000800,
-        Unused6     = 0x00001000,
-        Unused7     = 0x00002000,
-        Unused8     = 0x00004000,
-        Unused9     = 0x00008000,
-        Unused10    = 0x00010000,
-        Unused11    = 0x00020000,
-        Unused12    = 0x00040000,
-        Unused13    = 0x00080000,
-        Unused14    = 0x00100000,
-        Unused15    = 0x00200000,
-        Unused16    = 0x00400000,
-        Unused17    = 0x00800000,
-        Unused18    = 0x01000000,
-        Unused19    = 0x02000000,
-        Unused20    = 0x04000000,
-        Unused21    = 0x08000000,
-        Unused22    = 0x10000000,
-        Unused23    = 0x20000000,
-        Unused24    = 0x40000000,
-
-        Graveyard = Skeleton | Zombie | Ghoul | Wraith,
-    };
-
     [Serializable]
     public abstract class Spawnable : Node
     {
-        public int MaxSpawns = 0;
         public Spawnables NPCs = Spawnables.None;
+        private static ConcurrentDictionary<Guid, Spawner> m_Spawners = new ConcurrentDictionary<Guid, Spawner>();
+        private const int MINAXIS = 10;
+        private int m_MaxX = 0;
+        private int m_MaxY = 0;
+        private int[,] m_Map;
 
-        public Spawnable(Types type, Locations loc, string desc) : base(type, loc, desc) { isSpawnable = true; }
-
-        /// <summary>
-        ///     Gets a new Spawn based on the node's ideal spawn-types.
-        /// </summary>
-        /// <returns>Returns either a creature or null.</returns>
-        public BaseCreature GetSpawn()
+        #region Constructors
+        public Spawnable(LocationTypes type, Locations loc, string desc, int maxX, int maxY) : base(type, loc, desc)
         {
-            return rngSpawn(NPCs);
+            if (maxX < MINAXIS)
+                maxX = MINAXIS;
+
+            if (maxY < MINAXIS)
+                maxY = MINAXIS;
+
+            m_MaxX = maxX-1;
+            m_MaxY = maxY-1;
+
+            isSpawnable = true;
+            m_Map = new int[maxY, maxX];
         }
+        #endregion
 
-        protected BaseCreature rngSpawn(Spawnables spawnType)
+        #region Getters / Setters
+        #endregion
+
+        public void SpawnerAdd(int x, int y, int range, int limit)
         {
-            List<Spawnables> spawns = spawnablesToList(spawnType);
-            if (spawns == null)
-                return null;
+            if (NPCs == Spawnables.None)
+                return;
 
-            if (spawns.Count == 1)
-            {
-                return spawnOffType(spawns[0]);
-            }
-
-            int pos = Utility.RandomMinMax(0, spawns.Count - 1);
-            return spawnOffType(spawns[pos]);
-        }
-
-        protected List<Spawnables> spawnablesToList(Spawnables spawns)
-        {
-            List<Spawnables> creatures = new List<Spawnables>();
-
-            // While our spawnables passed are not "None", continue to try and build a list of potential creatures.
-            while (spawns != Spawnables.None)
-            {
-                foreach (Spawnables s in Enum.GetValues(typeof(Spawnables)))
-                {
-                    if ((spawns & s) == s && s != Spawnables.None)
-                    {   // Found a match.
-                        creatures.Add(s);    // Spawn based on its type.
-                        spawns &= ~s;                   // Remove our value from spawns.
-                    }
-                }
-            }
-
-            if (creatures.Count == 0)
-                return null;
-
-            return creatures;
-        }
-
-        protected BaseCreature spawnOffType(Spawnables spawn)
-        {
-            switch (spawn)
-            {
-                case Spawnables.Skeleton:
-                    return new Skeleton();
-                case Spawnables.Zombie:
-                    return new Zombie();
-                case Spawnables.Ghoul:
-                    return new Ghoul();
-                case Spawnables.Wraith:
-                    return new Wraith();
-                case Spawnables.Orc:
-                    return new Orc();
-                case Spawnables.Cyclops:
-                    return new Cyclops();
-                case Spawnables.Titan:
-                    return new Titan();
-                default:
-                    return null;
-            }
+            Spawner spawner = new Spawner(Location, NPCs, x, y, range, limit, m_MaxX, m_MaxY);
+            m_Spawners.TryAdd(spawner.Guid, spawner);
+            Utility.ConsoleNotify($"Spawner created @({spawner.Coordinate.X}, {spawner.Coordinate.Y}) in {Location.ToString()}");
         }
     }
 }

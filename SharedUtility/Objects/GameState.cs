@@ -14,15 +14,15 @@ namespace SUS.Shared.Objects
     {
         private static readonly double m_Version = 1.0;
         private Player m_Account = null;
-        private Node m_Location = null;
-        private Node m_LocationLast = null;
+        private NodeTag m_Location = null;
+        private NodeTag m_LocationLast = null;
         private int m_Unlocked = (int)Locations.None;
         private HashSet<MobileTag> m_Mobiles;
 
         #region Constructors
         public GameState(Player account) : this(account, null, (int)Locations.Basic) { }
         public GameState(Player account, int unlocked) : this(account, null, unlocked) { }
-        public GameState(Player account, Node location, int unlocked)
+        public GameState(Player account, NodeTag location, int unlocked)
         {
             this.Account = account;
             this.NodeCurrent = location;
@@ -101,7 +101,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public Node NodeCurrent
+        public NodeTag NodeCurrent
         {
             get { return m_Location; }
             set
@@ -110,8 +110,11 @@ namespace SUS.Shared.Objects
                     return;
 
                 if (NodeCurrent == null)
+                {
                     m_Location = value;
-                else if (value.ID == NodeCurrent.ID)
+                    return;
+                }
+                else if (!value.IsValid || value.Location == NodeCurrent.Location)
                     return;
 
                 NodeLast = NodeCurrent; // Swap the Node.
@@ -119,7 +122,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public Node NodeLast
+        public NodeTag NodeLast
         {
             get { return m_LocationLast; }
             set
@@ -128,8 +131,11 @@ namespace SUS.Shared.Objects
                     return;
 
                 if (NodeLast == null)
+                {
                     m_LocationLast = value;
-                else if (value.ID == NodeLast.ID)
+                    return;
+                }
+                else if (!value.IsValid || value.Location == NodeLast.Location)
                     return;
 
                 m_LocationLast = value;     // Updates our Last Node accessed.
@@ -326,33 +332,19 @@ namespace SUS.Shared.Objects
             int pos = -1;
             if (int.TryParse(location, out pos) && pos <= 0)
                 return Locations.None;                      // User attempted a negative number.
-            else if (pos > NodeCurrent.ConnectionsCount)
-                return Locations.None;                      // User attempted a number out of range.
 
             int count = 0;
-            foreach (Locations loc in Enum.GetValues(typeof(Locations)))
+            foreach (Locations loc in NodeCurrent.ConnectionsToList())
             {
                 if (loc == Locations.None)          // A connection cannot be 'None'
                     continue;
-                else if ((loc & (loc - 1)) != 0)                // Check if this is not a power of two (indicating it is a combination location)
-                    continue;                                   //  It was a combination.
-                else if (!NodeCurrent.HasConnection(loc))       // Validate if it is not a connection.
-                    continue;                                   //  It is not a connection, return
+                else if ((loc & (loc - 1)) != 0)    // Check if this is not a power of two (indicating it is a combination location)
+                    continue;                       //  It was a combination.
 
                 ++count;
-                if (pos > 0)
+                if (count == pos)   // Attempts to check the integer conversion
                 {
-                    if (count == pos)   // Attempts to check the integer conversion
-                    {
-                        return loc;     //  if a match is found, return it.
-                    }
-                }
-                else
-                {
-                    if (NodeCurrent.StringToConnection(location) == loc)
-                    {
-                        return loc;
-                    }
+                    return loc;     //  if a match is found, return it.
                 }
             }
 

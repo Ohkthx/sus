@@ -16,6 +16,51 @@ namespace SUS.Shared.Objects
         Equippable = Armor | Weapon,
     }
 
+
+    [Serializable]
+    public sealed class Coordinate
+    {
+        private int m_Xaxis = 0;
+        private int m_Yaxis = 0;
+
+        public Coordinate(int x, int y)
+        {
+            if (x < 0)
+                x = 0;
+            if (y < 0)
+                y = 0;
+
+            X = x;
+            Y = y;
+        }
+
+        #region Getters / Setters
+        public int X
+        {
+            get { return m_Xaxis; }
+            set
+            {
+                if (value < 0 || value == X)
+                    return;
+
+                m_Xaxis = value;
+            }
+        }
+
+        public int Y
+        {
+            get { return m_Yaxis; }
+            set
+            {
+                if (value < 0 || value == Y)
+                    return;
+
+                m_Yaxis = value;
+            }
+        }
+        #endregion
+    }
+
     [Serializable]
     public abstract class Item
     {
@@ -83,6 +128,54 @@ namespace SUS.Shared.Objects
         public bool IsEquippable { get { return (ItemTypes.Equippable & Type) == Type; } }
 
         public bool IsDestroyable { get { return m_isDestroyable; } }
+        #endregion
+
+        #region Overrides
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 13;
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, Guid) ? Guid.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, Name) ? Name.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, Type) ? Type.GetHashCode() : 0);
+                return hash;
+            }
+        }
+
+        public static bool operator ==(Item i1, Item i2)
+        {
+            if (Object.ReferenceEquals(i1, i2)) return true;
+            if (Object.ReferenceEquals(null, i1)) return false;
+            return (i1.Equals(i2));
+        }
+
+        public static bool operator !=(Item i1, Item i2)
+        {
+            return !(i1 == i2);
+        }
+
+        public override bool Equals(object value)
+        {
+            if (Object.ReferenceEquals(null, value)) return false;
+            if (Object.ReferenceEquals(this, value)) return true;
+            if (value.GetType() != this.GetType()) return false;
+            return IsEqual((Item)value);
+        }
+
+        public bool Equals(Item mobile)
+        {
+            if (Object.ReferenceEquals(null, mobile)) return false;
+            if (Object.ReferenceEquals(this, mobile)) return true;
+            return IsEqual(mobile);
+        }
+
+        private bool IsEqual(Item value)
+        {
+            return (value != null)
+                && (Type == value.Type)
+                && (Guid == value.Guid);
+        }
         #endregion
     }
 }

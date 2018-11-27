@@ -6,10 +6,11 @@ namespace SUS.Shared.Objects.Nodes
     [Serializable]
     public class Sewers : Spawnable
     {
-        public Sewers() : base(Types.Dungeon | Types.PvP, Locations.Sewers, "EW! Sticky!")
+        public Sewers() : base(LocationTypes.Dungeon | LocationTypes.PvP, Locations.Sewers, "EW! Sticky!", 30, 35)
         {
-            MaxSpawns = 6;
             NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul;
+
+            SpawnerAdd(15, 17, 15, 15);
         }
     }
 }

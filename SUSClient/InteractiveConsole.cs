@@ -98,7 +98,7 @@ namespace SUSClient
                         listMobiles(MobileType.Player);
                         break;
                     case ConsoleActions.npcs:
-                        listMobiles(MobileType.NPC);
+                        listMobiles(MobileType.NPC | MobileType.Creature);
                         break;
                     case ConsoleActions.mobiles:
                         listMobiles(MobileType.Mobile);
@@ -138,7 +138,7 @@ namespace SUSClient
                     listMobiles(MobileType.Player);
                     break;
                 case ConsoleActions.npcs:
-                    listMobiles(MobileType.NPC);
+                    listMobiles(MobileType.NPC | MobileType.Creature);
                     break;
                 case ConsoleActions.mobiles:
                     listMobiles(MobileType.Mobile);
@@ -164,7 +164,7 @@ namespace SUSClient
         ///     Changes the location of the current gamestate to that which is provided.
         /// </summary>
         /// <param name="location">New location.</param>
-        public void LocationUpdater(Node location)
+        public void LocationUpdater(NodeTag location)
         {
             if (location == null)
                 return;
@@ -213,7 +213,7 @@ namespace SUSClient
             if (gs.NodeLast == null)
                 last = "None";
             else
-                last = gs.NodeLast.Name;
+                last = gs.NodeLast.ToString();
 
             Console.WriteLine($" {last}");
         }

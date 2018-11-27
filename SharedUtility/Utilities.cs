@@ -13,12 +13,17 @@ namespace SUS.Shared.Utilities
     /// </summary>
     public static class Utility
     {
+        private static object notifyLock = new object();
+
         public static void ConsoleNotify(string msg)
         {
-            ConsoleColor cc = Console.ForegroundColor;          // Save the console's color.
-            Console.ForegroundColor = ConsoleColor.DarkRed;     // Set the color to Dark Red.
-            Console.WriteLine($" !! {msg}");
-            Console.ForegroundColor = cc;                       // Reset the color to the default.
+            lock (notifyLock)
+            {
+                ConsoleColor cc = Console.ForegroundColor;          // Save the console's color.
+                Console.ForegroundColor = ConsoleColor.DarkRed;     // Set the color to Dark Red.
+                Console.WriteLine($" !! {msg}");
+                Console.ForegroundColor = cc;                       // Reset the color to the default.
+            }
         }
 
         public static double RandomMinMax(double min, double max)

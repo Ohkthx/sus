@@ -67,7 +67,7 @@ namespace SUS.Shared.Packets
     public sealed class MoveMobilePacket : Packet
     {
         private Locations m_Location;
-        private Node m_NewLocation = null;
+        private NodeTag m_NewLocation = null;
 
         #region Constructors
         public MoveMobilePacket(Locations location, Mobile mobile) : this(location, new MobileTag(mobile)) { }
@@ -88,7 +88,7 @@ namespace SUS.Shared.Packets
             }
         }
 
-        public Node NewLocation
+        public NodeTag NewLocation
         {
             get { return m_NewLocation; }
             set

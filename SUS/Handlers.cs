@@ -92,12 +92,17 @@ namespace SUS.Server
         {
             Locations szLoc = GameObject.StartingZone;
 
-            player.Location = szLoc; // Assign the Starting Zone Location to the player.
+            player.Location = szLoc;            // Assign the Starting Zone Location to the player.
             player.Login();                     // Log the player in.
 
             // Client has sent a player, create a proper gamestate and send it to the client.
             GameState newState = new GameState(player);
-            newState.NodeCurrent = GameObject.FindNode(szLoc); // Assign the Starting Zone Node to the GameState.
+
+            Node loc = GameObject.FindNode(szLoc); // Assign the Starting Zone Node to the GameState.
+            if (loc == null)
+                return new ErrorPacket("Server: Invalid location to move to.");
+
+            newState.NodeCurrent = loc.GetTag();
 
             GameObject.UpdateGameStates(newState);          // Updates the GameObject with the new state that is being tracked.
             GameObject.UpdateMobiles(player);               // Update our tracked Mobiles with the new Player.
@@ -166,10 +171,11 @@ namespace SUS.Server
         /// <returns>Packaged Node.</returns>
         private static Packet GetNode(GetNodePacket gnp)
         {
-            gnp.NewLocation = GameObject.FindNode(gnp.Location);  // Fetch a new or updated node.
-            if (gnp.NewLocation == null)
+            Node newLocation = GameObject.FindNode(gnp.Location);  // Fetch a new or updated node.
+            if (newLocation == null)
                 return new ErrorPacket("Server: Bad node requested.");
 
+            gnp.NewLocation = newLocation.GetTag();
             return gnp;
         }
         #endregion
@@ -283,7 +289,11 @@ namespace SUS.Server
         /// <returns>Packed "OK" server response.</returns>
         private static Packet MobileMove(MoveMobilePacket mm)
         {
-            mm.NewLocation = GameObject.MoveMobile(mm.Location, mm.Author);
+            Node loc = GameObject.MoveMobile(mm.Location, mm.Author);
+            if (loc == null)
+                return new ErrorPacket("Server: Invalid location to move to.");
+
+            mm.NewLocation = loc.GetTag();
             return mm;
         }
 

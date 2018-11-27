@@ -84,7 +84,7 @@ namespace SUS.Shared.Packets
     public sealed class GetNodePacket : Packet
     {
         private Locations m_Location;
-        private Node m_NewLocation = null;
+        private NodeTag m_NewLocation = null;
 
         public GetNodePacket(Locations location) : base(PacketTypes.GetNode, null) { Location = location; }
 
@@ -99,7 +99,7 @@ namespace SUS.Shared.Packets
             }
         }
 
-        public Node NewLocation
+        public NodeTag NewLocation
         {
             get { return m_NewLocation; }
             set

@@ -12,7 +12,7 @@ namespace SUS.Shared.Objects
     }
 
     [Serializable]
-    class Armor : Equippable
+    public class Armor : Equippable
     {
         private int m_ArmorRating;
 
@@ -30,7 +30,7 @@ namespace SUS.Shared.Objects
         public int ArmorRating
         {
             get { return m_ArmorRating; }
-            set
+            private set
             {
                 if (value != ArmorRating)
                     m_ArmorRating = value;

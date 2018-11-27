@@ -64,6 +64,7 @@
     <Compile Include="Objects\Items\Equippable.cs" />
     <Compile Include="Objects\Items\Weapon.cs" />
     <Compile Include="Objects\Items\Armor.cs" />
+    <Compile Include="Objects\Spawner.cs" />
     <Compile Include="Packets\GetInformation.cs" />
     <Compile Include="Packets\MobileActions.cs" />
     <Compile Include="Objects\Mobiles\BaseCreature.cs" />

@@ -18,6 +18,11 @@ namespace SUS.Shared.Objects
         MainHand    = 0x00000080,
         Offhand     = 0x00000100,
         TwoHanded   = MainHand | Offhand,
+
+        Melee       = 0x00000200,
+        Ranged      = 0x00000400,
+
+        Bow         = TwoHanded | Ranged,
     }
 
     [Serializable]
@@ -40,7 +45,7 @@ namespace SUS.Shared.Objects
         {
             get
             {
-                return ((Layer & ItemLayers.MainHand) == ItemLayers.MainHand) || ((Layer & ItemLayers.TwoHanded) == ItemLayers.TwoHanded);
+                return (Layer & ItemLayers.MainHand) == ItemLayers.MainHand || (Layer & ItemLayers.TwoHanded) == ItemLayers.TwoHanded;
             }
         }
 

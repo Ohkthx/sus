@@ -12,11 +12,28 @@ namespace SUS.Shared.Objects.Mobiles
         private int m_DamageMin = -1;
         private int m_DamageMax = -1;
 
+        private Guid m_OwningSpawner;
+
         #region Constructors
-        public BaseCreature() : base(MobileType.NPC) { ID = Serial.NewObject; }
+        public BaseCreature() : base(MobileType.Creature) { ID = Serial.NewObject; }
         #endregion
 
         #region Getters / Setters
+        public Guid OwningSpawner
+        {
+            get { return m_OwningSpawner; }
+            set
+            {
+                if (value == null)
+                    return;
+                else if (OwningSpawner == Guid.Empty)
+                    m_OwningSpawner = value;
+
+                if (value != OwningSpawner)
+                    m_OwningSpawner = value;
+            }
+        }
+
         public void SetDamage(int val)
         {
             m_DamageMin = val;

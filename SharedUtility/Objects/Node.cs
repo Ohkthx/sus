@@ -6,7 +6,7 @@ using SUS.Shared.Objects.Mobiles;
 namespace SUS.Shared.Objects
 {
     [Flags, Serializable]
-    public enum Types
+    public enum LocationTypes
     {
         Town = 1,
         Dungeon = 2,
@@ -63,20 +63,86 @@ namespace SUS.Shared.Objects
     }
 
     [Serializable]
+    public class NodeTag
+    {
+        private LocationTypes m_Type;
+        private Locations m_Location;
+        private Locations m_Connections;
+
+        #region Constructors
+        public NodeTag(LocationTypes type, Locations location, Locations connections)
+        {
+            Type = type;
+            Location = location;
+            m_Connections = connections;
+        }
+        #endregion
+
+        #region Getters / Setters
+        public LocationTypes Type
+        {
+            get { return m_Type; }
+            private set
+            {
+                if (value != m_Type)
+                    m_Type = value;
+            }
+        }
+
+        public Locations Location
+        {
+            get { return m_Location; }
+            private set
+            {
+                if (value != m_Location)
+                    m_Location = value;
+            }
+        }
+
+        public Locations Connections 
+        {
+            get { return m_Connections; }
+            private set
+            {
+                if (value != Connections)
+                    m_Connections = value;
+            }
+        }
+
+        public bool IsValid { get { return Location != Locations.None && (Location & (Location - 1)) == 0; } }
+        #endregion
+
+        public List<Locations> ConnectionsToList()
+        {
+            List<Locations> conn = new List<Locations>();
+
+            foreach (Locations loc in Enum.GetValues(typeof(Locations)))
+            {
+                if (loc == Locations.None || (loc & (loc - 1)) != 0)
+                    continue;
+                else if ((Connections & loc) == loc)
+                    conn.Add(loc);
+            }
+
+            return conn;
+        }   
+    }
+
+
+    [Serializable]
     public abstract class Node
     {
         private string m_Name;
         private string m_Description = string.Empty;
 
         public bool isSpawnable { get; protected set; } = false;
-        //private HashSet<MobileTag> m_Mobiles;
 
-        private Types m_Type;
+        private LocationTypes m_Type;
         private Locations m_Location;
         private Locations m_Connections = Locations.None;
 
         #region Constructors
-        public Node(Types type, Locations location, string description)
+        public Node(LocationTypes type, Locations location, string description)
         {
             Name = Enum.GetName(typeof(Locations), location);
             Description = description;
@@ -137,7 +203,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public Types Type
+        public LocationTypes Type
         {
             get { return m_Type; }
             set
@@ -250,6 +316,11 @@ namespace SUS.Shared.Objects
         public static bool isValidLocation(Locations loc)
         {   // Check if it is not a 'None' location. If it is not, verifies that it is a power of 2.
             return loc != Locations.None && (loc & (loc - 1)) == 0;
+        }
+
+        public NodeTag GetTag()
+        {
+            return new NodeTag(Type, Location, Connections);
         }
     }
 }

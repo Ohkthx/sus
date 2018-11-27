@@ -27,8 +27,9 @@ namespace SUS.Shared.Objects
         None = 0,
         Player = 1,
         NPC = 2,
+        Creature = 4,
 
-        Mobile = Player | NPC,
+        Mobile = Player | NPC | Creature,
     }
 
     [Serializable]
@@ -232,6 +233,7 @@ namespace SUS.Shared.Objects
     [Serializable]
     public abstract class Mobile
     {
+        private Coordinate m_Coord;
         private Guid m_Guid;
         private Serial m_ID;                // ID of the mobile.
         private string m_Name;              // Name of the mobile.
@@ -348,6 +350,21 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Getters / Setters
+        public Coordinate Coordinate
+        {
+            get { return m_Coord; }
+            set
+            {
+                if (value == null)
+                    return;
+                else if (Coordinate == null)
+                    m_Coord = value;
+
+                if (value != Coordinate)
+                    m_Coord = value;
+            }
+        }
+
         public Guid Guid
         {
             get

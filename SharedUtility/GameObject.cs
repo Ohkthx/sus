@@ -14,9 +14,6 @@ namespace SUS
     public static class GameObject
     {
         #region Dictionaries and Variables.
-        // Timer that calls the world spawner to repopulate the world.
-        private static Timer m_SpawnTimer;
-
         // Player ID => GameState
         private static ConcurrentDictionary<ulong, GameState> m_Gamestates = new ConcurrentDictionary<ulong, GameState>();
 
@@ -48,9 +45,6 @@ namespace SUS
             // Create our map if there are no nodes yet.
             if (m_Nodes.Count() == 0)
                 CreateMap();
-
-            // Start our timer for spawning creatures.
-            SpawnTimerStart(15000);
         }
 
         #region Map Data
@@ -80,9 +74,6 @@ namespace SUS
             UpdateNodes(Sewer);
             UpdateNodes(Wilderness);
             UpdateNodes(Graveyard);
-
-            // Start our timer for spawning creatures.
-            SpawnTimerStart(15000);
         }
 
         /// <summary>
@@ -154,8 +145,11 @@ namespace SUS
         public static Mobile FindMobile(MobileType type, Serial serial)
         {   // Iterate our hashset of mobiles.
             foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
-                if (((m.Value.Type == type) && (m.Value.ID == serial)) || type == MobileType.Mobile)
+                if (((m.Value.Type == type) && (m.Value.ID == serial))
+                    || type == MobileType.Mobile)
+                {
                     return m.Value;   // If the type and serial match, return it. If it is type of 'Any', return it.
+                }
 
             return null;    // Nothing was found, return null.
         }
@@ -335,83 +329,9 @@ namespace SUS
         #endregion
 
         #region Spawns / Spawnning
-        /// <summary>
-        ///     Starts our spawner with the specified timing..
-        /// </summary>
-        private static void SpawnTimerStart(int milliseconds)
+        public static bool Spawn(Mobile mobile, Locations location)
         {
-            m_SpawnTimer = new Timer(milliseconds);  // Create the timer with a 15sec counter.
-            m_SpawnTimer.Elapsed += Spawner;            // Calls "CheckSpawns" when it hits the interval.
-            m_SpawnTimer.AutoReset = true;                  // Timer to reset or not once it hits it's limit.
-            m_SpawnTimer.Enabled = true;                    // Enable it.
-        }
-
-        /// <summary>
-        ///     Stops our spawner from running.
-        /// </summary>
-        private static void SpawnTimerStop()
-        {   
-            if (m_SpawnTimer != null && m_SpawnTimer.Enabled)
-                m_SpawnTimer.Enabled = false;   // Only stop the timer if it is currently assigned to and running.
-        }
-
-        /// <summary>
-        ///     Works to allow for timing and debugging of the spawner.
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="e"></param>
-        private static void Spawner(Object source, ElapsedEventArgs e)
-        {
-            System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
-            uint npcAdded = CheckSpawns();
-
-            watch.Stop();
-
-            if (npcAdded > 0)
-                Utility.ConsoleNotify($"Checked and Spawned {npcAdded} mobiles in {watch.ElapsedMilliseconds}ms.");
-        }
-
-        /// <summary>
-        ///     Checks all of the local spawns for individual nodes.
-        /// </summary>
-        /// <returns></returns>
-        private static uint CheckSpawns()
-        {
-            Dictionary<Locations, HashSet<Mobile>> LocMobiles = new Dictionary<Locations, HashSet<Mobile>>();
-
-            // Generate our keys and HashSets
-            foreach (KeyValuePair<Locations, Node> n in m_Nodes)
-                LocMobiles.Add(n.Key, new HashSet<Mobile>());
-
-            // Add our mobiles to a Dictionary with their Location being the key.
-            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
-            {
-                if (!m.Value.IsPlayer)
-                    LocMobiles[m.Value.Location].Add(m.Value);  // Only add if the creature is not a player.
-            }
-
-            uint npcAdded = 0;
-            // Iterate our new dictionary- getting the needed nodes.
-            foreach (KeyValuePair<Locations, HashSet<Mobile>> kv in LocMobiles)
-            {
-                Node n = FindNode(kv.Key);
-                if (n == null || !n.isSpawnable)
-                    continue;
-
-                Spawnable ns = n as Spawnable;
-                if (kv.Value.Count < ns.MaxSpawns)
-                {
-                    int amount = Utility.RandomMinMax(0, 2);            // Will spawn between 0 and 2 mobs.
-                    if ((kv.Value.Count + amount) > ns.MaxSpawns)       // Check for potential overspawning.
-                        amount = ns.MaxSpawns - kv.Value.Count;         //  Set our amount appropriately to prevent and overspawn.
-
-                    for (int i = 0; i < amount; i++)
-                        if (Spawn(ns.GetSpawn(), ns.Location))          // Spawn based on the amount.
-                            ++npcAdded;
-                }
-            }
-
-            return npcAdded;
+            return Spawn(mobile, location, Guid.Empty);
         }
 
         /// <summary>
@@ -420,21 +340,58 @@ namespace SUS
         /// <param name="mobile">Mobile to add to a location.</param>
         /// <param name="location">Location to be modified.</param>
         /// <returns></returns>
-        public static bool Spawn(Mobile mobile, Locations location)
+        public static bool Spawn(Mobile mobile, Locations location, Guid spawner)
         {
             if (mobile == null)
                 return false;
             else if (!Node.isValidLocation(location))
                 return false;   // If an invalid location is passed, return false.
 
+            if (mobile.Type == MobileType.Creature && spawner != Guid.Empty)
+                (mobile as BaseCreature).OwningSpawner = spawner;
+
             mobile.Location = location; // Updates the location of the local mobile.
             if (UpdateMobiles(mobile))  // Update the mobile in the GameObject.
             {
-                //Utility.ConsoleNotify($"Spawned {mobile.Name} in {mobile.Location.ToString()}.");
+                Utility.ConsoleNotify($"Spawned {mobile.Name} in {mobile.Location.ToString()} @({mobile.Coordinate.X}, {mobile.Coordinate.Y}).");
                 return true;
             }
 
             return false;
+        }
+
+        public static int SpawnersCount(Locations loc, Guid spawner)
+        {
+            if (spawner == Guid.Empty)
+                return -1;
+
+            HashSet<BaseCreature> bc = FindSpawned(loc, spawner);
+            if (bc == null)
+                return -1;
+
+            return bc.Count;
+        }
+
+        private static HashSet<BaseCreature> FindSpawned(Locations loc, Guid spawner)
+        {
+            HashSet<BaseCreature> mobiles = new HashSet<BaseCreature>();
+            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+            {
+                if (m.Value.Location == loc && m.Value.Type == MobileType.Creature)
+                {
+                    BaseCreature bc = m.Value as BaseCreature;
+                    if (bc == null)
+                        continue;
+
+                    if (bc.OwningSpawner == spawner)
+                        mobiles.Add(bc);
+                }
+            }
+
+            if (mobiles.Count > 0)
+                return mobiles;
+
+            return null;    // Nothing was found, return null.
         }
         #endregion
     }
