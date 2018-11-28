@@ -32,6 +32,8 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Getters / Setters
+        public int MaxX { get { return m_MaxX; } }
+        public int MaxY { get { return m_MaxY; } }
         #endregion
 
         public void SpawnerAdd(int x, int y, int range, int limit)
@@ -42,6 +44,11 @@ namespace SUS.Shared.Objects
             Spawner spawner = new Spawner(Location, NPCs, x, y, range, limit, m_MaxX, m_MaxY);
             m_Spawners.TryAdd(spawner.Guid, spawner);
             Utility.ConsoleNotify($"Spawner created @({spawner.Coordinate.X}, {spawner.Coordinate.Y}) in {Location.ToString()}");
+        }
+
+        public Coordinate StartingCoordinate()
+        {
+            return new Coordinate(MaxX / 2, MaxY / 2);
         }
     }
 }

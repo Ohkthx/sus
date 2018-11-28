@@ -143,7 +143,13 @@ namespace SUS.Server
         #region Information Requests 
         private static Packet LocalMobiles(GetMobilesPacket gmp)
         {
-            gmp.Mobiles = GameObject.FindMobiles(gmp.Location, MobileType.Mobile);
+            Mobile relativeMobile = GameObject.FindMobile(gmp.Author.Guid);
+            if (relativeMobile == null || relativeMobile.Coordinate == null)
+                return new ErrorPacket("Server: You are not in a location to get nearby objects.");
+
+            HashSet<MobileTag> lm = GameObject.FindNearbyMobiles(gmp.Location, relativeMobile);
+            gmp.Mobiles = lm;
+            //gmp.Mobiles = GameObject.FindMobiles(gmp.Location, MobileType.Mobile);
             return gmp;
         }
 
@@ -289,7 +295,7 @@ namespace SUS.Server
         /// <returns>Packed "OK" server response.</returns>
         private static Packet MobileMove(MoveMobilePacket mm)
         {
-            Node loc = GameObject.MoveMobile(mm.Location, mm.Author);
+            Node loc = GameObject.MoveMobile(mm.Location, mm.Author, direction : mm.Direction);
             if (loc == null)
                 return new ErrorPacket("Server: Invalid location to move to.");
 
@@ -308,7 +314,7 @@ namespace SUS.Server
                 return new ErrorPacket("Server: Ressurrection target not provided.");
 
             // Sends the mobile to the StartingZone, ressurrects, and processes it as if an admin performed the action.
-            GameObject.MoveMobile(GameObject.StartingZone, res.Author, forceMove: true, ressurrection: true);
+            GameObject.Ressurrect(GameObject.StartingZone, res.Author);
             return new RessurrectMobilePacket(GameObject.StartingZone, res.Author, success: true);
         }
     }

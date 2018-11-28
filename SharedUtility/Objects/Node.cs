@@ -68,13 +68,15 @@ namespace SUS.Shared.Objects
         private LocationTypes m_Type;
         private Locations m_Location;
         private Locations m_Connections;
+        private bool m_Traversable;
 
         #region Constructors
-        public NodeTag(LocationTypes type, Locations location, Locations connections)
+        public NodeTag(LocationTypes type, Locations location, Locations connections, bool spawnable)
         {
             Type = type;
             Location = location;
             m_Connections = connections;
+            m_Traversable = spawnable;
         }
         #endregion
 
@@ -108,6 +110,8 @@ namespace SUS.Shared.Objects
                     m_Connections = value;
             }
         }
+
+        public bool CanTraverse { get { return m_Traversable; } }
 
         public bool IsValid { get { return Location != Locations.None && (Location & (Location - 1)) == 0; } }
         #endregion
@@ -320,7 +324,7 @@ namespace SUS.Shared.Objects
 
         public NodeTag GetTag()
         {
-            return new NodeTag(Type, Location, Connections);
+            return new NodeTag(Type, Location, Connections, isSpawnable);
         }
     }
 }

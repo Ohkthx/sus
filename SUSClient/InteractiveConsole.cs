@@ -66,15 +66,18 @@ namespace SUSClient
             while (clientRequest == null)
             {   // Get our action from the user.
                 ConsoleActions consoleAction = ConsoleActions.none;
-                string act = string.Empty;
+                string[] actions = null;
 
                 while (true)
                 {
                     Console.Write($"\n > [Round: {rounds}] Choose an action: ");
-                    act = Console.ReadLine().ToLower();
+                    actions = Console.ReadLine().ToLower().Split(' ');
+
+                    if (actions.Count() == 0)
+                        continue;
 
                     // Validate the requested action is acceptable to be processed on.
-                    if (ValidActions.TryGetValue(act, out consoleAction))
+                    if (ValidActions.TryGetValue(actions[0], out consoleAction))
                     {   // If it was a good action, break the while loop early.
                         this.lastAction = consoleAction;
                         break;
@@ -86,7 +89,10 @@ namespace SUSClient
                 switch (consoleAction)
                 {   // Process the action by calling the appropriate functions.
                     case ConsoleActions.move:
-                        move();
+                        if (actions.Count() > 1)
+                            move(actions[1]);
+                        else
+                            move();
                         break;
                     case ConsoleActions.look:
                         look();
@@ -179,14 +185,56 @@ namespace SUSClient
         {
             look();
 
+            MobileDirections newDir = MobileDirections.None;
             Locations newLoc = Locations.None;
-            do
+            while(true)
+            {
                 Console.Write("Select location: ");
-            while ((newLoc = gs.StringToLocation(Console.ReadLine())) == Locations.None);
+                string input = Console.ReadLine();
 
-            Console.WriteLine($"Selected: {newLoc.ToString()}");
+                if (gs.NodeCurrent.CanTraverse)
+                {
+                    if ((newDir = gs.StringToDirection(input)) != MobileDirections.None)
+                    {
+                        Console.WriteLine($"Selected: {newDir.ToString()}");
+                        clientRequest = new MoveMobilePacket(gs.Account.Location, gs.Account.getTag(), newDir);
+                        return;
+                    }
+                }
 
-            this.clientRequest = new MoveMobilePacket(newLoc, gs.Account);
+                if ((newLoc = gs.StringToLocation(input)) != Locations.None)
+                {
+                    Console.WriteLine($"Selected: {newLoc.ToString()}");
+                    clientRequest = new MoveMobilePacket(newLoc, gs.Account.getTag());
+                    return;
+                }
+            }
+        }
+
+        private void move(string position)
+        {
+            MobileDirections newDir = MobileDirections.None;
+            Locations newLoc = Locations.None;
+
+            if (gs.NodeCurrent.CanTraverse)
+            {
+                if ((newDir = gs.StringToDirection(position)) != MobileDirections.None)
+                {
+                    Console.WriteLine($"Selected: {newDir.ToString()}");
+                    clientRequest = new MoveMobilePacket(gs.Account.Location, gs.Account.getTag(), newDir);
+                    return;
+                }
+            }
+
+            if ((newLoc = gs.StringToLocation(position)) != Locations.None)
+            {
+                Console.WriteLine($"Selected: {newLoc.ToString()}");
+                clientRequest = new MoveMobilePacket(newLoc, gs.Account.getTag());
+                return;
+
+            }
+
+            move();
         }
 
         /// <summary>
@@ -194,8 +242,21 @@ namespace SUSClient
         /// </summary>
         private void look()
         {
-            Console.WriteLine($" Nearby Locations:");
+            if (gs.NodeCurrent.CanTraverse)
+            {   // Print our directions since we can move within this map.
+                Console.WriteLine(" Directions to travel locally:");
+                foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
+                {
+                    if (dir == MobileDirections.None)
+                        continue;
+
+                    Console.WriteLine($"  {Enum.GetName(typeof(MobileDirections), dir)}");
+                }
+                Console.WriteLine();
+            }
+
             int pos = 0;
+            Console.WriteLine(" Nearby Locations:");
             foreach (Locations n in gs.NodeCurrent.ConnectionsToList())
             {
                 ++pos;
@@ -227,7 +288,7 @@ namespace SUSClient
         {
             if (this.clientRequest == null)
             {   // Create a request for the server to respond to.
-                this.clientRequest = new GetMobilesPacket(gs.NodeCurrent.Location);
+                this.clientRequest = new GetMobilesPacket(gs.NodeCurrent.Location, gs.Account.getTag());
                 return null;
             }
 

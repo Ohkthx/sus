@@ -10,7 +10,7 @@ namespace SUS.Shared.Packets
         private Locations m_Location;
         private HashSet<MobileTag> m_Mobiles = null;
 
-        public GetMobilesPacket(Locations location) : base(PacketTypes.GetLocalMobiles, null) { Location = location; }
+        public GetMobilesPacket(Locations location, MobileTag relative) : base(PacketTypes.GetLocalMobiles, relative) { Location = location; }
 
         #region Getters / Setters
         public Locations Location

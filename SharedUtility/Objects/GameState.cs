@@ -313,7 +313,7 @@ namespace SUS.Shared.Objects
                 if (rez.isSuccessful)
                 {   // And the server reported it was successful...
                     Account.Ressurrect();               // Ressurrect our account.
-                    return new MoveMobilePacket(rez.Location, Account);
+                    return new MoveMobilePacket(rez.Location, Account.getTag());
                 }
             }
 
@@ -330,8 +330,10 @@ namespace SUS.Shared.Objects
         public Locations StringToLocation(string location)
         {
             int pos = -1;
-            if (int.TryParse(location, out pos) && pos <= 0)
+            if (int.TryParse(location, out pos) && pos < 0)
                 return Locations.None;                      // User attempted a negative number.
+            else if (pos == 0)
+                return Account.Location;
 
             int count = 0;
             foreach (Locations loc in NodeCurrent.ConnectionsToList())
@@ -349,6 +351,22 @@ namespace SUS.Shared.Objects
             }
 
             return Locations.None;
+        }
+
+        public MobileDirections StringToDirection(string location)
+        {
+            if (!NodeCurrent.CanTraverse)
+                return MobileDirections.None;
+
+            foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
+            {
+                if (dir == MobileDirections.None) 
+                    continue;
+                else if (Enum.GetName(typeof(MobileDirections), dir).ToLower() == location.ToLower())
+                    return dir;
+            }
+
+            return MobileDirections.None;
         }
         #endregion
 

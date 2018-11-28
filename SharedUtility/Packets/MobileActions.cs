@@ -66,18 +66,32 @@ namespace SUS.Shared.Packets
     [Serializable]
     public sealed class MoveMobilePacket : Packet
     {
+        private MobileDirections m_Direction = MobileDirections.None;
         private Locations m_Location;
         private NodeTag m_NewLocation = null;
 
         #region Constructors
-        public MoveMobilePacket(Locations location, Mobile mobile) : this(location, new MobileTag(mobile)) { }
-        public MoveMobilePacket(Locations location, MobileTag mobile) : base(PacketTypes.MobileMove, mobile)
+        public MoveMobilePacket(Locations location, MobileTag mobile) : this(location, mobile, MobileDirections.None) { }
+        public MoveMobilePacket(Locations location, MobileTag mobile, MobileDirections direction) : base(PacketTypes.MobileMove, mobile)
         {
             Location = location;
+            Direction = direction;
         }
         #endregion
 
         #region Getters / Setters
+        public MobileDirections Direction
+        {
+            get { return m_Direction; }
+            set
+            {
+                if (value == MobileDirections.None || value == Direction) 
+                    return; // Prevent assigning a bad value or reassigning.
+
+                m_Direction = value;
+            }
+        }
+
         public Locations Location
         {
             get { return m_Location; }

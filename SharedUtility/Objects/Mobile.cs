@@ -32,6 +32,22 @@ namespace SUS.Shared.Objects
         Mobile = Player | NPC | Creature,
     }
 
+    [Flags, Serializable]
+    public enum MobileDirections
+    {
+        None = 0,
+
+        North = 1,
+        South = 2,
+        East = 4,
+        West = 8,
+
+        NorthEast = North | East,
+        NorthWest = North | West,
+        SouthEast = South | East,
+        SouthWest = South | West,
+    }
+
     [Serializable]
     public class MobileModifier
     {
@@ -244,6 +260,10 @@ namespace SUS.Shared.Objects
         protected Dictionary<Guid, Item> m_Items;
         private Dictionary<ItemLayers, Equippable> m_Equipped;
 
+        // Mobile Properties
+        private int m_Speed = 1;            // Speed that the Mobile moves at.
+        private readonly int m_Vision = 15;          // Distance the Mobile can see.
+        
         // Mobile Stats.
         private int m_StatCap;
         private int m_Str, m_Dex, m_Int;
@@ -475,6 +495,9 @@ namespace SUS.Shared.Objects
                 return rating;
             }
         }
+
+        public int Vision { get { return m_Vision; } }
+        public int Speed { get { return m_Speed; } }
         #endregion
 
         #region Stats
@@ -805,6 +828,51 @@ namespace SUS.Shared.Objects
         public abstract void Kill();
 
         public abstract void Ressurrect();
+
+        public void MoveInDirection(MobileDirections direction, int xMax, int yMax)
+        {
+            if (direction == MobileDirections.None)
+                return; // No desired direction, do not move.
+
+
+            // Gets a pseudo-random distance between our vision (default: 15) and  30 * Speed (default: 1)
+            int distance = Utility.RandomMinMax(Vision, (Vision * Speed * 2));
+
+            // Factor in our current direction.
+            while (direction > MobileDirections.None)
+            {
+                foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
+                {
+                    if (dir == MobileDirections.None || (dir & (dir - 1)) != 0)
+                        continue;   // Current iteration is either 'None' or it is a combination of directions.
+
+                    if ((direction & dir) == dir)
+                    {   // We have found a direction that is within our current direction.
+                        switch (dir)
+                        {
+                            case MobileDirections.North:
+                                // Protect ourselves from extending beyond the coordinates we are allowed to.
+                                Coordinate.Y = ((Coordinate.Y + distance) > yMax) ? yMax : Coordinate.Y + distance;
+                                break;
+                            case MobileDirections.South:
+                                // Protection from negative coordinate.
+                                Coordinate.Y = ((Coordinate.Y - distance) < 0) ? 0 : Coordinate.Y - distance;
+                                break;
+                            case MobileDirections.East:
+                                // Protect ourselves from extending beyond the coordinates we are allowed to.
+                                Coordinate.X = ((Coordinate.X + distance) > xMax) ? xMax : Coordinate.X + distance;
+                                break;
+                            case MobileDirections.West:
+                                // Protection from negative coordinate.
+                                Coordinate.X = ((Coordinate.X - distance) < 0) ? 0 : Coordinate.X - distance; 
+                                break;
+                        }
+
+                        direction &= ~(dir);    // Removes our value from direction.
+                    }
+                }
+            }
+        }
 
         public MobileTag getTag() { return new MobileTag(this); }
     }

@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Timers;
 using SUS.Shared.Objects;
 using SUS.Shared.Objects.Mobiles;
 using SUS.Shared.Objects.Nodes;
@@ -177,6 +176,29 @@ namespace SUS
             return null;    // Nothing was found, return null.
         }
 
+        public static HashSet<MobileTag> FindNearbyMobiles(Locations loc, Mobile baseMobile)
+        {
+            int mRange = baseMobile.Vision;
+            int mX = baseMobile.Coordinate.X;
+            int mY = baseMobile.Coordinate.Y;
+
+            HashSet<MobileTag> lm = new HashSet<MobileTag>();
+            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+            {
+                if (m.Value.Location != loc || (m.Value.IsPlayer && m.Value.ID == baseMobile.ID))
+                    continue;
+
+                int distance = (int)Math.Sqrt(
+                    Math.Pow(mX - m.Value.Coordinate.X, 2)
+                    + Math.Pow(mY - m.Value.Coordinate.Y, 2)
+                    );
+
+                if (distance <= mRange)
+                    lm.Add(m.Value.getTag());
+            }
+            return lm;
+        }
+
         /// <summary>
         ///     Finds a player type mobile.
         /// </summary>
@@ -203,7 +225,7 @@ namespace SUS
         /// <param name="toLocation">Node to move the mobile to.</param>
         /// <param name="mobile">Mobile to update.</param>
         /// <param name="forceMove">Overrides requirements if an admin is performing the action.</param>
-        public static Node MoveMobile(Locations toLocation, MobileTag mobile, bool forceMove = false, bool ressurrection = false)
+        public static Node MoveMobile(Locations toLocation, MobileTag mobile, MobileDirections direction = MobileDirections.None,  bool forceMove = false)
         {
             Mobile m = FindMobile(mobile.Guid);
             if (m == null)
@@ -212,19 +234,31 @@ namespace SUS
                 return null;
             }
 
-            if (ressurrection)
-                m.Ressurrect(); // Ressurrect if requested.
-            else if (toLocation == m.Location)
-                return FindNode(toLocation);   // Trying to move within the same location.
-
             if (!forceMove)                                         // If it is not an admin move...
-                if (!isConnectedLocation(m.Location, toLocation))   //  And it is not a connected location...
+                if (!isConnectedLocation(m.Location, toLocation)
+                    && toLocation != m.Location)   //  And it is not a connected location...
                     return null;                                    //   Return failure.
-            
+
+            Node n = FindNode(toLocation);
+            if (n.isSpawnable)
+            {
+                Spawnable s = n as Spawnable;
+                if (m.Coordinate == null || toLocation != m.Location)
+                    m.Coordinate = s.StartingCoordinate();  // Resets or assigns the new coordinate.
+
+                if (toLocation == m.Location)
+                {   // Move our mobile into the targeted direction.
+                    m.MoveInDirection(direction, s.MaxX, s.MaxY);
+                }
+            }
+            else
+                m.Coordinate = null;
 
             m.Location = toLocation;    // Update the local mobile to the new location.
             if (UpdateMobiles(m))       // Update the mobile to our tracked mobile
+            {
                 return FindNode(toLocation);
+            }
 
             return null;
         }
@@ -263,6 +297,21 @@ namespace SUS
 
             m.Equip(i as Equippable);
 
+            return UpdateMobiles(m);
+        }
+
+        public static bool Ressurrect(Locations loc, MobileTag mobile)
+        {   // Validate we're not working with a null value.
+            if (mobile == null)
+                return false;
+
+            MoveMobile(loc, mobile, forceMove: true);
+
+            Mobile m = FindMobile(mobile.Guid);
+            if (m == null)
+                return false;
+
+            m.Ressurrect();    // Perform the ressurrection.
             return UpdateMobiles(m);
         }
 
