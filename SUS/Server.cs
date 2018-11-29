@@ -68,7 +68,13 @@ namespace SUS.Server
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
 
-            Program.ClientHandler(ref handler);
+            try
+            {
+                Program.ClientHandler(ref handler);
+            } catch (Exception e)
+            {
+                Console.WriteLine($"Something happened within a client. {e.Message}");
+            }
         }
     }
 }

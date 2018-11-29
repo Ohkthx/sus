@@ -10,7 +10,7 @@ namespace SUSClient
 {
     class InteractiveConsole
     {
-        private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, paperdoll, actions, exit }
+        private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, actions, paperdoll, exit }
 
         private static GameState gs = null;
         public Packet clientRequest = null;    // Temporary storage for a request sent by the client.
@@ -40,12 +40,12 @@ namespace SUSClient
             Dictionary<string, ConsoleActions> ValidActions = new Dictionary<string, ConsoleActions>();     // Generate our Valid Actions.
 
             // If Player is dead, we should send a ressurrection requestion.
-            if (gs.Account.IsDead)
+            if (gs.IsDead)
             {
                 Utility.ConsoleNotify("Sending ressurrection request.");
 
                 // Request to be sent to the server.
-                this.clientRequest = new RessurrectMobilePacket(gs.Account.Location, gs.Account.getTag());
+                this.clientRequest = new RessurrectMobilePacket(gs.NodeCurrent.Location, gs.Account);
                 return gs;
             }
 
@@ -117,7 +117,7 @@ namespace SUSClient
                         break;
                     case ConsoleActions.paperdoll:
                         Paperdoll pd = new Paperdoll(gs.Account);
-                        pd.Display();
+                        clientRequest = pd.Display();
                         break;
                     case ConsoleActions.exit:
                         exit();
@@ -170,12 +170,11 @@ namespace SUSClient
         ///     Changes the location of the current gamestate to that which is provided.
         /// </summary>
         /// <param name="location">New location.</param>
-        public void LocationUpdater(NodeTag location)
+        public void LocationUpdater(BasicNode location)
         {
             if (location == null)
                 return;
             gs.NodeCurrent = location;
-            gs.Account.Location = location.Location;
         }
 
         /// <summary>
@@ -197,7 +196,7 @@ namespace SUSClient
                     if ((newDir = gs.StringToDirection(input)) != MobileDirections.None)
                     {
                         Console.WriteLine($"Selected: {newDir.ToString()}");
-                        clientRequest = new MoveMobilePacket(gs.Account.Location, gs.Account.getTag(), newDir);
+                        clientRequest = new MoveMobilePacket(gs.NodeCurrent.Location, gs.Account, newDir);
                         return;
                     }
                 }
@@ -205,7 +204,7 @@ namespace SUSClient
                 if ((newLoc = gs.StringToLocation(input)) != Locations.None)
                 {
                     Console.WriteLine($"Selected: {newLoc.ToString()}");
-                    clientRequest = new MoveMobilePacket(newLoc, gs.Account.getTag());
+                    clientRequest = new MoveMobilePacket(newLoc, gs.Account);
                     return;
                 }
             }
@@ -221,7 +220,7 @@ namespace SUSClient
                 if ((newDir = gs.StringToDirection(position)) != MobileDirections.None)
                 {
                     Console.WriteLine($"Selected: {newDir.ToString()}");
-                    clientRequest = new MoveMobilePacket(gs.Account.Location, gs.Account.getTag(), newDir);
+                    clientRequest = new MoveMobilePacket(gs.NodeCurrent.Location, gs.Account, newDir);
                     return;
                 }
             }
@@ -229,9 +228,8 @@ namespace SUSClient
             if ((newLoc = gs.StringToLocation(position)) != Locations.None)
             {
                 Console.WriteLine($"Selected: {newLoc.ToString()}");
-                clientRequest = new MoveMobilePacket(newLoc, gs.Account.getTag());
+                clientRequest = new MoveMobilePacket(newLoc, gs.Account);
                 return;
-
             }
 
             move();
@@ -284,11 +282,11 @@ namespace SUSClient
         ///     This function is called again on the list is returned by the server.
         /// </summary>
         /// <returns>List of Players from the server.</returns>
-        private List<MobileTag> getMobiles()
+        private List<BasicMobile> getMobiles()
         {
             if (this.clientRequest == null)
             {   // Create a request for the server to respond to.
-                this.clientRequest = new GetMobilesPacket(gs.NodeCurrent.Location, gs.Account.getTag());
+                this.clientRequest = new GetMobilesPacket(gs.NodeCurrent.Location, gs.Account);
                 return null;
             }
 
@@ -302,7 +300,7 @@ namespace SUSClient
         /// <param name="type"></param>
         private void listMobiles(MobileType type)
         {
-            List<MobileTag> mobiles = getMobiles();    // Get a fresh list of mobiles from the server.
+            List<BasicMobile> mobiles = getMobiles();    // Get a fresh list of mobiles from the server.
             if (mobiles == null && this.clientRequest != null)
             {
                 return; // Return early to process a client request.
@@ -313,7 +311,7 @@ namespace SUSClient
             int pos = 0;
             if (mobiles.Count > 0)
             {   // Iterate our list of Players.
-                foreach (MobileTag m in mobiles)
+                foreach (BasicMobile m in mobiles)
                 {
                     if ((type & m.Type) == m.Type)
                     {
@@ -330,7 +328,7 @@ namespace SUSClient
             this.Reset();
         }
 
-        public MobileTag SelectMobile(List<MobileTag> mobiles)
+        public BasicMobile SelectMobile(List<BasicMobile> mobiles)
         {
             listMobiles(MobileType.Mobile);    // Retreives our mobiles.
 
@@ -358,7 +356,7 @@ namespace SUSClient
         /// </summary>
         private void attack()
         {
-            List<MobileTag> mobiles = getMobiles();
+            List<BasicMobile> mobiles = getMobiles();
             if (mobiles == null)
             {   // Get a fresh batch of local NPCs.
                 return;                                 // Haven't made the request, making it now by returning early.
@@ -370,12 +368,12 @@ namespace SUSClient
                 return;
             }
 
-            MobileTag targetMobile = SelectMobile(mobiles);
+            BasicMobile targetMobile = SelectMobile(mobiles);
 
             Console.WriteLine(" Performing an attack on {0}.", targetMobile.Name);
 
             // Our newly created action to perform.
-            CombatMobilePacket attackAction = new CombatMobilePacket(gs.Account.getTag());
+            CombatMobilePacket attackAction = new CombatMobilePacket(gs.Account);
             attackAction.AddTarget(targetMobile);
 
             // Request to be sent to the server.
@@ -404,7 +402,7 @@ namespace SUSClient
         /// </summary>
         private void exit()
         {
-            clientRequest = new SocketKillPacket(gs.Account.getTag(), kill: true);
+            clientRequest = new SocketKillPacket(gs.Account, kill: true);
         }
     }
 }

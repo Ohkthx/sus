@@ -7,59 +7,68 @@ namespace SUS.Shared.Packets
     [Serializable]
     public sealed class CombatMobilePacket : Packet
     {
-        private List<MobileTag> Affected;       // List of Targets
-        private List<MobileModifier> Updates;   // Updates on all.
+        private List<BasicMobile> Targets;      // List of Targets
+        private List<string> Updates;           // Updates on all.
+        private bool m_IsDead;                  // Determines if the Initator (Player) died.
         public string Result = string.Empty;
 
-        public CombatMobilePacket(MobileTag mobile) : base(PacketTypes.MobileCombat, mobile) { }
+        #region Constructors
+        public CombatMobilePacket(BasicMobile mobile) : base(PacketTypes.MobileCombat, mobile) { }
+        #endregion
 
-        public void AddTarget(MobileTag tag)
+        #region Getters / Setters
+        public bool IsDead
         {
-            if (Affected == null)
+            get { return m_IsDead; }
+            set
+            {
+                if (value != IsDead)
+                    m_IsDead = value;
+            }
+        }
+        #endregion
+
+        public void AddTarget(BasicMobile tag)
+        {
+            if (Targets == null)
             {   // List is unassigned, create and add.
-                Affected = new List<MobileTag>();
-                Affected.Add(tag);
+                Targets = new List<BasicMobile>();
+                Targets.Add(tag);
                 return;
             }
-            else if (!Affected.Contains(tag))
+            else if (!Targets.Contains(tag))
             {   // Tag is not already in the list, add.
-                Affected.Add(tag);
+                Targets.Add(tag);
             }
         }
 
-        public void AddUpdate(MobileModifier mobile)
+        public void AddUpdate(List<string> info)
         {
+            if (info == null)
+                return;
+
             if (Updates == null)
-            {   // List does not exist. Create it, add, and return.
-                Updates = new List<MobileModifier>();
-                Updates.Add(mobile);
+            {   // List does not exist. Just assign it.
+                Updates = info;
                 return;
             }
 
-            int loc = Updates.IndexOf(mobile);
-            if (loc >= 0)
-            {   // Mobile exists in the list, replace it with the new version.
-                Updates[loc] = mobile;
-                return;
-            }
-
-            // Loc was -1 indicating it does not exist, add it.
-            Updates.Add(mobile);
+            Updates.AddRange(info);
         }
 
-        public List<MobileTag> GetTargets()
+        public List<BasicMobile> GetTargets()
         {
-            return Affected;
+            return Targets;
         }
 
-        public List<MobileModifier> GetUpdates()
+        public List<string> GetUpdates()
         {
             return Updates;
         }
 
         public void CleanClientInfo()
         {
-            this.Affected = null;
+            this.Targets = null;
         }
     }
 
@@ -68,11 +77,11 @@ namespace SUS.Shared.Packets
     {
         private MobileDirections m_Direction = MobileDirections.None;
         private Locations m_Location;
-        private NodeTag m_NewLocation = null;
+        private BasicNode m_NewLocation = null;
 
         #region Constructors
-        public MoveMobilePacket(Locations location, MobileTag mobile) : this(location, mobile, MobileDirections.None) { }
-        public MoveMobilePacket(Locations location, MobileTag mobile, MobileDirections direction) : base(PacketTypes.MobileMove, mobile)
+        public MoveMobilePacket(Locations location, BasicMobile mobile) : this(location, mobile, MobileDirections.None) { }
+        public MoveMobilePacket(Locations location, BasicMobile mobile, MobileDirections direction) : base(PacketTypes.MobileMove, mobile)
         {
             Location = location;
             Direction = direction;
@@ -102,7 +111,7 @@ namespace SUS.Shared.Packets
             }
         }
 
-        public NodeTag NewLocation
+        public BasicNode NewLocation
         {
             get { return m_NewLocation; }
             set
@@ -126,8 +135,8 @@ namespace SUS.Shared.Packets
         private bool m_Success = false;
 
         #region Constructors
-        public RessurrectMobilePacket(Locations loc, Mobile mobile) : this(loc, new MobileTag(mobile)) { }
-        public RessurrectMobilePacket(Locations loc, MobileTag mobile, bool success = false) : base(PacketTypes.MobileResurrect, mobile)
+        public RessurrectMobilePacket(Locations loc, Mobile mobile) : this(loc, new BasicMobile(mobile)) { }
+        public RessurrectMobilePacket(Locations loc, BasicMobile mobile, bool success = false) : base(PacketTypes.MobileResurrect, mobile)
         {
             Location = loc;
             isSuccessful = success;

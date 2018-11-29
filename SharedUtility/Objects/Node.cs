@@ -63,7 +63,7 @@ namespace SUS.Shared.Objects
     }
 
     [Serializable]
-    public class NodeTag
+    public class BasicNode
     {
         private LocationTypes m_Type;
         private Locations m_Location;
@@ -71,7 +71,7 @@ namespace SUS.Shared.Objects
         private bool m_Traversable;
 
         #region Constructors
-        public NodeTag(LocationTypes type, Locations location, Locations connections, bool spawnable)
+        public BasicNode(LocationTypes type, Locations location, Locations connections, bool spawnable)
         {
             Type = type;
             Location = location;
@@ -322,9 +322,9 @@ namespace SUS.Shared.Objects
             return loc != Locations.None && (loc & (loc - 1)) == 0;
         }
 
-        public NodeTag GetTag()
+        public BasicNode GetTag()
         {
-            return new NodeTag(Type, Location, Connections, isSpawnable);
+            return new BasicNode(Type, Location, Connections, isSpawnable);
         }
     }
 }

@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using SUS.Shared.Packets;
 
 namespace SUSClient
 {
     public abstract class Menu
     {
-        private string Header = string.Empty;   // Presented at the top of the Body.
-        private string Body = string.Empty;     // Information to be read.
-        private string Footer = string.Empty;   // Footer is reserved for Items / Options.
+        protected string Header = string.Empty;   // Presented at the top of the Body.
+        protected string Body = string.Empty;     // Information to be read.
+        protected string Footer = string.Empty;   // Footer is reserved for Items / Options.
+        protected List<string> Options = new List<string>();
 
         private string Name = string.Empty;
         private Menu ParentMenu;
@@ -18,6 +20,7 @@ namespace SUSClient
         #region Constructors
         public Menu(string header, string body) { this.Header = header; this.Body = body; }
         public Menu(string body) : this(string.Empty, body) { }
+        public Menu() { }
         #endregion
 
         #region Overrides
@@ -85,10 +88,9 @@ namespace SUSClient
         private void SetParent(Menu parent) { this.ParentMenu = parent; }
         #endregion
 
-        /// <summary>
-        ///     Shows the menu and available options.
-        /// </summary>
-        public void Display()
+        public abstract Packet Display();
+
+        protected void ShowMenu()
         {   // Print our header if we have one.
             if (this.Header != string.Empty)
                 Console.WriteLine(this.Header + "\n");
@@ -101,5 +103,14 @@ namespace SUSClient
             if (this.Footer != string.Empty)
                 Console.WriteLine("\n"+Footer);
         }
+
+        protected string GetInput()
+        {
+            Console.Write("Please choose an option: ");
+            return Console.ReadLine();
+        }
+
+        protected abstract void PrintOptions();
+        protected abstract int ParseOptions(string input);
     }
 }

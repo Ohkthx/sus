@@ -59,6 +59,15 @@ namespace SUS.Shared.Objects
             }
         }
         #endregion
+
+        public int Distance(Coordinate to) { return Distance(to.X, to.Y); }
+        public int Distance(int x, int y)
+        {
+            return (int)Math.Sqrt(
+                    Math.Pow(X - x, 2)
+                    + Math.Pow(Y - y, 2)
+                    );
+        }
     }
 
     [Serializable]

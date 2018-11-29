@@ -8,7 +8,7 @@ namespace SUS.Shared.Packets
     {
         private bool m_Kill;
 
-        public SocketKillPacket(MobileTag user, bool kill = true) : base(PacketTypes.SocketKill, user)
+        public SocketKillPacket(BasicMobile user, bool kill = true) : base(PacketTypes.SocketKill, user)
         {
             Kill = kill;
         }

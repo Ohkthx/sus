@@ -23,8 +23,9 @@ namespace SUS
             SocketKillPacket socketKill = new SocketKillPacket(null, false);
             SocketHandler socketHandler = new SocketHandler(client, SocketHandler.Types.Client, debug: true);
 
-            int timeout = 10000;
+            int timeout = 5000;
             int requests = 0;
+            int requestCap = 10;
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
 
@@ -32,28 +33,42 @@ namespace SUS
             while (socketKill.Kill == false)
             {
                 Object obj = socketHandler.FromClient();
-                ++requests;
 
-                if (stopwatch.ElapsedMilliseconds < timeout && requests > 5)
-                {
-                    socketHandler.ToClient(new ErrorPacket($"Server: You have exceeded 5 requests in {timeout / 1000} seconds and now on cooldown.").ToByte());
-                    System.Threading.Thread.Sleep(timeout);
-                    stopwatch.Reset();
-                    requests = 0;
-                }
-                else if (stopwatch.ElapsedMilliseconds >= timeout)
+                #region Check Timeout
+                if (stopwatch.ElapsedMilliseconds >= timeout)
                 {
                     stopwatch.Reset();
                     requests = 0;
                 }
-
-                if (obj is Packet)
+                else if (stopwatch.ElapsedMilliseconds < timeout && requests >= requestCap)
                 {
-                    Packet req = obj as Packet;
+                    socketHandler.ToClient(new ErrorPacket($"Server: You have exceeded {requestCap} requests in {timeout / 1000} seconds and now on cooldown.").ToByte());
+                    System.Threading.Thread.Sleep(timeout * 3);
+                    stopwatch.Reset();
+                    requests = 0;
+                }
+                else
+                {
+                    ++requests;
+                }
+                #endregion
 
-                    ServerInstance.Request(socketHandler, req); // If it is not a SocketKill, process it first.
-                    if (req.Type == PacketTypes.SocketKill)
-                        socketKill = req as SocketKillPacket;   // This will lead to termination.
+                try
+                {
+                    if (obj is Packet)
+                    {
+                        Packet req = obj as Packet;
+
+                        ServerInstance.Request(socketHandler, req); // If it is not a SocketKill, process it first.
+                        if (req.Type == PacketTypes.SocketKill)
+                            socketKill = req as SocketKillPacket;   // This will lead to termination.
+                    }
+                } catch (Exception e)
+                {
+                    Console.WriteLine($"An error occurred while processing the user's desired action. {e.Message}");
+                    SocketKillPacket skp = new SocketKillPacket(null, kill: true);  // Create a new packet.
+                    socketHandler.ToClient(skp.ToByte());                           // Send it to our client for a clean connection.
+                    socketKill = skp;                                               // Assign our local to break the loop.
                 }
             }
         }

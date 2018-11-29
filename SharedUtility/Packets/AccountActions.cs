@@ -7,15 +7,15 @@ namespace SUS.Shared.Packets
     [Serializable]
     public sealed class AccountAuthenticatePacket : Packet
     {
-        private Player m_Player;
+        private BasicMobile m_Player;
 
         #region Constructors
-        public AccountAuthenticatePacket(MobileTag mobile) : base (PacketTypes.Authenticate, mobile) { }
-        public AccountAuthenticatePacket(UInt64 id, string name) : this(new MobileTag(Guid.Empty, id, MobileType.Player, name)) { }
+        public AccountAuthenticatePacket(BasicMobile mobile) : base (PacketTypes.Authenticate, mobile) { }
+        public AccountAuthenticatePacket(UInt64 id, string name) : this(new BasicMobile(Guid.Empty, id, MobileType.Player, name)) { }
         #endregion
 
         #region Getters / Setters
-        public Player Player
+        public BasicMobile Player
         {
             get { return m_Player; }
             set
@@ -38,7 +38,7 @@ namespace SUS.Shared.Packets
         private GameState m_GameState;
 
         #region Constructors
-        public AccountGameStatePacket(MobileTag mobile) : base(PacketTypes.GameState, mobile) { }
+        public AccountGameStatePacket(BasicMobile mobile) : base(PacketTypes.GameState, mobile) { }
         #endregion
 
         #region Getters / Setters

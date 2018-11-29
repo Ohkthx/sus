@@ -121,7 +121,7 @@ namespace SUS
         #endregion
 
         #region Mobile Actions
-        public static Mobile FindMobile(MobileTag mobile) { return FindMobile(mobile.Guid); }
+        public static Mobile FindMobile(BasicMobile mobile) { return FindMobile(mobile.Guid); }
         public static Mobile FindMobile(Mobile mobile) { return FindMobile(mobile.Guid); }
         public static Mobile FindMobile(Guid guid)
         {
@@ -159,14 +159,14 @@ namespace SUS
         /// <param name="loc">Location to search.</param>
         /// <param name="type">Type of mobile."</param>
         /// <returns>List of Mobile Tags fitting the criteria.</returns>
-        public static HashSet<MobileTag> FindMobiles(Locations loc, MobileType type)
+        public static HashSet<BasicMobile> FindMobiles(Locations loc, MobileType type)
         {
-            HashSet<MobileTag> tags = new HashSet<MobileTag>();
+            HashSet<BasicMobile> tags = new HashSet<BasicMobile>();
             foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
             {
                 if (((m.Value.Type == type) && (m.Value.Location == loc)) || (type == MobileType.Mobile && m.Value.Location == loc))
                 {
-                    tags.Add(m.Value.getTag());
+                    tags.Add(m.Value.Basic());
                 }
             }
 
@@ -176,25 +176,21 @@ namespace SUS
             return null;    // Nothing was found, return null.
         }
 
-        public static HashSet<MobileTag> FindNearbyMobiles(Locations loc, Mobile baseMobile)
+        public static HashSet<BasicMobile> FindNearbyMobiles(Locations loc, Mobile baseMobile)
         {
             int mRange = baseMobile.Vision;
-            int mX = baseMobile.Coordinate.X;
-            int mY = baseMobile.Coordinate.Y;
 
-            HashSet<MobileTag> lm = new HashSet<MobileTag>();
+            HashSet<BasicMobile> lm = new HashSet<BasicMobile>();
             foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
             {
                 if (m.Value.Location != loc || (m.Value.IsPlayer && m.Value.ID == baseMobile.ID))
                     continue;
 
-                int distance = (int)Math.Sqrt(
-                    Math.Pow(mX - m.Value.Coordinate.X, 2)
-                    + Math.Pow(mY - m.Value.Coordinate.Y, 2)
-                    );
+                // Calculate the distance between the two coordinates.
+                int distance = baseMobile.Coordinate.Distance(m.Value.Coordinate);
 
                 if (distance <= mRange)
-                    lm.Add(m.Value.getTag());
+                    lm.Add(m.Value.Basic());
             }
             return lm;
         }
@@ -225,7 +221,7 @@ namespace SUS
         /// <param name="toLocation">Node to move the mobile to.</param>
         /// <param name="mobile">Mobile to update.</param>
         /// <param name="forceMove">Overrides requirements if an admin is performing the action.</param>
-        public static Node MoveMobile(Locations toLocation, MobileTag mobile, MobileDirections direction = MobileDirections.None,  bool forceMove = false)
+        public static Node MoveMobile(Locations toLocation, BasicMobile mobile, MobileDirections direction = MobileDirections.None,  bool forceMove = false)
         {
             Mobile m = FindMobile(mobile.Guid);
             if (m == null)
@@ -282,7 +278,7 @@ namespace SUS
             return true;
         }
 
-        public static bool SwapMobileEquipment(MobileTag mobile, Guid item)
+        public static bool SwapMobileEquipment(BasicMobile mobile, Guid item)
         {
             if (mobile == null || item == null || item == Guid.Empty)
                 return false;
@@ -300,7 +296,7 @@ namespace SUS
             return UpdateMobiles(m);
         }
 
-        public static bool Ressurrect(Locations loc, MobileTag mobile)
+        public static bool Ressurrect(Locations loc, BasicMobile mobile)
         {   // Validate we're not working with a null value.
             if (mobile == null)
                 return false;

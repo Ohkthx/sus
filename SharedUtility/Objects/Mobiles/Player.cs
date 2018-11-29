@@ -1,16 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
 using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects.Mobiles
 {
+    public interface IPlayableClass
+    {
+        string ToString();
+        int GetHashCode();
+        bool Equals(Object obj);
+        void ToInsert(ref SQLiteCommand cmd);
+    }
+
     [Serializable]
     public class Player : Mobile
     {
         private int m_Deaths = 0;
         private int m_Kills = 0;
         public bool isLoggedIn { get; private set; } = false;
-        private TypeOfDamage DamageType = TypeOfDamage.Melee;
 
         #region Constructors
         public Player(ulong id, string name, int rawStr, int rawDex, int rawInt) : base(MobileType.Player)
@@ -27,6 +35,8 @@ namespace SUS.Shared.Objects.Mobiles
 
             EquipmentAdd(new Weapon(ItemLayers.MainHand, WeaponMaterials.Wooden, "Short Sword"));
             EquipmentAdd(new Armor(ItemLayers.Offhand, ArmorMaterials.Leather, "Leather Shield"));
+
+            EquipmentAdd(new Weapon(ItemLayers.Bow, WeaponMaterials.Wooden, "Composite Bow"));
         }
         #endregion
 
@@ -52,7 +62,7 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  | +-- Bandaids: {0}\t\tBandaid Heal Amount: {0}\n" +
                 $"  | +-- Arrows: {0}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {0}\n" +
-                $"  | +-- Weapon Type: {DamageType.ToString()}\n" +
+                $"  | +-- Weapon: {Weapon.Name}\n" +
                 $"  |\n" +
                 $"  +-[ Statistics ]\n" +
                 $"  | +-- Deaths: {Deaths}\n" +
@@ -107,45 +117,12 @@ namespace SUS.Shared.Objects.Mobiles
         #region Combat
         public override int Attack()
         {
-            int Damage = 0;
-
-            switch (this.DamageType)
-            {
-                case TypeOfDamage.Archery:
-                    Damage = (Dex / 2) + (Str / 3);
-                    break;
-                case TypeOfDamage.Magic:
-                    Damage = (int)((double)Int / 1.5);
-                    break;
-                case TypeOfDamage.Melee:
-                    Damage = (Str / 2) + (Dex / 3);
-                    break;
-                default:
-                    Damage = 4;
-                    break;
-            }
-
+            int Damage = 40;
             return Utility.RandomMinMax(Damage / 2, Damage);
         }
 
         private void statIncrease()
         {
-            int rng = Utility.RandomMinMax(0, 100);
-            if (rng > 5)
-                return;
-
-            switch (DamageType)
-            {
-                case TypeOfDamage.Archery:
-                    RawDex++;
-                    break;
-                case TypeOfDamage.Magic:
-                    RawInt++;
-                    break;
-                case TypeOfDamage.Melee:
-                    RawStr++;
-                    break;
-            }
         }
 
         private void skillIncrease() { }

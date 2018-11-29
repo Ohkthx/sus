@@ -28,10 +28,10 @@ namespace SUS.Shared.Packets
     public abstract class Packet
     {
         private PacketTypes m_Type; // Type of the packet.
-        private MobileTag m_Author; // Author / Owner of the packet.
+        private BasicMobile m_Author; // Author / Owner of the packet.
 
         // Creates an instance of a Request based on supplied Type and Object.
-        public Packet(PacketTypes type, MobileTag author)
+        public Packet(PacketTypes type, BasicMobile author)
         {
             Type = type;
             Author = author;
@@ -48,7 +48,7 @@ namespace SUS.Shared.Packets
             }
         }
 
-        public MobileTag Author 
+        public BasicMobile Author 
         {
             get { return m_Author; }
             private set

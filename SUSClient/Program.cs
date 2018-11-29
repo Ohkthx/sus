@@ -102,7 +102,8 @@ namespace SUSClient
                         gamestate.Mobiles = (req as GetMobilesPacket).Mobiles;
                         break;
                     case PacketTypes.GetMobile:
-                        Console.WriteLine($"Server sent: {(req as GetMobilePacket).Mobile.Name}");
+                        Console.WriteLine($"Server sent: {(req as GetMobilePacket).Target.Name}");
+                        gamestate.ParseGetMobilePacket(req);
                         ia.Reset();
                         break;
                     case PacketTypes.GetNode:

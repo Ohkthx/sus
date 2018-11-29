@@ -13,16 +13,21 @@ namespace SUS.Shared.Objects
     public class GameState : ISQLCompatibility
     {
         private static readonly double m_Version = 1.0;
-        private Player m_Account = null;
-        private NodeTag m_Location = null;
-        private NodeTag m_LocationLast = null;
-        private int m_Unlocked = (int)Locations.None;
-        private HashSet<MobileTag> m_Mobiles;
+        private BasicMobile m_Account = null;
+        private BasicNode m_Location = null;
+        private BasicNode m_LocationLast = null;
+        private bool m_IsDead;
+        private Locations m_Unlocked = Locations.None;
+
+        // Objects that need to be requested from the server.
+        private HashSet<BasicMobile> m_Mobiles;                   // Local / Nearby creatures.
+        private Dictionary<Guid, Item> m_Items;                          // Items in the inventory.
+        private Dictionary<ItemLayers, Equippable> m_Equipped;  // Equipped items.
 
         #region Constructors
-        public GameState(Player account) : this(account, null, (int)Locations.Basic) { }
-        public GameState(Player account, int unlocked) : this(account, null, unlocked) { }
-        public GameState(Player account, NodeTag location, int unlocked)
+        public GameState(BasicMobile account) : this(account, null, Locations.Basic) { }
+        public GameState(BasicMobile account, Locations unlocked) : this(account, null, unlocked) { }
+        public GameState(BasicMobile account, BasicNode location, Locations unlocked)
         {
             this.Account = account;
             this.NodeCurrent = location;
@@ -89,7 +94,7 @@ namespace SUS.Shared.Objects
 
         public UInt64 ID { get { return Account.ID.ToInt(); } }
 
-        public Player Account
+        public BasicMobile Account
         {
             get { return m_Account; }
             set
@@ -101,7 +106,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public NodeTag NodeCurrent
+        public BasicNode NodeCurrent
         {
             get { return m_Location; }
             set
@@ -122,7 +127,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public NodeTag NodeLast
+        public BasicNode NodeLast
         {
             get { return m_LocationLast; }
             set
@@ -142,12 +147,12 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public HashSet<MobileTag> Mobiles
+        public HashSet<BasicMobile> Mobiles
         {
             get
             {
                 if (m_Mobiles == null)
-                    m_Mobiles = new HashSet<MobileTag>();
+                    m_Mobiles = new HashSet<BasicMobile>();
 
                 return m_Mobiles;
             }
@@ -159,6 +164,16 @@ namespace SUS.Shared.Objects
                 m_Mobiles = value;
             }
         }
+
+        public bool IsDead
+        {
+            get { return m_IsDead; }
+            set
+            {
+                if (value != IsDead)
+                    m_IsDead = value;
+            }
+        }
         #endregion
 
         #region Finding
@@ -168,9 +183,9 @@ namespace SUS.Shared.Objects
         /// <param name="type">Type of a mobile.</param>
         /// <param name="serial">Serial of the mobile to find.</param>
         /// <returns></returns>
-        private MobileTag FindMobile(MobileType type, Serial serial)
+        private BasicMobile FindMobile(MobileType type, Serial serial)
         {   // Iterate our hashset of mobiles.
-            foreach (MobileTag m in Mobiles)
+            foreach (BasicMobile m in Mobiles)
                 if (m.Type == type && m.ID == serial)
                     return m;   // If the type and serial match, return it. If it is type of 'Any', return it.
 
@@ -179,20 +194,17 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Mobile Actions
-        public bool UpdateMobile(MobileTag mobile, bool remove = false)
+        public bool UpdateMobile(BasicMobile mobile, bool remove = false)
         {
             if (mobile == null)
                 return false;
 
             if (remove)
             {
-                if (mobile.IsPlayer && mobile.ID == Account.ID)
-                {
-                    Account.Kill(); // Kill the player, but skip removal.
-                    return true;
-                }
-                else
+                if (!(mobile.IsPlayer && mobile.ID == Account.ID))
                     return RemoveMobile(mobile);    // This case will on pass if it is not the player and is flagged for removal.
+                else
+                    return true;
             }
             else
             {
@@ -205,7 +217,7 @@ namespace SUS.Shared.Objects
         /// </summary>
         /// <param name="mobile">Mobile to be added.</param>
         /// <returns>Succcess (true), or Failure (false)</returns>
-        private bool AddMobile(MobileTag mobile)
+        private bool AddMobile(BasicMobile mobile)
         {
             if (Mobiles.Count > 0 && Mobiles.Contains(mobile))
                 Mobiles.Remove(mobile);
@@ -218,7 +230,7 @@ namespace SUS.Shared.Objects
         /// </summary>
         /// <param name="mobile">Mobile to remove.</param>
         /// <returns>Number of elements removed.</returns>
-        private bool RemoveMobile(MobileTag mobile)
+        private bool RemoveMobile(BasicMobile mobile)
         {
             if (Mobiles.Count == 0)
                 return true;
@@ -226,7 +238,7 @@ namespace SUS.Shared.Objects
             return Mobiles.Remove(mobile);
         }
 
-        public bool HasMobile(MobileTag mobile)
+        public bool HasMobile(BasicMobile mobile)
         {
             if (Mobiles.Count == 0)
                 return false;
@@ -239,61 +251,25 @@ namespace SUS.Shared.Objects
             if (Mobiles.Count == 0)
                 return false;
 
-            foreach (MobileTag m in Mobiles)
+            foreach (BasicMobile m in Mobiles)
                 if (m.Type == mobileType && m.ID == mobileID)
                     return true;
 
             return false;
         }
 
-        /// <summary>
-        ///     Updates a Node with a mobile.
-        /// </summary>
-        /// <param name="toLocation">Node to move the mobile to.</param>
-        /// <param name="mobile">Mobile to update.</param>
-        public bool MoveMobile(Locations toLocation, Mobile mobile)
+        public void MobileActionHandler(CombatMobilePacket cmp)
         {
-            if (mobile != Account)
-                return false;
-
-            if (!Node.isValidLocation(toLocation))
-                return false;   // It must be a combination of locations.
-            else if (toLocation == mobile.Location)
-                return false;   // Trying to move within the same location.
-
-            Account.Location = toLocation;
-            return true;
-        }
-
-        public void MobileActionHandler(CombatMobilePacket ma)
-        {
-            Console.WriteLine($"\n Server Reponse: {ma.Result}");
-
-            foreach (MobileModifier mm in ma.GetUpdates())
-            {   // Attempt to update the gamestate with the modifications to the mobile.
-                string attr = string.Empty;
-                if (mm.ModStrength != 0)
-                    attr += $"\n\tStrength: {mm.ModStrength}";
-                if (mm.ModDexterity != 0)
-                    attr += $"\n\tDexterity: {mm.ModDexterity}";
-                if (mm.ModIntelligence != 0)
-                    attr += $"\n\tIntelligence: {mm.ModIntelligence}";
-
-
-                Console.WriteLine($"  => {mm.Name}'s health was changed by {mm.ModHits}. " +
-                    $"\n\tStamina was changed by {mm.ModStamina}." +
-                    $"{attr}" +
-                    $"\n\tDead? {mm.IsDead}");
-
-                if (mm.IsPlayer && (mm.ID == Account.ID))
-                    Account.ApplyModification(mm);
-
-                if (mm.IsDead && !(mm.IsPlayer && mm.ID == Account.ID))
-                {
-                    Account.AddKill();
-                    UpdateMobile(FindMobile(mm.Type, mm.ID), remove: true);
-                }
+            List<string> u = cmp.GetUpdates();
+            Console.WriteLine("\nServer response:");
+            if (u == null)
+            {
+                Utility.ConsoleNotify("Server sent back a bad combat log.");
+                return;
             }
+
+            foreach (string str in u)
+                Console.WriteLine(str);
         }
 
         /// <summary>
@@ -303,7 +279,7 @@ namespace SUS.Shared.Objects
         public void Kill(Mobile mobile)
         {
             mobile.Kill();
-            UpdateMobile(mobile.getTag(), remove: true);
+            UpdateMobile(mobile.Basic(), remove: true);
         }
 
         public Packet Ressurrect(RessurrectMobilePacket rez)
@@ -312,8 +288,7 @@ namespace SUS.Shared.Objects
             {   // If we are talking about our account...
                 if (rez.isSuccessful)
                 {   // And the server reported it was successful...
-                    Account.Ressurrect();               // Ressurrect our account.
-                    return new MoveMobilePacket(rez.Location, Account.getTag());
+                    return new MoveMobilePacket(rez.Location, Account);
                 }
             }
 
@@ -333,7 +308,7 @@ namespace SUS.Shared.Objects
             if (int.TryParse(location, out pos) && pos < 0)
                 return Locations.None;                      // User attempted a negative number.
             else if (pos == 0)
-                return Account.Location;
+                return NodeCurrent.Location;
 
             int count = 0;
             foreach (Locations loc in NodeCurrent.ConnectionsToList())
@@ -370,6 +345,63 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
-        public byte[] ToByte() { return Network.Serialize(this); }
+        #region Packet Parsing
+        public void ParseGetMobilePacket(Packet p)
+        {
+            GetMobilePacket gmp = p as GetMobilePacket;
+            if (gmp == null)
+                return;
+
+            GetMobilePacket.RequestReason reason = gmp.Reason;
+
+            while (reason != GetMobilePacket.RequestReason.None)
+            {
+                foreach (GetMobilePacket.RequestReason r in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
+                {
+                    if (r == GetMobilePacket.RequestReason.None || (r & (r - 1)) != 0)
+                        continue;
+
+                    switch (reason & r)
+                    {
+                        case GetMobilePacket.RequestReason.Paperdoll:
+                            Console.WriteLine("\nPaper Doll Information:");
+                            Console.WriteLine(gmp.Paperdoll);
+                            break;
+                        case GetMobilePacket.RequestReason.Location:
+                            Console.WriteLine("\nLocation Information:");
+                            Console.WriteLine(gmp.Location.ToString());
+                            break;
+                        case GetMobilePacket.RequestReason.IsDead:
+                            Console.WriteLine("\nIs Dead?");
+                            Console.WriteLine(gmp.IsDead.ToString());
+                            if (gmp.Target == Account)
+                                IsDead = gmp.IsDead;
+                            break;
+                        case GetMobilePacket.RequestReason.Items:
+                            Console.WriteLine("\nOwned Items:");
+                            foreach (KeyValuePair<Guid, Item> i in gmp.Items)
+                                Console.WriteLine($" {i.Value.Name}");
+                            if (gmp.Target == Account)
+                                m_Items = gmp.Items;
+                            break;
+                        case GetMobilePacket.RequestReason.Equipment:
+                            Console.WriteLine("\nEquipped Items:");
+                            foreach (KeyValuePair<ItemLayers, Equippable> e in gmp.Equipment)
+                                Console.WriteLine($" Layer: {e.Value.Layer.ToString()} Item: {e.Value.Name}");
+                            if (gmp.Target == Account)
+                                m_Equipped = gmp.Equipment;
+                            break;
+                    }
+
+                    reason &= ~(r);
+                }
+            }
+        }
+        #endregion
+
+        public byte[] ToByte()
+        {
+            return Network.Serialize(this);
+        }
     }
 }

@@ -1,26 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
 using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects
 {
-    public interface IPlayableClass
-    {
-        string ToString();
-        int GetHashCode();
-        bool Equals(Object obj);
-        void ToInsert(ref SQLiteCommand cmd);
-    }
-
-    [Flags, Serializable]
-    public enum TypeOfDamage
-    {
-        Archery = 1,
-        Magic = 2,
-        Melee = 4,
-    };
-
     [Flags, Serializable]
     public enum MobileType
     {
@@ -49,72 +32,7 @@ namespace SUS.Shared.Objects
     }
 
     [Serializable]
-    public class MobileModifier
-    {
-        public Serial ID { get; private set; }
-        public string Name { get; private set; }
-        public MobileType Type { get; private set; } = MobileType.None;
-        public bool IsDead { get; private set; } = false;   // Sets it to be false by default.
-        public int ModHits { get; private set; } = 0;
-        public int ModStamina { get; private set; } = 0;
-        public int ModStrength { get; set; } = 0;
-        public int ModDexterity { get; set; } = 0;
-        public int ModIntelligence { get; set; } = 0;
-
-        #region Constructors
-        public MobileModifier(Mobile mobile): this(mobile.ID, mobile.Name, mobile.Type) { }
-
-        public MobileModifier(ulong id, string name, MobileType type)
-        {
-            this.ID = id;
-            this.Name = name;
-            this.Type = type;
-        }
-        #endregion
-
-        #region Overrides
-        public override bool Equals(object obj)
-        {
-            MobileModifier mobile = obj as MobileModifier;
-            if (mobile == null)
-                return false;
-
-            return mobile.ID == this.ID && mobile.Name == this.Name && mobile.Type == this.Type;
-        }
-
-        public override int GetHashCode()
-        {
-            int hash = 37;
-            hash += ID.GetHashCode();
-            hash *= 397;
-
-            // If the name isn't blank (shouldn't be), factor it.
-            if (Name != null)
-            {
-                hash += Name.GetHashCode();
-                hash *= 397;
-            }
-
-            // If it is an NPC or Player, factor that into the hash.
-            if (Type != MobileType.None)
-            {
-                hash += (int)Type;
-                hash *= 397;
-            }
-
-            return hash;
-        }
-        #endregion
-
-        public bool IsPlayer { get { return Type == MobileType.Player; } }
-
-        public void HitsModified(int change) { this.ModHits += change; }
-        public void StaminaModified(int change) { this.ModStamina += change; }
-        public void DeathModified(bool dead) { this.IsDead = dead; }
-    }
-
-    [Serializable]
-    public class MobileTag
+    public class BasicMobile
     {
         private Guid m_Guid;
         private Serial m_ID;
@@ -122,9 +40,9 @@ namespace SUS.Shared.Objects
         private MobileType m_Type;
 
         #region Constructors
-        public MobileTag(Mobile mobile) : this(mobile.Guid, mobile.ID, mobile.Type, mobile.Name) { }
+        public BasicMobile(Mobile mobile) : this(mobile.Guid, mobile.ID, mobile.Type, mobile.Name) { }
 
-        public MobileTag(Guid guid, UInt64 id, MobileType type, string name)
+        public BasicMobile(Guid guid, UInt64 id, MobileType type, string name)
         {
             Guid = guid;
             ID = new Serial(id);
@@ -210,14 +128,14 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public static bool operator ==(MobileTag m1, MobileTag m2)
+        public static bool operator ==(BasicMobile m1, BasicMobile m2)
         {
             if (Object.ReferenceEquals(m1, m2)) return true;
             if (Object.ReferenceEquals(null, m1)) return false;
             return (m1.Equals(m2));
         }
 
-        public static bool operator !=(MobileTag m1, MobileTag m2)
+        public static bool operator !=(BasicMobile m1, BasicMobile m2)
         {
             return !(m1 == m2);
         }
@@ -227,17 +145,17 @@ namespace SUS.Shared.Objects
             if (Object.ReferenceEquals(null, value)) return false;
             if (Object.ReferenceEquals(this, value)) return true;
             if (value.GetType() != this.GetType()) return false;
-            return IsEqual((MobileTag)value);
+            return IsEqual((BasicMobile)value);
         }
 
-        public bool Equals(MobileTag mobile)
+        public bool Equals(BasicMobile mobile)
         {
             if (Object.ReferenceEquals(null, mobile)) return false;
             if (Object.ReferenceEquals(this, mobile)) return true;
             return IsEqual(mobile);
         }
 
-        private bool IsEqual(MobileTag value)
+        private bool IsEqual(BasicMobile value)
         {
             return (value != null)
                 && (m_Type == value.m_Type)
@@ -465,6 +383,21 @@ namespace SUS.Shared.Objects
                 if (m_Equipped == null)
                     m_Equipped = new Dictionary<ItemLayers, Equippable>();
                 return m_Equipped;
+            }
+        }
+
+        public Equippable Weapon
+        {
+            get
+            {
+                if (Equipment.ContainsKey(ItemLayers.Bow))
+                    return Equipment[ItemLayers.Bow];
+                else if (Equipment.ContainsKey(ItemLayers.TwoHanded))
+                    return Equipment[ItemLayers.TwoHanded];
+                else if (Equipment.ContainsKey(ItemLayers.MainHand))
+                    return Equipment[ItemLayers.MainHand];
+                else
+                    return new Weapon(ItemLayers.MainHand, WeaponMaterials.Iron, "Hands");
             }
         }
 
@@ -704,7 +637,7 @@ namespace SUS.Shared.Objects
                 return;
 
             // Check to see if we need to remove our Main-Hand and Off-Hand
-            if (item.Layer == ItemLayers.TwoHanded)
+            if ((item.Layer & ItemLayers.TwoHanded) == ItemLayers.TwoHanded)
             {
                 m_Equipped.Remove(ItemLayers.MainHand);
                 m_Equipped.Remove(ItemLayers.Offhand);
@@ -712,6 +645,10 @@ namespace SUS.Shared.Objects
             else if (item.IsWeapon && m_Equipped.ContainsKey(ItemLayers.TwoHanded))
             {
                 m_Equipped.Remove(ItemLayers.TwoHanded);
+            }
+            else if (item.IsWeapon && m_Equipped.ContainsKey(ItemLayers.Bow))
+            {
+                m_Equipped.Remove(ItemLayers.Bow);
             }
 
             m_Equipped[item.Layer] = item;
@@ -763,26 +700,32 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Combat
-        public void Combat(ref MobileModifier mm_init, ref Mobile opponent, ref MobileModifier mm_opp)
+        public List<string> Combat(ref Mobile opponent)
         {
+            List<string> output = new List<string>();
             int initAtk = this.Attack();
 
             if (this == opponent)
-            {   // Is the initiator attacking theirself? Do the damage and return.
-                mm_init.HitsModified(this.TakeDamage(initAtk) * -1);
-                mm_init.DeathModified(this.IsDead);
-                return;
+            {   // Is the initiator attacking themself? Do the damage and return.
+                output.Add($"You perform {TakeDamage(initAtk) * -1} damage on yourself.");
+                if (IsDead)
+                    output.Add("You have died.");
+                return output;
             }
 
-            mm_opp.HitsModified(opponent.TakeDamage(initAtk) * -1);     // Update the MobileModifier. -1 to indicate a loss of health.
-            mm_opp.DeathModified(opponent.IsDead);                    // Make sure the client knows the target is dead.
-
-            if (!opponent.IsDead)
+            output.Add($"You perform {opponent.TakeDamage(initAtk) * -1} damage to {opponent.Name}.");
+            if (opponent.IsDead)
             {
-                int oppAtk = opponent.Attack();
-                mm_init.HitsModified(this.TakeDamage(oppAtk) * -1);     // Update the MobileModifier.
-                mm_init.DeathModified(this.IsDead);
+                output.Add($"You have killed {opponent.Name}.");
+                return output;
             }
+
+            int oppAtk = opponent.Attack();
+            output.Add($"You take { TakeDamage(oppAtk) * -1} damage from {opponent.Name}.");
+            if (IsDead)
+                output.Add("You have died.");
+
+            return output;
         }
 
         /// <summary>
@@ -806,24 +749,6 @@ namespace SUS.Shared.Objects
 
         public abstract int Attack();
         #endregion
-
-        public void ApplyModification(MobileModifier mod)
-        {
-            if (mod.ID != ID || mod.Type != Type)
-                return;
-
-            Str += mod.ModStrength;
-            Int += mod.ModIntelligence;
-            Dex += mod.ModDexterity;
-
-            if (mod.IsDead)
-                Kill();
-            else
-            {
-                Hits += mod.ModHits;
-                Stam += mod.ModStamina;
-            }
-        }
 
         public abstract void Kill();
 
@@ -874,6 +799,6 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public MobileTag getTag() { return new MobileTag(this); }
+        public BasicMobile Basic() { return new BasicMobile(this); }
     }
 }

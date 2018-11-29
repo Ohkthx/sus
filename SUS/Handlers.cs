@@ -96,7 +96,7 @@ namespace SUS.Server
             player.Login();                     // Log the player in.
 
             // Client has sent a player, create a proper gamestate and send it to the client.
-            GameState newState = new GameState(player);
+            GameState newState = new GameState(player.Basic());
 
             Node loc = GameObject.FindNode(szLoc); // Assign the Starting Zone Node to the GameState.
             if (loc == null)
@@ -107,7 +107,7 @@ namespace SUS.Server
             GameObject.UpdateGameStates(newState);          // Updates the GameObject with the new state that is being tracked.
             GameObject.UpdateMobiles(player);               // Update our tracked Mobiles with the new Player.
 
-            AccountGameStatePacket gsp = new AccountGameStatePacket(player.getTag());
+            AccountGameStatePacket gsp = new AccountGameStatePacket(player.Basic());
             gsp.GameState = newState;
             return gsp;
         }
@@ -133,9 +133,13 @@ namespace SUS.Server
             if (gs == null)
                 return;             // No mobile by that User ID? Just return.
 
-            gs.Account.Logout();
+            Player account = GameObject.FindMobile(gs.Account.Guid) as Player;
+            if (account == null)
+                return;
 
-            GameObject.UpdateMobiles(gs.Account);
+            account.Logout();
+
+            GameObject.UpdateMobiles(account);
             GameObject.UpdateGameStates(gs, remove: true);
         }
         #endregion
@@ -147,7 +151,7 @@ namespace SUS.Server
             if (relativeMobile == null || relativeMobile.Coordinate == null)
                 return new ErrorPacket("Server: You are not in a location to get nearby objects.");
 
-            HashSet<MobileTag> lm = GameObject.FindNearbyMobiles(gmp.Location, relativeMobile);
+            HashSet<BasicMobile> lm = GameObject.FindNearbyMobiles(gmp.Location, relativeMobile);
             gmp.Mobiles = lm;
             //gmp.Mobiles = GameObject.FindMobiles(gmp.Location, MobileType.Mobile);
             return gmp;
@@ -160,12 +164,44 @@ namespace SUS.Server
         /// <returns>Either an Error Request or a Request containing the mobile.</returns>
         private static Packet GetMobile(GetMobilePacket gmp)
         {
-            if (gmp.Tag == null)
+            if (gmp.Target == null)
                 return new ErrorPacket("Server: Bad mobile requested.");
 
-            gmp.Mobile = GameObject.FindMobile(gmp.Tag.Guid);
-            if (gmp.Mobile == null)
+            Mobile m = GameObject.FindMobile(gmp.Target.Guid);
+            if (m == null)
                 return new ErrorPacket("Server: There is no such mobile anymore.");
+
+            GetMobilePacket.RequestReason reason = gmp.Reason;
+
+            while (reason != GetMobilePacket.RequestReason.None)
+            {
+                foreach (GetMobilePacket.RequestReason r in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
+                {
+                    if (r == GetMobilePacket.RequestReason.None || (r & (r - 1)) != 0)
+                        continue; 
+
+                    switch (gmp.Reason & r)
+                    {
+                        case GetMobilePacket.RequestReason.Paperdoll:
+                            gmp.Paperdoll = m.ToString();
+                            break;
+                        case GetMobilePacket.RequestReason.Location:
+                            gmp.Location = m.Location;
+                            break;
+                        case GetMobilePacket.RequestReason.IsDead:
+                            gmp.IsDead = m.IsDead;
+                            break;
+                        case GetMobilePacket.RequestReason.Items:
+                            gmp.Items = m.Items;
+                            break;
+                        case GetMobilePacket.RequestReason.Equipment:
+                            gmp.Equipment = m.Equipment;
+                            break;
+                    }
+
+                    reason &= ~(r);
+                }
+            }
 
             return gmp;
         }
@@ -207,40 +243,35 @@ namespace SUS.Server
         ///     Performs the lookup and combating of mobiles.
         /// </summary>
         /// <param name="initiator">Initiating Mobile.</param>
-        /// <param name="mobileAction">Reference to the MobileAction to send back.</param>
+        /// <param name="cmp">Reference to the MobileAction to send back.</param>
         /// <returns>Packaged Error if occurred, otherwise should normally return null.</returns>
-        private static Packet MobileActionHandlerAttack(Player initiator, ref CombatMobilePacket mobileAction)
+        private static Packet MobileActionHandlerAttack(Player initiator, ref CombatMobilePacket cmp)
         {
             if (initiator.IsDead)
                 return new ErrorPacket("Server: You are dead and need to ressurrect.");
 
-            HashSet<MobileModifier> updates = new HashSet<MobileModifier>();        // Will contain updates to be passed back to client.
-            MobileModifier mm_initiator = new MobileModifier(initiator);
-
             List<Mobile> mobiles = new List<Mobile>();                              // This will hold all good mobiles.
-            List<MobileTag> targets = mobileAction.GetTargets();    // List containing <Type, Serial>
+            List<BasicMobile> targets = cmp.GetTargets();    // List containing <Type, Serial>
             if (targets.Count == 0)
                 return new ErrorPacket("Server: No targets provided for attacking.");
 
             // Iterate each of the affected, adding it to our list of Mobiles.
-            foreach (MobileTag mt in targets)
+            foreach (BasicMobile t in targets)
             {
                 // Lookup the affected mobile.
-                Mobile affectee = null;
-                    affectee = GameObject.FindMobile(mt.Guid);
-
-                if (affectee == null)
+                 Mobile target = GameObject.FindMobile(t.Guid);
+                if (target == null)
                     return new ErrorPacket("Server: That target has moved or died recently.");
-                else if (initiator.Location != affectee.Location)
+                else if (initiator.Location != target.Location)
                     return new ErrorPacket("Server: That target is no longer in the area.");
-                else if (affectee.IsPlayer)
+                else if (target.IsPlayer)
                 {
-                    Player p = affectee as Player;  
+                    Player p = target as Player;  
                     if (!p.isLoggedIn)
                         return new ErrorPacket("Server: That target has logged out recently.");
                 }
 
-                mobiles.Add(affectee);  // Add it to our list of known "good" mobiles.
+                mobiles.Add(target);  // Add it to our list of known "good" mobiles.
             }
 
             // Iterate our mobiles and perform combat.
@@ -250,10 +281,9 @@ namespace SUS.Server
                     break;
 
                 Mobile target = m;
-                MobileModifier mm_affectee = new MobileModifier(target);
 
                 // Combat the two objects.
-                initiator.Combat(ref mm_initiator, ref target, ref mm_affectee);
+                cmp.AddUpdate(initiator.Combat(ref target));
 
                 // Update the affectee.
                 if (target.IsDead)
@@ -269,6 +299,7 @@ namespace SUS.Server
                 // Update our initiator.
                 if (initiator.IsDead)
                 {
+                    cmp.IsDead = true;
                     GameObject.Kill(initiator);
                 }
                 else
@@ -276,15 +307,11 @@ namespace SUS.Server
                     GameObject.UpdateMobiles(initiator);
                 }
 
-                // Update to pass to the client regarding the affectee.
-                mobileAction.AddUpdate(mm_affectee);
-
-                mobileAction.Result += $"{initiator.Name} attacked {target.Name}. ";    // TODO: Move this to MobileModifier.
+                cmp.Result += $"{initiator.Name} attacked {target.Name}. ";    // TODO: Move this to MobileModifier.
             }
 
             // Add our updated information for the initiator. After processing all changes.
-            mobileAction.AddUpdate(mm_initiator);
-            mobileAction.CleanClientInfo();         // Remove worthless data so it isn't retransmitted.
+            cmp.CleanClientInfo();         // Remove worthless data so it isn't retransmitted.
             return null;
         }
 
