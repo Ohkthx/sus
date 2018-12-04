@@ -53,6 +53,9 @@ namespace SUS.Server
                 case PacketTypes.MobileResurrect:
                     clientInfo = MobileRessurrect(req as RessurrectMobilePacket);
                     break;
+                case PacketTypes.UseItem:
+                    clientInfo = MobileUseItem(req as UseItemPacket);
+                    break;
 
 
                 default:
@@ -343,6 +346,51 @@ namespace SUS.Server
             // Sends the mobile to the StartingZone, ressurrects, and processes it as if an admin performed the action.
             GameObject.Ressurrect(GameObject.StartingZone, res.Author);
             return new RessurrectMobilePacket(GameObject.StartingZone, res.Author, success: true);
+        }
+
+        private static Packet MobileUseItem(UseItemPacket uip)
+        {
+            if (uip.Item == null || uip.Item == Guid.Empty)
+                return new ErrorPacket("Server: That is an invalid item.");
+
+            Mobile m = GameObject.FindMobile(uip.Author.Guid);
+            if (m == null)
+                return new ErrorPacket("Server: Invalid object to use that item on.");
+
+            if (!m.HasItem(uip.Item))
+                return new ErrorPacket("Server: You no longer have that item.");
+
+            Item i = m.FindItem(uip.Item);
+            if (i.Type != ItemTypes.Consumable)
+                return new ErrorPacket("Server: How do you expect to use that?");
+
+            Consumable c = i as Consumable;
+            if (c.Amount <= 0)
+                return new ErrorPacket("Server: Do you not have anymore of those.");
+
+            if (c.ConsumableType != Consumable.ConsumableTypes.HealthPotion)
+                return new ErrorPacket("Server: We can only user health potions for now.");
+
+            if (m.Hits == m.HitsMax)
+                return new ErrorPacket("Server: You are already at full health.");
+
+            int effect = Potion.GetEffect(m.HitsMax);
+            if (m.Hits + effect >= m.HitsMax)
+            {
+                effect = m.HitsMax - m.Hits;
+                m.Hits = m.HitsMax;
+            }
+            else
+            {
+                m.Hits += effect;
+            }
+
+            c--;            // Decrease our consumable by 1.
+            m.ItemAdd(c);   // Update it.
+            GameObject.UpdateMobiles(m);
+
+            uip.Response = $"You used a Health Potion that healed {effect} health points. Health: {m.Hits} / {m.HitsMax}. {c.Name} remain.";
+            return uip;
         }
     }
     #endregion

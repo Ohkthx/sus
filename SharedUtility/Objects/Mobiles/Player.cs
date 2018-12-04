@@ -28,15 +28,18 @@ namespace SUS.Shared.Objects.Mobiles
 
             InitStats(rawStr, rawDex, rawInt);
 
+            // Create our consumables.
+            InitConsumables();
+
             // Give some basic armor and weapons.
             EquipmentAdd(new Armor(ItemLayers.Chest, ArmorMaterials.Leather, "Leather Chest"));
             EquipmentAdd(new Armor(ItemLayers.Legs, ArmorMaterials.Leather, "Leather Leggings"));
             EquipmentAdd(new Armor(ItemLayers.Feet, ArmorMaterials.Leather, "Leather Boots"));
 
-            EquipmentAdd(new Weapon(ItemLayers.MainHand, WeaponMaterials.Wooden, "Short Sword"));
+            EquipmentAdd(new Weapon(ItemLayers.MainHand, WeaponMaterials.Wooden, "Short Sword", "1d6"));
             EquipmentAdd(new Armor(ItemLayers.Offhand, ArmorMaterials.Leather, "Leather Shield"));
 
-            EquipmentAdd(new Weapon(ItemLayers.Bow, WeaponMaterials.Wooden, "Composite Bow"));
+            EquipmentAdd(new Weapon(ItemLayers.Bow, WeaponMaterials.Wooden, "Composite Bow", "1d8"));
         }
         #endregion
 
@@ -117,7 +120,10 @@ namespace SUS.Shared.Objects.Mobiles
         #region Combat
         public override int Attack()
         {
-            int Damage = 40;
+            if (Weapon.IsBow && Arrows.Amount <= 0)
+                Unequip(ItemLayers.Bow);
+
+            int Damage = Weapon.Damage * (Weapon.Rating /2 );
             return Utility.RandomMinMax(Damage / 2, Damage);
         }
 

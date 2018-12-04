@@ -386,18 +386,46 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public Equippable Weapon
+        public Weapon Weapon
         {
             get
             {
                 if (Equipment.ContainsKey(ItemLayers.Bow))
-                    return Equipment[ItemLayers.Bow];
+                    return Equipment[ItemLayers.Bow] as Weapon;
                 else if (Equipment.ContainsKey(ItemLayers.TwoHanded))
-                    return Equipment[ItemLayers.TwoHanded];
+                    return Equipment[ItemLayers.TwoHanded] as Weapon;
                 else if (Equipment.ContainsKey(ItemLayers.MainHand))
-                    return Equipment[ItemLayers.MainHand];
+                    return Equipment[ItemLayers.MainHand] as Weapon;
                 else
-                    return new Weapon(ItemLayers.MainHand, WeaponMaterials.Iron, "Hands");
+                    return new Weapon(ItemLayers.MainHand, WeaponMaterials.None, "Hands", "1d4");
+            }
+        }
+
+        public Potion HealthPotions
+        {
+            get
+            {
+                foreach (KeyValuePair<Guid, Item> i in Items)
+                    if (i.Value.Type == ItemTypes.Consumable
+                        && (i.Value as Consumable).ConsumableType == Consumable.ConsumableTypes.HealthPotion)
+                        return i.Value as Potion;
+                Potion p = new Potion();
+                ItemAdd(p);
+                return p;
+            }
+        }
+
+        public Arrow Arrows
+        {
+            get
+            {
+                foreach (KeyValuePair<Guid, Item> i in Items)
+                    if (i.Value.Type == ItemTypes.Consumable
+                        && (i.Value as Consumable).ConsumableType == Consumable.ConsumableTypes.Arrows)
+                        return i.Value as Arrow;
+                Arrow a = new Arrow();
+                ItemAdd(a);
+                return a;
             }
         }
 
@@ -622,6 +650,12 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Items / Equippables
+        protected void InitConsumables()
+        {
+            ItemAdd(new Potion(10));
+            ItemAdd(new Arrow(200));
+        }
+
         public void EquipmentAdd(Equippable item)
         {
             if (item == null || !item.IsEquippable)

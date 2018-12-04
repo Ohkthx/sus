@@ -165,5 +165,57 @@ namespace SUS.Shared.Packets
         }
         #endregion
     }
-}
 
+    [Serializable]
+    public sealed class UseItemPacket : Packet
+    {
+        private Guid m_Item;
+        private ItemTypes m_Type;
+        private string m_Response = string.Empty;
+
+        #region Constructor
+        public UseItemPacket(BasicMobile mobile, ItemTypes type, Guid guid) : base(PacketTypes.UseItem, mobile)
+        {
+            Item = guid;
+            ItemType = type;
+        }
+        #endregion
+
+        #region Getters / Setters
+        public Guid Item
+        {
+            get { return m_Item; }
+            private set
+            {
+                if (value == null || value == Guid.Empty)
+                    return;
+
+                m_Item = value;
+            }
+        }
+
+        public ItemTypes ItemType
+        {
+            get { return m_Type; }
+            private set
+            {
+                if (value == ItemTypes.None || value == ItemType)
+                    return;
+                m_Type = value;
+            }
+        }
+
+        public string Response
+        {
+            get { return m_Response; }
+            set
+            {
+                if (value == null || value == string.Empty)
+                    return;
+
+                m_Response = value;
+            }
+        }
+        #endregion
+    }
+}

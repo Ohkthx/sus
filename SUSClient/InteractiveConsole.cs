@@ -10,7 +10,7 @@ namespace SUSClient
 {
     class InteractiveConsole
     {
-        private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, actions, paperdoll, exit }
+        private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, actions, heal, paperdoll, exit }
 
         private static GameState gs = null;
         public Packet clientRequest = null;    // Temporary storage for a request sent by the client.
@@ -118,6 +118,9 @@ namespace SUSClient
                     case ConsoleActions.paperdoll:
                         Paperdoll pd = new Paperdoll(gs.Account);
                         clientRequest = pd.Display();
+                        break;
+                    case ConsoleActions.heal:
+                        clientRequest = gs.Heal();
                         break;
                     case ConsoleActions.exit:
                         exit();

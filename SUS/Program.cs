@@ -25,7 +25,7 @@ namespace SUS
 
             int timeout = 5000;
             int requests = 0;
-            int requestCap = 10;
+            int requestCap = 15;
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
 
@@ -46,6 +46,7 @@ namespace SUS
                     System.Threading.Thread.Sleep(timeout * 3);
                     stopwatch.Reset();
                     requests = 0;
+                    continue;
                 }
                 else
                 {

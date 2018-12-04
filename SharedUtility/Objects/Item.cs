@@ -75,7 +75,7 @@ namespace SUS.Shared.Objects
     {
         protected Guid m_Guid;
         protected string m_Name;
-        protected ItemTypes m_Type;
+        private ItemTypes m_Type;
         protected int m_Weight;
         protected bool m_isDestroyable;
 
@@ -98,7 +98,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public string Name
+        public virtual string Name
         {
             get
             {
@@ -117,7 +117,7 @@ namespace SUS.Shared.Objects
         public ItemTypes Type
         {
             get { return m_Type; }
-            protected set
+            private set
             {
                 if (value != ItemTypes.None && value != Type)
                     m_Type = value;

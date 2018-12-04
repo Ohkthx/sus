@@ -61,7 +61,10 @@
     <Compile Include="GameObject.cs" />
     <Compile Include="Objects\GameState.cs" />
     <Compile Include="Objects\Item.cs" />
+    <Compile Include="Objects\Items\Consumable.cs" />
     <Compile Include="Objects\Items\Equippable.cs" />
+    <Compile Include="Objects\Items\Arrow.cs" />
+    <Compile Include="Objects\Items\Potion.cs" />
     <Compile Include="Objects\Items\Weapon.cs" />
     <Compile Include="Objects\Items\Armor.cs" />
     <Compile Include="Objects\Spawner.cs" />

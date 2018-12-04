@@ -28,13 +28,15 @@ namespace SUSClient
         static void StartUp(string []args)
         {
             foreach (string arg in args)
+            {
                 if (arg.ToLower() == "-debug")
                 {
                     Console.WriteLine("Found debug..");
                     DEBUG = true;
                 }
+            }
 
-            Console.WriteLine($"Verison: {GameState.Version}");
+            Console.WriteLine($"Version: {GameState.Version}");
 
             AsynchronousClient.StartClient();   // Starts the Client.
             Console.Read();
@@ -102,7 +104,6 @@ namespace SUSClient
                         gamestate.Mobiles = (req as GetMobilesPacket).Mobiles;
                         break;
                     case PacketTypes.GetMobile:
-                        Console.WriteLine($"Server sent: {(req as GetMobilePacket).Target.Name}");
                         gamestate.ParseGetMobilePacket(req);
                         ia.Reset();
                         break;
@@ -123,6 +124,10 @@ namespace SUSClient
                     case PacketTypes.MobileResurrect:
                         creq = gamestate.Ressurrect(req as RessurrectMobilePacket);   // If we require a new current node,
                         ia.Reset();                                             //  the request will be made and sent early.
+                        break;
+                    case PacketTypes.UseItem:
+                        gamestate.UseItem(req as UseItemPacket);
+                        ia.Reset();
                         break;
                 }
 

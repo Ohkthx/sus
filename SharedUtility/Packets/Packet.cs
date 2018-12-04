@@ -20,6 +20,7 @@ namespace SUS.Shared.Packets
         MobileCombat,
         MobileMove,
         MobileResurrect,
+        UseItem,
 
         SocketKill
     }

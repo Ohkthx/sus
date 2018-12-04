@@ -194,70 +194,6 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Mobile Actions
-        public bool UpdateMobile(BasicMobile mobile, bool remove = false)
-        {
-            if (mobile == null)
-                return false;
-
-            if (remove)
-            {
-                if (!(mobile.IsPlayer && mobile.ID == Account.ID))
-                    return RemoveMobile(mobile);    // This case will on pass if it is not the player and is flagged for removal.
-                else
-                    return true;
-            }
-            else
-            {
-                return AddMobile(mobile);       // Add the mobile.
-            }
-        }
-
-        /// <summary>
-        ///     Adds either a Player or NPC. Performs and update if the mobile already exists.
-        /// </summary>
-        /// <param name="mobile">Mobile to be added.</param>
-        /// <returns>Succcess (true), or Failure (false)</returns>
-        private bool AddMobile(BasicMobile mobile)
-        {
-            if (Mobiles.Count > 0 && Mobiles.Contains(mobile))
-                Mobiles.Remove(mobile);
-
-            return Mobiles.Add(mobile); // Add the Mobile to the Node's tracked Mobiles.
-        }
-
-        /// <summary>
-        ///     Removes the mobile from the correct list (NPCs or Players)
-        /// </summary>
-        /// <param name="mobile">Mobile to remove.</param>
-        /// <returns>Number of elements removed.</returns>
-        private bool RemoveMobile(BasicMobile mobile)
-        {
-            if (Mobiles.Count == 0)
-                return true;
-
-            return Mobiles.Remove(mobile);
-        }
-
-        public bool HasMobile(BasicMobile mobile)
-        {
-            if (Mobiles.Count == 0)
-                return false;
-
-            return Mobiles.Contains(mobile);
-        }
-
-        public bool HasMobile(MobileType mobileType, UInt64 mobileID)
-        {
-            if (Mobiles.Count == 0)
-                return false;
-
-            foreach (BasicMobile m in Mobiles)
-                if (m.Type == mobileType && m.ID == mobileID)
-                    return true;
-
-            return false;
-        }
-
         public void MobileActionHandler(CombatMobilePacket cmp)
         {
             List<string> u = cmp.GetUpdates();
@@ -272,16 +208,6 @@ namespace SUS.Shared.Objects
                 Console.WriteLine(str);
         }
 
-        /// <summary>
-        ///     Removes a mobile from the current Gamestate.
-        /// </summary>
-        /// <param name="mobile">Mobile to remove.</param>
-        public void Kill(Mobile mobile)
-        {
-            mobile.Kill();
-            UpdateMobile(mobile.Basic(), remove: true);
-        }
-
         public Packet Ressurrect(RessurrectMobilePacket rez)
         {
             if (rez.Author.IsPlayer && rez.Author.ID == ID)
@@ -293,6 +219,31 @@ namespace SUS.Shared.Objects
             }
 
             return null;
+        }
+
+        public void UseItem(UseItemPacket uip)
+        {
+            Console.WriteLine(uip.Response);
+        }
+
+        public Packet Heal()
+        {
+            if (m_Items == null)
+                return null;
+
+            Potion p = null;
+            foreach (KeyValuePair<Guid, Item> i in m_Items)
+                if (i.Value.Type == ItemTypes.Consumable
+                    && (i.Value as Consumable).ConsumableType == Consumable.ConsumableTypes.HealthPotion)
+                    p = i.Value as Potion;
+
+            if (p == null)
+            {
+                Utility.ConsoleNotify("You do not have any potions in your inventory. Request an updated inventory.");
+                return null;
+            }
+
+            return new UseItemPacket(Account, ItemTypes.Consumable, p.Guid);
         }
         #endregion
 
