@@ -37,14 +37,14 @@ namespace SUS
                 #region Check Timeout
                 if (stopwatch.ElapsedMilliseconds >= timeout)
                 {
-                    stopwatch.Reset();
+                    stopwatch.Restart();
                     requests = 0;
                 }
                 else if (stopwatch.ElapsedMilliseconds < timeout && requests >= requestCap)
                 {
                     socketHandler.ToClient(new ErrorPacket($"Server: You have exceeded {requestCap} requests in {timeout / 1000} seconds and now on cooldown.").ToByte());
                     System.Threading.Thread.Sleep(timeout * 3);
-                    stopwatch.Reset();
+                    stopwatch.Restart();
                     requests = 0;
                     continue;
                 }

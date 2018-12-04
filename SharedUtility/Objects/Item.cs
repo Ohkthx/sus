@@ -60,6 +60,53 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
+        #region Overrides
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 13;
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, X) ? X.GetHashCode() : 0);
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, Y) ? Y.GetHashCode() : 0);
+                return hash;
+            }
+        }
+
+        public static bool operator ==(Coordinate c1, Coordinate c2)
+        {
+            if (Object.ReferenceEquals(c1, c2)) return true;
+            if (Object.ReferenceEquals(null, c1)) return false;
+            return (c1.Equals(c2));
+        }
+
+        public static bool operator !=(Coordinate c1, Coordinate c2)
+        {
+            return !(c1 == c2);
+        }
+
+        public override bool Equals(object value)
+        {
+            if (Object.ReferenceEquals(null, value)) return false;
+            if (Object.ReferenceEquals(this, value)) return true;
+            if (value.GetType() != this.GetType()) return false;
+            return IsEqual((Coordinate)value);
+        }
+
+        public bool Equals(Coordinate mobile)
+        {
+            if (Object.ReferenceEquals(null, mobile)) return false;
+            if (Object.ReferenceEquals(this, mobile)) return true;
+            return IsEqual(mobile);
+        }
+
+        private bool IsEqual(Coordinate value)
+        {
+            return (value != null)
+                && (X == value.X)
+                && (Y == value.Y);
+        }
+        #endregion
+
         public int Distance(Coordinate to) { return Distance(to.X, to.Y); }
         public int Distance(int x, int y)
         {
@@ -67,6 +114,48 @@ namespace SUS.Shared.Objects
                     Math.Pow(X - x, 2)
                     + Math.Pow(Y - y, 2)
                     );
+        }
+
+        public Coordinate Midpoint(Coordinate to) { return Midpoint(to.X, to.Y); }
+        public Coordinate Midpoint(int x, int y)
+        {
+            return new Coordinate((X + x) / 2, (Y + y) / 2);
+        }
+
+        public void MoveTowards(Coordinate to) { MoveTowards(to.X, to.Y); }
+        public void MoveTowards(int x2, int y2)
+        {   // Bresenham's line algorithm; provided by: Frank Lioty @StackOverflow
+            int w = x2 - X;
+            int h = y2 - Y;
+            int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+
+            if (w < 0) dx1 = -1; else if (w > 0) dx1 = 1;
+            if (h < 0) dy1 = -1; else if (h > 0) dy1 = 1;
+            if (w < 0) dx2 = -1; else if (w > 0) dx2 = 1;
+
+            int longest = Math.Abs(w);
+            int shortest = Math.Abs(h);
+            if (!(longest > shortest))
+            {
+                longest = Math.Abs(h);
+                shortest = Math.Abs(w);
+                if (h < 0) dy2 = -1; else if (h > 0) dy2 = 1;
+                dx2 = 0;
+            }
+
+            int numerator = longest >> 1;
+            numerator += shortest;
+            if (!(numerator < longest))
+            {
+                numerator -= longest;
+                X += dx1;
+                Y += dy1;
+            }
+            else
+            {
+                X += dx2;
+                Y += dy2;
+            }
         }
     }
 

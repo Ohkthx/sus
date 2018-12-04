@@ -25,6 +25,8 @@ namespace SUS.Shared.Objects
         East = 4,
         West = 8,
 
+        Nearby = 16,
+
         NorthEast = North | East,
         NorthWest = North | West,
         SouthEast = South | East,
@@ -734,33 +736,7 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Combat
-        public List<string> Combat(ref Mobile opponent)
-        {
-            List<string> output = new List<string>();
-            int initAtk = this.Attack();
 
-            if (this == opponent)
-            {   // Is the initiator attacking themself? Do the damage and return.
-                output.Add($"You perform {TakeDamage(initAtk) * -1} damage on yourself.");
-                if (IsDead)
-                    output.Add("You have died.");
-                return output;
-            }
-
-            output.Add($"You perform {opponent.TakeDamage(initAtk) * -1} damage to {opponent.Name}.");
-            if (opponent.IsDead)
-            {
-                output.Add($"You have killed {opponent.Name}.");
-                return output;
-            }
-
-            int oppAtk = opponent.Attack();
-            output.Add($"You take { TakeDamage(oppAtk) * -1} damage from {opponent.Name}.");
-            if (IsDead)
-                output.Add("You have died.");
-
-            return output;
-        }
 
         /// <summary>
         ///     Current mobile takes damage from outside source.
@@ -790,7 +766,7 @@ namespace SUS.Shared.Objects
 
         public void MoveInDirection(MobileDirections direction, int xMax, int yMax)
         {
-            if (direction == MobileDirections.None)
+            if (direction == MobileDirections.None || direction == MobileDirections.Nearby)
                 return; // No desired direction, do not move.
 
 

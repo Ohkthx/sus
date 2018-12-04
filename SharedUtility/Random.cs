@@ -74,6 +74,7 @@ namespace SUS.Shared.Utilities
         }
     }
 
+    [Serializable]
     public class DiceRoll
     {
         //private static readonly string ndmRegex = @"^([0-9]*)d([0-9]+|%)$";

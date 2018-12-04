@@ -16,6 +16,8 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
             SetHits(58, 72);
 
             SetDamage(5, 7);
+
+            EquipmentAdd(new Weapon(ItemLayers.Bow, WeaponMaterials.Steel, "Composite Bow", "1d8"));
         }
     }
 }

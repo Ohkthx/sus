@@ -176,10 +176,8 @@ namespace SUS
             return null;    // Nothing was found, return null.
         }
 
-        public static HashSet<BasicMobile> FindNearbyMobiles(Locations loc, Mobile baseMobile)
+        public static HashSet<BasicMobile> FindNearbyMobiles(Locations loc, Mobile baseMobile, int range)
         {
-            int mRange = baseMobile.Vision;
-
             HashSet<BasicMobile> lm = new HashSet<BasicMobile>();
             foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
             {
@@ -189,10 +187,41 @@ namespace SUS
                 // Calculate the distance between the two coordinates.
                 int distance = baseMobile.Coordinate.Distance(m.Value.Coordinate);
 
-                if (distance <= mRange)
+                if (distance <= range)
                     lm.Add(m.Value.Basic());
             }
             return lm;
+        }
+
+        public static Mobile FindNearestMobile(ref Mobile mobile)
+        {
+            int v = mobile.Vision;
+            HashSet<BasicMobile> localmobiles = new HashSet<BasicMobile>();
+            int i = 0;
+            while (localmobiles.Count == 0 && ++i * v < 120)
+            {
+                localmobiles = FindNearbyMobiles(mobile.Location, mobile, v * i);
+                if (localmobiles == null)
+                    localmobiles = new HashSet<BasicMobile>();
+            }
+
+            if (localmobiles.Count == 0)
+                return null;   // Just return null since we found no nearby.
+
+            Mobile closestMobile = null;
+            foreach (BasicMobile m in localmobiles)
+            {
+                Mobile mm = FindMobile(m.Guid);
+                if (mm == null)
+                    continue;
+
+                if (closestMobile == null)
+                    closestMobile = mm;
+                else if (mobile.Coordinate.Distance(mm.Coordinate) < mobile.Coordinate.Distance(closestMobile.Coordinate))
+                    closestMobile = mm;
+            }
+
+            return closestMobile;
         }
 
         /// <summary>
@@ -244,7 +273,21 @@ namespace SUS
 
                 if (toLocation == m.Location)
                 {   // Move our mobile into the targeted direction.
-                    m.MoveInDirection(direction, s.MaxX, s.MaxY);
+                    if (direction == MobileDirections.Nearby)
+                    {   // Move to nearby NPC.
+                        Mobile newM = FindNearestMobile(ref m);
+                        if (newM != null)
+                        {   // Moves the mobile to the nearest, 1 pace at a time until in vision.
+                            while (m.Coordinate.Distance(newM.Coordinate) > m.Vision)
+                            {
+                                m.Coordinate.MoveTowards(newM.Coordinate);
+                            }
+                        }
+                    }
+                    else
+                    {   // Move in a specific direction.
+                        m.MoveInDirection(direction, s.MaxX, s.MaxY);
+                    }
                 }
             }
             else

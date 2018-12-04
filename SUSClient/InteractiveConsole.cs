@@ -343,7 +343,6 @@ namespace SUSClient
                 {
                     if (input - 1 >= 0 && input - 1 < mobiles.Count)
                     {
-                        Utility.ConsoleNotify($"Mobile Selected: {mobiles[input - 1].Name}.");
                         return mobiles[input - 1];
                     }
                     Utility.ConsoleNotify("Bad option, please try again.");
@@ -368,12 +367,11 @@ namespace SUSClient
             if (mobiles.Count == 0)
             {
                 Utility.ConsoleNotify("No mobs to attack.");
+                Reset();
                 return;
             }
 
             BasicMobile targetMobile = SelectMobile(mobiles);
-
-            Console.WriteLine(" Performing an attack on {0}.", targetMobile.Name);
 
             // Our newly created action to perform.
             CombatMobilePacket attackAction = new CombatMobilePacket(gs.Account);

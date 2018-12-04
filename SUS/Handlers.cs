@@ -154,7 +154,7 @@ namespace SUS.Server
             if (relativeMobile == null || relativeMobile.Coordinate == null)
                 return new ErrorPacket("Server: You are not in a location to get nearby objects.");
 
-            HashSet<BasicMobile> lm = GameObject.FindNearbyMobiles(gmp.Location, relativeMobile);
+            HashSet<BasicMobile> lm = GameObject.FindNearbyMobiles(gmp.Location, relativeMobile, relativeMobile.Vision);
             gmp.Mobiles = lm;
             //gmp.Mobiles = GameObject.FindMobiles(gmp.Location, MobileType.Mobile);
             return gmp;
@@ -284,14 +284,15 @@ namespace SUS.Server
                     break;
 
                 Mobile target = m;
+                Mobile init = initiator as Mobile;
 
                 // Combat the two objects.
-                cmp.AddUpdate(initiator.Combat(ref target));
+                cmp.AddUpdate(CombatStage.Combat(ref init, ref target));
 
                 // Update the affectee.
                 if (target.IsDead)
                 {
-                    initiator.AddKill();
+                    (init as Player).AddKill();
                     GameObject.Kill(target);
                 }
                 else
@@ -300,17 +301,17 @@ namespace SUS.Server
                 }
 
                 // Update our initiator.
-                if (initiator.IsDead)
+                if (init.IsDead)
                 {
                     cmp.IsDead = true;
-                    GameObject.Kill(initiator);
+                    GameObject.Kill(init);
                 }
                 else
                 {
-                    GameObject.UpdateMobiles(initiator);
+                    GameObject.UpdateMobiles(init);
                 }
 
-                cmp.Result += $"{initiator.Name} attacked {target.Name}. ";    // TODO: Move this to MobileModifier.
+                cmp.Result += $"{init.Name} attacked {target.Name}. ";    // TODO: Move this to MobileModifier.
             }
 
             // Add our updated information for the initiator. After processing all changes.
