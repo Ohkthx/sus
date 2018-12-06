@@ -358,41 +358,70 @@ namespace SUS.Server
             if (m == null)
                 return new ErrorPacket("Server: Invalid object to use that item on.");
 
+            if (m.IsDead)
+                return new ErrorPacket("Server: You are dead.");
+
             if (!m.HasItem(uip.Item))
                 return new ErrorPacket("Server: You no longer have that item.");
 
             Item i = m.FindItem(uip.Item);
-            if (i.Type != ItemTypes.Consumable)
-                return new ErrorPacket("Server: How do you expect to use that?");
+            if (i == null)
+                return new ErrorPacket("Server: You no longer have that item.");
 
-            Consumable c = i as Consumable;
-            if (c.Amount <= 0)
+
+            switch(i.Type)
+            {
+                case ItemTypes.Consumable:
+                    return UseConsumable(uip, m, i as Consumable);
+                case ItemTypes.Equippable:
+                case ItemTypes.Armor:
+                case ItemTypes.Weapon:
+                    return EquipEquippable(uip, m, i as Equippable);
+                default:
+                    return new ErrorPacket("Server: You no longer have that item.");
+            }
+        }
+
+        #region Item Use
+        private static Packet UseConsumable(UseItemPacket uip, Mobile mobile, Consumable item)
+        {
+            if (item.Amount <= 0)
                 return new ErrorPacket("Server: Do you not have anymore of those.");
 
-            if (c.ConsumableType != Consumable.ConsumableTypes.HealthPotion)
-                return new ErrorPacket("Server: We can only user health potions for now.");
+            if (item.ConsumableType != Consumable.ConsumableTypes.HealthPotion)
+                return new ErrorPacket("Server: We can only use health potions for now.");
 
-            if (m.Hits == m.HitsMax)
+            if (mobile.Hits == mobile.HitsMax)
                 return new ErrorPacket("Server: You are already at full health.");
 
-            int effect = Potion.GetEffect(m.HitsMax);
-            if (m.Hits + effect >= m.HitsMax)
+            int effect = Potion.GetEffect(mobile.HitsMax);
+            if (mobile.Hits + effect >= mobile.HitsMax)
             {
-                effect = m.HitsMax - m.Hits;
-                m.Hits = m.HitsMax;
+                effect = mobile.HitsMax - mobile.Hits;
+                mobile.Hits = mobile.HitsMax;
             }
             else
             {
-                m.Hits += effect;
+                mobile.Hits += effect;
             }
 
-            c--;            // Decrease our consumable by 1.
-            m.ItemAdd(c);   // Update it.
-            GameObject.UpdateMobiles(m);
+            item--;                 // Decrease our consumable by 1.
+            mobile.ItemAdd(item);   // Update it.
+            GameObject.UpdateMobiles(mobile);
 
-            uip.Response = $"You used a Health Potion that healed {effect} health points. Health: {m.Hits} / {m.HitsMax}. {c.Name} remain.";
+            uip.Response = $"You used a Health Potion that healed {effect} health points. Health: {mobile.Hits} / {mobile.HitsMax}. {item.Name} remain.";
+
             return uip;
         }
+
+        private static Packet EquipEquippable(UseItemPacket uip, Mobile mobile, Equippable item)
+        {
+            mobile.Equip(item);
+            GameObject.UpdateMobiles(mobile);
+            uip.Response = $"You have equipped [{item.Name}].";
+            return uip;
+        }
+        #endregion
     }
     #endregion
 }

@@ -182,7 +182,7 @@ namespace SUS.Shared.Objects
 
         // Mobile Properties
         private int m_Speed = 1;            // Speed that the Mobile moves at.
-        private readonly int m_Vision = 15;          // Distance the Mobile can see.
+        private readonly int m_Vision = 15; // Distance the Mobile can see.
         
         // Mobile Stats.
         private int m_StatCap;
@@ -460,7 +460,19 @@ namespace SUS.Shared.Objects
         }
 
         public int Vision { get { return m_Vision; } }
-        public int Speed { get { return m_Speed; } }
+
+        public int Speed
+        {
+            get { return m_Speed; }
+            set
+            {
+                if (value < 0)
+                    return;
+                else if (value == Speed)
+                    return;
+                m_Speed = value;
+            }
+        }
         #endregion
 
         #region Stats
@@ -652,10 +664,10 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Items / Equippables
-        protected void InitConsumables()
+        protected void InitConsumables(int potions, int arrows)
         {
-            ItemAdd(new Potion(10));
-            ItemAdd(new Arrow(200));
+            ItemAdd(new Potion(potions));
+            ItemAdd(new Arrow(arrows));
         }
 
         public void EquipmentAdd(Equippable item)
@@ -690,6 +702,7 @@ namespace SUS.Shared.Objects
             m_Equipped[item.Layer] = item;
         }
 
+        public void Unequip(Equippable item) { Unequip(item.Layer); }
         public void Unequip(ItemLayers item)
         {
             m_Equipped.Remove(item);

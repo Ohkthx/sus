@@ -261,7 +261,7 @@ namespace SUS
 
             if (!forceMove)                                         // If it is not an admin move...
                 if (!isConnectedLocation(m.Location, toLocation)
-                    && toLocation != m.Location)   //  And it is not a connected location...
+                    && toLocation != m.Location)                    //  And it is not a connected location...
                     return null;                                    //   Return failure.
 
             Node n = FindNode(toLocation);
@@ -280,7 +280,7 @@ namespace SUS
                         {   // Moves the mobile to the nearest, 1 pace at a time until in vision.
                             while (m.Coordinate.Distance(newM.Coordinate) > m.Vision)
                             {
-                                m.Coordinate.MoveTowards(newM.Coordinate);
+                                m.Coordinate.MoveTowards(newM.Coordinate, m.Speed);
                             }
                         }
                     }

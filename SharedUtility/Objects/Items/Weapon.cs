@@ -16,14 +16,16 @@ namespace SUS.Shared.Objects
     public class Weapon : Equippable
     {
         private DiceRoll m_Damage;
+        private int m_AttackRange;
         private int m_AttackMinimum;
         private int m_AttackMaximum;
         private WeaponMaterials m_Material = WeaponMaterials.None;
 
         #region Constructors
-        public Weapon(ItemLayers layer, WeaponMaterials material, string name, string damage) : base(ItemTypes.Weapon, layer)
+        public Weapon(ItemLayers layer, WeaponMaterials material, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
         {
             Name = name;
+            Range = range;
 
             DiceDamage = new DiceRoll(damage);
             MinimumDMG = ((DiceDamage.Dice + DiceDamage.Modifier) > 0) ? DiceDamage.Dice + DiceDamage.Modifier : 0;
@@ -95,6 +97,20 @@ namespace SUS.Shared.Objects
                     return;
 
                 m_AttackMaximum = value;
+            }
+        }
+
+        public int Range
+        {
+            get { return m_AttackRange; }
+            private set
+            {
+                if (value == Range)
+                    return;
+                else if (value < 1)
+                    value = 1;
+
+                m_AttackRange = value;
             }
         }
         #endregion

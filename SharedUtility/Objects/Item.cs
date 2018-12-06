@@ -122,8 +122,8 @@ namespace SUS.Shared.Objects
             return new Coordinate((X + x) / 2, (Y + y) / 2);
         }
 
-        public void MoveTowards(Coordinate to) { MoveTowards(to.X, to.Y); }
-        public void MoveTowards(int x2, int y2)
+        public void MoveTowards(Coordinate to, int speed) { MoveTowards(to.X, to.Y, speed); }
+        public void MoveTowards(int x2, int y2, int speed)
         {   // Bresenham's line algorithm; provided by: Frank Lioty @StackOverflow
             int w = x2 - X;
             int h = y2 - Y;
@@ -144,17 +144,23 @@ namespace SUS.Shared.Objects
             }
 
             int numerator = longest >> 1;
-            numerator += shortest;
-            if (!(numerator < longest))
+            for (int i = 0; i < speed; i++)
             {
-                numerator -= longest;
-                X += dx1;
-                Y += dy1;
-            }
-            else
-            {
-                X += dx2;
-                Y += dy2;
+                if (i == longest)
+                    break;
+
+                numerator += shortest;
+                if (!(numerator < longest))
+                {
+                    numerator -= longest;
+                    X += dx1;
+                    Y += dy1;
+                }
+                else
+                {
+                    X += dx2;
+                    Y += dy2;
+                }
             }
         }
     }

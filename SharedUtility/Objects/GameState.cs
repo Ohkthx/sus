@@ -221,15 +221,58 @@ namespace SUS.Shared.Objects
             return null;
         }
 
-        public void UseItem(UseItemPacket uip)
+        public void UseItemResponse(UseItemPacket uip)
         {
             Console.WriteLine(uip.Response);
+        }
+
+        public Packet UseItems()
+        {
+            if (m_Items == null)
+                return new GetMobilePacket(Account, GetMobilePacket.RequestReason.Items);
+
+            int pos = 0;
+            foreach (KeyValuePair<Guid, Item> i in m_Items)
+            {
+                ++pos;
+                Console.WriteLine($" [{pos}] {i.Value.Name}");
+            }
+
+            Console.WriteLine();
+
+            int opt;
+            string input;
+            do
+            {
+                Console.Write(" Selection: ");
+                input = Console.ReadLine();
+            } while (int.TryParse(input, out opt) && (opt < 1 || opt > m_Items.Count));
+
+            Item item = null;
+            pos = 0;
+            foreach (KeyValuePair<Guid, Item> i in m_Items)
+            {
+                ++pos;
+                if (pos == opt)
+                {
+                    item = i.Value;
+                    break;
+                }
+            }
+
+            if (item == null)
+            {
+                Console.WriteLine("Bad value.");
+                return null;
+            }
+
+            return new UseItemPacket(Account, item.Type, item.Guid);
         }
 
         public Packet Heal()
         {
             if (m_Items == null)
-                return null;
+                return new GetMobilePacket(Account, GetMobilePacket.RequestReason.Items);
 
             Potion p = null;
             foreach (KeyValuePair<Guid, Item> i in m_Items)
@@ -305,6 +348,7 @@ namespace SUS.Shared.Objects
 
             GetMobilePacket.RequestReason reason = gmp.Reason;
 
+            Console.WriteLine();
             while (reason != GetMobilePacket.RequestReason.None)
             {
                 foreach (GetMobilePacket.RequestReason r in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
@@ -315,30 +359,26 @@ namespace SUS.Shared.Objects
                     switch (reason & r)
                     {
                         case GetMobilePacket.RequestReason.Paperdoll:
-                            Console.WriteLine("\nPaper Doll Information:");
+                            Console.WriteLine("Paper Doll Information:");
                             Console.WriteLine(gmp.Paperdoll);
                             break;
                         case GetMobilePacket.RequestReason.Location:
-                            Console.WriteLine("\nLocation Information:");
+                            Console.WriteLine("Location Information:");
                             Console.WriteLine(gmp.Location.ToString());
                             break;
                         case GetMobilePacket.RequestReason.IsDead:
-                            Console.WriteLine("\nIs Dead?");
+                            Console.WriteLine("Is Dead?");
                             Console.WriteLine(gmp.IsDead.ToString());
                             if (gmp.Target == Account)
                                 IsDead = gmp.IsDead;
                             break;
                         case GetMobilePacket.RequestReason.Items:
-                            Console.WriteLine("\nOwned Items:");
-                            foreach (KeyValuePair<Guid, Item> i in gmp.Items)
-                                Console.WriteLine($" {i.Value.Name}");
+                            Console.WriteLine("Received updated items.");
                             if (gmp.Target == Account)
                                 m_Items = gmp.Items;
                             break;
                         case GetMobilePacket.RequestReason.Equipment:
-                            Console.WriteLine("\nEquipped Items:");
-                            foreach (KeyValuePair<ItemLayers, Equippable> e in gmp.Equipment)
-                                Console.WriteLine($" Layer: {e.Value.Layer.ToString()} Item: {e.Value.Name}");
+                            Console.WriteLine("Received updated equipment.");
                             if (gmp.Target == Account)
                                 m_Equipped = gmp.Equipment;
                             break;

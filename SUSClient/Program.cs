@@ -126,7 +126,7 @@ namespace SUSClient
                         ia.Reset();                                             //  the request will be made and sent early.
                         break;
                     case PacketTypes.UseItem:
-                        gamestate.UseItem(req as UseItemPacket);
+                        gamestate.UseItemResponse(req as UseItemPacket);
                         ia.Reset();
                         break;
                 }

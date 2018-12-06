@@ -1,4 +1,5 @@
 ﻿using System;
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects.Mobiles.Spawns
 {
@@ -17,7 +18,9 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
 
             SetDamage(5, 7);
 
-            EquipmentAdd(new Weapon(ItemLayers.Bow, WeaponMaterials.Steel, "Composite Bow", "1d8"));
+            InitConsumables(Utility.RandomMinMax(0,2), Utility.RandomMinMax(10, 25));
+
+            EquipmentAdd(new Weapon(ItemLayers.Bow, WeaponMaterials.Steel, "Composite Bow", "1d8", range: 10));
         }
     }
 }
