@@ -141,11 +141,11 @@ namespace SUS
         /// <param name="type">Type of a mobile.</param>
         /// <param name="serial">Serial of the mobile to find.</param>
         /// <returns></returns>
-        public static Mobile FindMobile(MobileType type, Serial serial)
+        public static Mobile FindMobile(Mobile.Types type, Serial serial)
         {   // Iterate our hashset of mobiles.
             foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
                 if (((m.Value.Type == type) && (m.Value.ID == serial))
-                    || type == MobileType.Mobile)
+                    || type == Mobile.Types.Mobile)
                 {
                     return m.Value;   // If the type and serial match, return it. If it is type of 'Any', return it.
                 }
@@ -159,12 +159,12 @@ namespace SUS
         /// <param name="loc">Location to search.</param>
         /// <param name="type">Type of mobile."</param>
         /// <returns>List of Mobile Tags fitting the criteria.</returns>
-        public static HashSet<BasicMobile> FindMobiles(Locations loc, MobileType type)
+        public static HashSet<BasicMobile> FindMobiles(Locations loc, Mobile.Types type)
         {
             HashSet<BasicMobile> tags = new HashSet<BasicMobile>();
             foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
             {
-                if (((m.Value.Type == type) && (m.Value.Location == loc)) || (type == MobileType.Mobile && m.Value.Location == loc))
+                if (((m.Value.Type == type) && (m.Value.Location == loc)) || (type == Mobile.Types.Mobile && m.Value.Location == loc))
                 {
                     tags.Add(m.Value.Basic());
                 }
@@ -231,7 +231,7 @@ namespace SUS
         /// <returns></returns>
         public static Mobile FindPlayer(Serial serial)
         {
-            return FindMobile(MobileType.Player, serial);
+            return FindMobile(Mobile.Types.Player, serial);
         }
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace SUS
         /// <returns></returns>
         public static Mobile FindNPC(Serial serial)
         {
-            return FindMobile(MobileType.NPC, serial);
+            return FindMobile(Mobile.Types.NPC, serial);
         }
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace SUS
         /// <param name="toLocation">Node to move the mobile to.</param>
         /// <param name="mobile">Mobile to update.</param>
         /// <param name="forceMove">Overrides requirements if an admin is performing the action.</param>
-        public static Node MoveMobile(Locations toLocation, BasicMobile mobile, MobileDirections direction = MobileDirections.None, bool forceMove = false)
+        public static Node MoveMobile(Locations toLocation, BasicMobile mobile, Mobile.Directions direction = Mobile.Directions.None, bool forceMove = false)
         {
             Mobile m = FindMobile(mobile.Guid);
             if (m == null)
@@ -273,7 +273,7 @@ namespace SUS
 
                 if (toLocation == m.Location)
                 {   // Move our mobile into the targeted direction.
-                    if (direction == MobileDirections.Nearby)
+                    if (direction == Mobile.Directions.Nearby)
                     {   // Move to nearby NPC.
                         Mobile newM = FindNearestMobile(ref m);
                         if (newM != null)
@@ -435,7 +435,7 @@ namespace SUS
             else if (!Node.isValidLocation(location))
                 return false;   // If an invalid location is passed, return false.
 
-            if (mobile.Type == MobileType.Creature && spawner != Guid.Empty)
+            if (mobile.Type == Mobile.Types.Creature && spawner != Guid.Empty)
                 (mobile as BaseCreature).OwningSpawner = spawner;
 
             mobile.Location = location; // Updates the location of the local mobile.
@@ -465,7 +465,7 @@ namespace SUS
             HashSet<BaseCreature> mobiles = new HashSet<BaseCreature>();
             foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
             {
-                if (m.Value.Location == loc && m.Value.Type == MobileType.Creature)
+                if (m.Value.Location == loc && m.Value.Type == Mobile.Types.Creature)
                 {
                     BaseCreature bc = m.Value as BaseCreature;
                     if (bc == null)

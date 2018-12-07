@@ -101,13 +101,13 @@ namespace SUSClient
                         lastloc();
                         break;
                     case ConsoleActions.players:
-                        listMobiles(MobileType.Player);
+                        listMobiles(Mobile.Types.Player);
                         break;
                     case ConsoleActions.npcs:
-                        listMobiles(MobileType.NPC | MobileType.Creature);
+                        listMobiles(Mobile.Types.NPC | Mobile.Types.Creature);
                         break;
                     case ConsoleActions.mobiles:
-                        listMobiles(MobileType.Mobile);
+                        listMobiles(Mobile.Types.Mobile);
                         break;
                     case ConsoleActions.actions:
                         printActions();
@@ -148,13 +148,13 @@ namespace SUSClient
             switch (lastAction)
             {
                 case ConsoleActions.players:
-                    listMobiles(MobileType.Player);
+                    listMobiles(Mobile.Types.Player);
                     break;
                 case ConsoleActions.npcs:
-                    listMobiles(MobileType.NPC | MobileType.Creature);
+                    listMobiles(Mobile.Types.NPC | Mobile.Types.Creature);
                     break;
                 case ConsoleActions.mobiles:
-                    listMobiles(MobileType.Mobile);
+                    listMobiles(Mobile.Types.Mobile);
                     break;
                 case ConsoleActions.attack:
                     attack();
@@ -191,7 +191,7 @@ namespace SUSClient
         {
             look();
 
-            MobileDirections newDir = MobileDirections.None;
+            Mobile.Directions newDir = Mobile.Directions.None;
             Locations newLoc = Locations.None;
             while(true)
             {
@@ -200,7 +200,7 @@ namespace SUSClient
 
                 if (gs.NodeCurrent.CanTraverse)
                 {
-                    if ((newDir = gs.StringToDirection(input)) != MobileDirections.None)
+                    if ((newDir = gs.StringToDirection(input)) != Mobile.Directions.None)
                     {
                         Console.WriteLine($"Selected: {newDir.ToString()}");
                         clientRequest = new MoveMobilePacket(gs.NodeCurrent.Location, gs.Account, newDir);
@@ -219,12 +219,12 @@ namespace SUSClient
 
         private void move(string position)
         {
-            MobileDirections newDir = MobileDirections.None;
+            Mobile.Directions newDir = Mobile.Directions.None;
             Locations newLoc = Locations.None;
 
             if (gs.NodeCurrent.CanTraverse)
             {
-                if ((newDir = gs.StringToDirection(position)) != MobileDirections.None)
+                if ((newDir = gs.StringToDirection(position)) != Mobile.Directions.None)
                 {
                     Console.WriteLine($"Selected: {newDir.ToString()}");
                     clientRequest = new MoveMobilePacket(gs.NodeCurrent.Location, gs.Account, newDir);
@@ -250,12 +250,12 @@ namespace SUSClient
             if (gs.NodeCurrent.CanTraverse)
             {   // Print our directions since we can move within this map.
                 Console.WriteLine(" Directions to travel locally:");
-                foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
+                foreach (Mobile.Directions dir in Enum.GetValues(typeof(Mobile.Directions)))
                 {
-                    if (dir == MobileDirections.None)
+                    if (dir == Mobile.Directions.None)
                         continue;
 
-                    Console.WriteLine($"  {Enum.GetName(typeof(MobileDirections), dir)}");
+                    Console.WriteLine($"  {Enum.GetName(typeof(Mobile.Directions), dir)}");
                 }
                 Console.WriteLine();
             }
@@ -305,7 +305,7 @@ namespace SUSClient
         ///     Parent caller for retrieving either local Players or NPCs.
         /// </summary>
         /// <param name="type"></param>
-        private void listMobiles(MobileType type)
+        private void listMobiles(Mobile.Types type)
         {
             List<BasicMobile> mobiles = getMobiles();    // Get a fresh list of mobiles from the server.
             if (mobiles == null && this.clientRequest != null)
@@ -337,7 +337,7 @@ namespace SUSClient
 
         public BasicMobile SelectMobile(List<BasicMobile> mobiles)
         {
-            listMobiles(MobileType.Mobile);    // Retreives our mobiles.
+            listMobiles(Mobile.Types.Mobile);    // Retreives our mobiles.
 
             int input = 0;
             do

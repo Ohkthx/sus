@@ -4,47 +4,18 @@ using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects
 {
-    [Flags, Serializable]
-    public enum MobileType
-    {
-        None = 0,
-        Player = 1,
-        NPC = 2,
-        Creature = 4,
-
-        Mobile = Player | NPC | Creature,
-    }
-
-    [Flags, Serializable]
-    public enum MobileDirections
-    {
-        None = 0,
-
-        North = 1,
-        South = 2,
-        East = 4,
-        West = 8,
-
-        Nearby = 16,
-
-        NorthEast = North | East,
-        NorthWest = North | West,
-        SouthEast = South | East,
-        SouthWest = South | West,
-    }
-
     [Serializable]
     public class BasicMobile
     {
         private Guid m_Guid;
         private Serial m_ID;
         private string m_Name;
-        private MobileType m_Type;
+        private Mobile.Types m_Type;
 
         #region Constructors
         public BasicMobile(Mobile mobile) : this(mobile.Guid, mobile.ID, mobile.Type, mobile.Name) { }
 
-        public BasicMobile(Guid guid, UInt64 id, MobileType type, string name)
+        public BasicMobile(Guid guid, UInt64 id, Mobile.Types type, string name)
         {
             Guid = guid;
             ID = new Serial(id);
@@ -84,14 +55,14 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public MobileType Type
+        public Mobile.Types Type
         {
             get { return m_Type; }
             set
             {
-                if (value == MobileType.None)
+                if (value == Mobile.Types.None)
                     return;
-                else if (Type == MobileType.None)
+                else if (Type == Mobile.Types.None)
                     m_Type = value;
 
                 if (Type != value)
@@ -114,7 +85,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public bool IsPlayer { get { return Type == MobileType.Player; } }
+        public bool IsPlayer { get { return Type == Mobile.Types.Player; } }
         #endregion
 
         #region Overrides
@@ -169,11 +140,40 @@ namespace SUS.Shared.Objects
     [Serializable]
     public abstract class Mobile
     {
+        [Flags]
+        public enum Types
+        {
+            None        = 0,
+            Player      = 1,
+            NPC         = 2,
+            Creature    = 4,
+
+            Mobile = Player | NPC | Creature,
+        }
+
+        [Flags]
+        public enum Directions
+        {
+            None    = 0,
+
+            North   = 1,
+            South   = 2,
+            East    = 4,
+            West    = 8,
+
+            Nearby  = 16,
+
+            NorthEast = North | East,
+            NorthWest = North | West,
+            SouthEast = South | East,
+            SouthWest = South | West,
+        }
+
         private Coordinate m_Coord;
         private Guid m_Guid;
         private Serial m_ID;                // ID of the mobile.
         private string m_Name;              // Name of the mobile.
-        private MobileType m_Type;          // Type of Mobile: NPC or Player.
+        private Types m_Type;          // Type of Mobile: NPC or Player.
         private Locations m_Location;       // Location of the mobile.
 
         // Currently owned and equipped items.
@@ -192,7 +192,7 @@ namespace SUS.Shared.Objects
         private Dictionary<int, Skill> m_Skills;  // Skills possessed by the mobile.
 
         #region Contructors
-        public Mobile(MobileType type)
+        public Mobile(Types type)
         {
             Type = type;
 
@@ -352,17 +352,17 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public MobileType Type
+        public Types Type
         {
             get { return m_Type; }
             private set
             {
-                if (value != MobileType.None && value != Type)
+                if (value != Types.None && value != Type)
                     m_Type = value;
             }
         }
 
-        public bool IsPlayer { get { return m_Type == MobileType.Player; } }
+        public bool IsPlayer { get { return m_Type == Types.Player; } }
 
         public bool IsDead { get { return Hits <= 0; } }
 
@@ -795,9 +795,9 @@ namespace SUS.Shared.Objects
 
         public abstract void Ressurrect();
 
-        public int MoveInDirection(MobileDirections direction, int xMax, int yMax)
+        public int MoveInDirection(Directions direction, int xMax, int yMax)
         {
-            if (direction == MobileDirections.None || direction == MobileDirections.Nearby)
+            if (direction == Directions.None || direction == Directions.Nearby)
                 return 0; // No desired direction, do not move.
 
 
@@ -805,30 +805,30 @@ namespace SUS.Shared.Objects
             int distance = Utility.RandomMinMax(Vision, (Vision * Speed / 2));
 
             // Factor in our current direction.
-            while (direction > MobileDirections.None)
+            while (direction > Directions.None)
             {
-                foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
+                foreach (Directions dir in Enum.GetValues(typeof(Directions)))
                 {
-                    if (dir == MobileDirections.None || (dir & (dir - 1)) != 0)
+                    if (dir == Directions.None || (dir & (dir - 1)) != 0)
                         continue;   // Current iteration is either 'None' or it is a combination of directions.
 
                     if ((direction & dir) == dir)
                     {   // We have found a direction that is within our current direction.
                         switch (dir)
                         {
-                            case MobileDirections.North:
+                            case Directions.North:
                                 // Protect ourselves from extending beyond the coordinates we are allowed to.
                                 Coordinate.Y = ((Coordinate.Y + distance) > yMax) ? yMax : Coordinate.Y + distance;
                                 break;
-                            case MobileDirections.South:
+                            case Directions.South:
                                 // Protection from negative coordinate.
                                 Coordinate.Y = ((Coordinate.Y - distance) < 0) ? 0 : Coordinate.Y - distance;
                                 break;
-                            case MobileDirections.East:
+                            case Directions.East:
                                 // Protect ourselves from extending beyond the coordinates we are allowed to.
                                 Coordinate.X = ((Coordinate.X + distance) > xMax) ? xMax : Coordinate.X + distance;
                                 break;
-                            case MobileDirections.West:
+                            case Directions.West:
                                 // Protection from negative coordinate.
                                 Coordinate.X = ((Coordinate.X - distance) < 0) ? 0 : Coordinate.X - distance; 
                                 break;

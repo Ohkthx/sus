@@ -22,7 +22,7 @@ namespace SUS.Shared.Objects.Mobiles
         public bool isLoggedIn { get; private set; } = false;
 
         #region Constructors
-        public Player(ulong id, string name, int rawStr, int rawDex, int rawInt) : base(MobileType.Player)
+        public Player(ulong id, string name, int rawStr, int rawDex, int rawInt) : base(Types.Player)
         {
             ID = id;
             Name = name;

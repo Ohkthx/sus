@@ -7,7 +7,7 @@ namespace SUS.Shared.Objects.Mobiles
     public abstract class NPC : Mobile
     {
         #region Constructors
-        public NPC(): base(MobileType.NPC) { ID = Serial.NewObject; }
+        public NPC(): base(Types.NPC) { ID = Serial.NewObject; }
         #endregion
 
         #region Combat

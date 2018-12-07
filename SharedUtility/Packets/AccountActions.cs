@@ -11,7 +11,7 @@ namespace SUS.Shared.Packets
 
         #region Constructors
         public AccountAuthenticatePacket(BasicMobile mobile) : base (PacketTypes.Authenticate, mobile) { }
-        public AccountAuthenticatePacket(UInt64 id, string name) : this(new BasicMobile(Guid.Empty, id, MobileType.Player, name)) { }
+        public AccountAuthenticatePacket(UInt64 id, string name) : this(new BasicMobile(Guid.Empty, id, Mobile.Types.Player, name)) { }
         #endregion
 
         #region Getters / Setters

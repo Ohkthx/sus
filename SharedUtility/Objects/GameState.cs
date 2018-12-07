@@ -183,7 +183,7 @@ namespace SUS.Shared.Objects
         /// <param name="type">Type of a mobile.</param>
         /// <param name="serial">Serial of the mobile to find.</param>
         /// <returns></returns>
-        private BasicMobile FindMobile(MobileType type, Serial serial)
+        private BasicMobile FindMobile(Mobile.Types type, Serial serial)
         {   // Iterate our hashset of mobiles.
             foreach (BasicMobile m in Mobiles)
                 if (m.Type == type && m.ID == serial)
@@ -322,20 +322,20 @@ namespace SUS.Shared.Objects
             return Locations.None;
         }
 
-        public MobileDirections StringToDirection(string location)
+        public Mobile.Directions StringToDirection(string location)
         {
             if (!NodeCurrent.CanTraverse)
-                return MobileDirections.None;
+                return Mobile.Directions.None;
 
-            foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
+            foreach (Mobile.Directions dir in Enum.GetValues(typeof(Mobile.Directions)))
             {
-                if (dir == MobileDirections.None) 
+                if (dir == Mobile.Directions.None) 
                     continue;
-                else if (Enum.GetName(typeof(MobileDirections), dir).ToLower() == location.ToLower())
+                else if (Enum.GetName(typeof(Mobile.Directions), dir).ToLower() == location.ToLower())
                     return dir;
             }
 
-            return MobileDirections.None;
+            return Mobile.Directions.None;
         }
         #endregion
 

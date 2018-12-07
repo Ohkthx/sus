@@ -75,13 +75,13 @@ namespace SUS.Shared.Packets
     [Serializable]
     public sealed class MoveMobilePacket : Packet
     {
-        private MobileDirections m_Direction = MobileDirections.None;
+        private Mobile.Directions m_Direction = Mobile.Directions.None;
         private Locations m_Location;
         private BasicNode m_NewLocation = null;
 
         #region Constructors
-        public MoveMobilePacket(Locations location, BasicMobile mobile) : this(location, mobile, MobileDirections.None) { }
-        public MoveMobilePacket(Locations location, BasicMobile mobile, MobileDirections direction) : base(PacketTypes.MobileMove, mobile)
+        public MoveMobilePacket(Locations location, BasicMobile mobile) : this(location, mobile, Mobile.Directions.None) { }
+        public MoveMobilePacket(Locations location, BasicMobile mobile, Mobile.Directions direction) : base(PacketTypes.MobileMove, mobile)
         {
             Location = location;
             Direction = direction;
@@ -89,12 +89,12 @@ namespace SUS.Shared.Packets
         #endregion
 
         #region Getters / Setters
-        public MobileDirections Direction
+        public Mobile.Directions Direction
         {
             get { return m_Direction; }
             set
             {
-                if (value == MobileDirections.None || value == Direction) 
+                if (value == Mobile.Directions.None || value == Direction) 
                     return; // Prevent assigning a bad value or reassigning.
 
                 m_Direction = value;
