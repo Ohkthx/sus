@@ -204,6 +204,15 @@ namespace SUS.Shared.Objects
                 return;
             }
 
+            string fn = @"C:\Users\d0x1p2\Desktop\combat.txt";
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter(fn, true))
+            {
+                file.WriteLine();
+                file.WriteLine($"[{DateTime.Now}]");
+                foreach (string str in u)
+                    file.WriteLine(str);
+            }
+
             foreach (string str in u)
                 Console.WriteLine(str);
         }

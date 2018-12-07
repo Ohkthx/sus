@@ -103,10 +103,10 @@ namespace SUS.Shared.Utilities
         #endregion
 
         #region Getters / Setters 
-        public int Dice 
+        private int Dice 
         {
             get { return m_Amount; }
-            private set
+            set
             {
                 if (value <= 0)
                     value = 1;
@@ -117,10 +117,10 @@ namespace SUS.Shared.Utilities
             }
         }
 
-        public int Faces
+        private int Faces
         {
             get { return m_Faces; }
-            private set
+            set
             {
                 if (value <= 0)
                     value = 1;
@@ -131,10 +131,10 @@ namespace SUS.Shared.Utilities
             }
         }
 
-        public int Modifier
+        private int Modifier
         {
             get { return m_Modifier; }
-            private set
+            set
             {
                 if (value == Modifier)
                     return;
@@ -142,6 +142,9 @@ namespace SUS.Shared.Utilities
                 m_Modifier = value;
             }
         }
+
+        public int Minimum { get { return Dice + Modifier; } }
+        public int Maximum { get { return (Dice * Faces) + Modifier; } }
         #endregion
 
         public void Display()

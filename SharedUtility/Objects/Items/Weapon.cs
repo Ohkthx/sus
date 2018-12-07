@@ -21,48 +21,47 @@ namespace SUS.Shared.Objects
             Slashing,
         }
 
+        public enum PrimaryStats
+        {
+            Strength        = 1,
+            Dexterity       = 2,
+            Intelligence    = 4,
+        }
+
         private DiceRoll m_Damage;
         private int m_AttackRange;
-        private int m_AttackMinimum;
-        private int m_AttackMaximum;
         private Materials m_Material = Materials.None;
+        private DamageTypes m_DamageType;
+        private PrimaryStats m_Stat;
 
         #region Constructors
-        public Weapon(ItemLayers layer, Materials material, DamageTypes dmgtype, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
+        public Weapon(ItemLayers layer, Materials material, DamageTypes dmgtype, PrimaryStats stat, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
         {
             Name = name;
             Range = range;
 
-            DiceDamage = new DiceRoll(damage);
-            MinimumDMG = ((DiceDamage.Dice + DiceDamage.Modifier) > 0) ? DiceDamage.Dice + DiceDamage.Modifier : 0;
-            MaximumDMG = ((DiceDamage.Dice * DiceDamage.Faces + DiceDamage.Modifier) > 0) ? DiceDamage.Dice * DiceDamage.Faces + DiceDamage.Modifier : 0;
+            Material = material;
+            DamageType = dmgtype;
+            Stat = stat;
 
-            Material = material;  // Acts like a damage modifier.
+            DiceDamage = new DiceRoll(damage);
         }
         #endregion
 
         #region Getters / Setters
         public override int RawRating { get { return AttackRating; } }
-
-        private int AttackRating
-        {
-            get
-            {
-                return (MaximumDMG) + (int)Material;
-            }
-        }
+        private int AttackRating { get { return DiceDamage.Maximum + (int)Material; } }
+        public int Damage { get { return DiceDamage.Roll() + (int)Material; } }
 
         public bool IsBow
         {
             get { return IsWeapon && (Layer & ItemLayers.Bow) == ItemLayers.Bow; }
         }
 
-        public int Damage { get { return DiceDamage.Roll() + (int)Material; } }
-
-        public DiceRoll DiceDamage
+        private DiceRoll DiceDamage
         {
             get { return m_Damage; }
-            private set
+            set
             {
                 if (value == null)
                     return;
@@ -82,27 +81,27 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public int MinimumDMG
+        public DamageTypes DamageType
         {
-            get { return m_AttackMinimum; }
+            get { return m_DamageType; }
             private set
             {
-                if (value < 0 || value > MaximumDMG || value == MinimumDMG)
+                if (value == DamageType)
                     return;
 
-                m_AttackMinimum = value;
+                m_DamageType = value;
             }
         }
 
-        public int MaximumDMG
+        public PrimaryStats Stat
         {
-            get { return m_AttackMaximum; }
+            get { return m_Stat; }
             private set
             {
-                if (value < 0 || value < MinimumDMG || value == MaximumDMG)
+                if (value == Stat)
                     return;
 
-                m_AttackMaximum = value;
+                m_Stat = value;
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using SUS.Shared.Objects;
+using SUS.Shared.Utilities;
 
 namespace SUS.Server
 {
@@ -77,6 +78,11 @@ namespace SUS.Server
                 log.Add($"{aggressor.Name} moves towards {target.Name} and is now {target.Coordinate.Distance(aggressor.Coordinate)} paces away.");
             }
 
+            // Base for determining miss, hit, or crit.
+            DiceRoll d20 = new DiceRoll("1d20");
+            int d20roll = d20.Roll();                               // The roll.
+            int totalroll = d20roll + aggressor.AbilityModifier;    // Roll w/ Ability Modifier.
+            
             // If the target's distance is less than (or equal) to the distance.
             if (aggressor.Weapon.Range >= aggressor.Coordinate.Distance(target.Coordinate))
             {
@@ -87,7 +93,23 @@ namespace SUS.Server
                     aggressor.ItemAdd(c);
                 }
 
-                log.Add($"{aggressor.Name} performs {target.TakeDamage(aggressor.Attack()) * -1} damage to {target.Name}.");
+                if (d20roll == 1)
+                {   // Attack misses.
+                    log.Add($"{aggressor.Name} attempted but failed to land the attack.");
+                    return;
+                }
+                else if (totalroll < target.ArmorRating)
+                {
+                    log.Add($"{aggressor.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
+                    return;
+                }
+
+                int atkDamage = aggressor.Attack();
+                if (d20roll == 20)
+                    log.Add($"{aggressor.Name} performs a critical hit for {target.TakeDamage(atkDamage*2)} damage against {target.Name}.");
+                else
+                    log.Add($"{aggressor.Name} performs {target.TakeDamage(atkDamage)} damage to {target.Name}.");
+
                 if (target.IsDead)
                 {
                     log.Add($"{aggressor.Name} has killed {target.Name}.");

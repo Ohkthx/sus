@@ -34,7 +34,11 @@ namespace SUS.Shared.Objects.Mobiles
             InitConsumables(1000, 10, 50);
 
             // Give some basic armor and weapons.
+            EquipmentAdd(new Armor(ItemLayers.Head, Armor.Materials.Leather, "Leather Cap"));
+            EquipmentAdd(new Armor(ItemLayers.Neck, Armor.Materials.Leather, "Leather Gorget"));
             EquipmentAdd(new Armor(ItemLayers.Chest, Armor.Materials.Leather, "Leather Chest"));
+            EquipmentAdd(new Armor(ItemLayers.Arms, Armor.Materials.Leather, "Leather Sleeves"));
+            EquipmentAdd(new Armor(ItemLayers.Hands, Armor.Materials.Leather, "Leather Gloves"));
             EquipmentAdd(new Armor(ItemLayers.Legs, Armor.Materials.Leather, "Leather Leggings"));
             EquipmentAdd(new Armor(ItemLayers.Feet, Armor.Materials.Leather, "Leather Boots"));
             EquipmentAdd(new CompositeBow());
@@ -122,8 +126,7 @@ namespace SUS.Shared.Objects.Mobiles
         #region Combat
         public override int Attack()
         {
-            int Damage = Weapon.Damage * (Weapon.Rating /2 );
-            return Utility.RandomMinMax(Damage / 2, Damage);
+            return Weapon.Damage + AbilityModifier;
         }
 
         private void statIncrease()

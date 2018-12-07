@@ -21,6 +21,6 @@ namespace SUS.Shared.Objects.Items.Equipment
     [Serializable]
     public abstract class Bow : Weapon
     {
-        public Bow(string name, string damage, int r) : base(ItemLayers.Bow, Materials.Wooden, DamageTypes.Piercing, name, damage, range: r) { }
+        public Bow(string name, string damage, int r) : base(ItemLayers.Bow, Materials.Wooden, DamageTypes.Piercing, PrimaryStats.Dexterity, name, damage, range: r) { }
     }
 }

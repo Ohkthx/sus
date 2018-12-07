@@ -289,7 +289,7 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
-        #region Getters / Setters
+        #region Getters / Setters - Basic
         public Coordinate Coordinate
         {
             get { return m_Coord; }
@@ -368,6 +368,23 @@ namespace SUS.Shared.Objects
 
         public string GetHealth() { return $"{Hits} / {HitsMax}"; }
 
+        public int Vision { get { return m_Vision; } }
+
+        public int Speed
+        {
+            get { return m_Speed; }
+            set
+            {
+                if (value < 0)
+                    return;
+                else if (value == Speed)
+                    return;
+                m_Speed = value;
+            }
+        }
+        #endregion
+
+        #region Getters / Setters - Items
         public Dictionary<Guid, Item> Items
         {
             get
@@ -402,7 +419,9 @@ namespace SUS.Shared.Objects
                     return new Items.Equipment.Unarmed();
             }
         }
+        #endregion
 
+        #region Getters / Setters - Consumables
         public Gold Gold 
         {
             get
@@ -444,52 +463,9 @@ namespace SUS.Shared.Objects
                 return a;
             }
         }
-
-        public int ArmorRating
-        {
-            get
-            {
-                int rating = 0;
-                foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
-                {
-                    if (item.Value.IsArmor)
-                        rating += item.Value.Rating;
-                }
-                return rating;
-            }
-        }
-
-        public int WeaponRating
-        {
-            get
-            {
-                int rating = 0;
-                foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
-                {
-                    if (item.Value.IsWeapon)
-                        rating += item.Value.Rating;
-                }
-                return rating;
-            }
-        }
-
-        public int Vision { get { return m_Vision; } }
-
-        public int Speed
-        {
-            get { return m_Speed; }
-            set
-            {
-                if (value < 0)
-                    return;
-                else if (value == Speed)
-                    return;
-                m_Speed = value;
-            }
-        }
         #endregion
 
-        #region Stats
+        #region Getters / Setters - Stats
         public void InitStats(int rawStr, int rawDex, int rawInt)
         {
             m_Str = rawStr;
@@ -670,6 +646,38 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
+        #region Getters / Setters - Combat
+        public int ArmorRating
+        {
+            get
+            {
+                int rating = 0;
+                foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
+                {
+                    if (item.Value.IsArmor)
+                        rating += item.Value.Rating;
+                }
+                return rating;
+            }
+        }
+
+        public int WeaponRating
+        {
+            get
+            {
+                int rating = 0;
+                foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
+                {
+                    if (item.Value.IsWeapon)
+                        rating += item.Value.Rating;
+                }
+                return rating;
+            }
+        }
+
+        public int AbilityModifier { get { return abilityScore(); } }
+        #endregion
+
         #region Skills
         public Dictionary<int, Skill> Skills
         {
@@ -767,8 +775,6 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Combat
-
-
         /// <summary>
         ///     Current mobile takes damage from outside source.
         /// </summary>
@@ -789,6 +795,60 @@ namespace SUS.Shared.Objects
         }
 
         public abstract int Attack();
+
+        private int abilityScore()
+        {
+            int weaponStatVal = 0;  // Will store the value.
+            switch(Weapon.Stat)
+            {   // Gets the stat that is proficient for the equipped weapon.
+                case Weapon.PrimaryStats.Strength:
+                    weaponStatVal = Str;
+                    break;
+                case Weapon.PrimaryStats.Dexterity:
+                    weaponStatVal = Dex;
+                    break;
+                case Weapon.PrimaryStats.Intelligence:
+                    weaponStatVal = Int;
+                    break;
+            }
+
+            int score = 0;
+            weaponStatVal /= 4;
+            if (weaponStatVal >= 30)
+                score = 10;
+            else if (weaponStatVal >= 28)
+                score = 9;
+            else if (weaponStatVal >= 26)
+                score = 8;
+            else if (weaponStatVal >= 24)
+                score = 7;
+            else if (weaponStatVal >= 22)
+                score = 6;
+            else if (weaponStatVal >= 20)
+                score = 5;
+            else if (weaponStatVal >= 18)
+                score = 4;
+            else if (weaponStatVal >= 16)
+                score = 3;
+            else if (weaponStatVal >= 14)
+                score = 2;
+            else if (weaponStatVal >= 12)
+                score = 1;
+            else if (weaponStatVal >= 10)
+                score = 0;
+            else if (weaponStatVal >= 8)
+                score = -1;
+            else if (weaponStatVal >= 6)
+                score = -2;
+            else if (weaponStatVal >= 4)
+                score = -3;
+            else if (weaponStatVal >= 2)
+                score = -4;
+            else
+                score = -5;
+
+            return score;
+        }
         #endregion
 
         public abstract void Kill();
