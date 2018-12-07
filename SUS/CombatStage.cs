@@ -26,8 +26,8 @@ namespace SUS.Server
                 closeDistance(ref log, ref m1, ref m2);
             }
 
-            CombatTurn(ref log, ref m1, ref m2);
-            CombatTurn(ref log, ref m2, ref m1);
+            combatTurn(ref log, ref m1, ref m2);
+            combatTurn(ref log, ref m2, ref m1);
 
             return log;
         }
@@ -57,7 +57,7 @@ namespace SUS.Server
             log.Add($"{m1.Name} and {m2.Name} moved {paces} paces towards one another.");
         }
 
-        private static void CombatTurn(ref List<string> log, ref Mobile aggressor, ref Mobile target)
+        private static void combatTurn(ref List<string> log, ref Mobile aggressor, ref Mobile target)
         {
             if (aggressor.IsDead || target.IsDead)
                 return;
@@ -91,6 +91,44 @@ namespace SUS.Server
                 if (target.IsDead)
                 {
                     log.Add($"{aggressor.Name} has killed {target.Name}.");
+                    exchangeLoot(ref log, ref aggressor, ref target);
+                }
+            }
+        }
+
+        private static void exchangeLoot(ref List<string> log, ref Mobile m1, ref Mobile m2)
+        {
+            if (m1.IsDead)
+                loot(ref log, ref m2, m1);
+            else
+                loot(ref log, ref m1, m2);
+        }
+
+        private static void loot(ref List<string> log, ref Mobile to, Mobile from)
+        {
+            Dictionary<Consumable.ConsumableTypes, Consumable> fromC = new Dictionary<Consumable.ConsumableTypes, Consumable>();
+            foreach(KeyValuePair<Guid, Item> i in from.Items)
+                if (i.Value.Type == ItemTypes.Consumable)
+                    fromC.Add((i.Value as Consumable).ConsumableType, i.Value as Consumable);
+
+            foreach (KeyValuePair<Guid, Item> i in to.Items)
+            {
+                if (i.Value.Type == ItemTypes.Consumable)
+                {
+                    Consumable c = i.Value as Consumable;
+                    if (fromC.ContainsKey(c.ConsumableType))
+                    {
+                        Consumable fromCItem = fromC[c.ConsumableType];
+                        if (fromCItem.Amount > 0)
+                        {   // Only continue if there are more than 0 to loot.
+                            int amt = c.Add(fromCItem.Amount);
+                            if (amt > 0)
+                            {   // Only add the item if 1 or more is looted.
+                                log.Add($"Looted: {amt} => {c.Name}.");
+                                to.ItemAdd(c);
+                            }
+                        }
+                    }
                 }
             }
         }

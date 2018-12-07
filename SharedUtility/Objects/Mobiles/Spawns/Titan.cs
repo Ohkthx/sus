@@ -1,4 +1,5 @@
 ﻿using System;
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects.Mobiles.Spawns
 {
@@ -16,6 +17,9 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
             SetHits(322, 351);
 
             SetDamage(13, 16);
+
+            // Consumables and/or Equipment.
+            InitConsumables(450, Utility.RandomMinMax(0, 3), 0);
         }
     }
 }

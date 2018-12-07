@@ -399,7 +399,21 @@ namespace SUS.Shared.Objects
                 else if (Equipment.ContainsKey(ItemLayers.MainHand))
                     return Equipment[ItemLayers.MainHand] as Weapon;
                 else
-                    return new Weapon(ItemLayers.MainHand, WeaponMaterials.None, "Hands", "1d4");
+                    return new Items.Equipment.Unarmed();
+            }
+        }
+
+        public Gold Gold 
+        {
+            get
+            {
+                foreach (KeyValuePair<Guid, Item> i in Items)
+                    if (i.Value.Type == ItemTypes.Consumable
+                        && (i.Value as Consumable).ConsumableType == Consumable.ConsumableTypes.Gold)
+                        return i.Value as Gold;
+                Gold g = new Gold();
+                ItemAdd(g);
+                return g;
             }
         }
 
@@ -664,8 +678,10 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Items / Equippables
-        protected void InitConsumables(int potions, int arrows)
+        protected void InitConsumables(int gold = 0) { InitConsumables(gold, 0, 0); }
+        protected void InitConsumables(int gold, int potions, int arrows)
         {
+            ItemAdd(new Gold(gold));
             ItemAdd(new Potion(potions));
             ItemAdd(new Arrow(arrows));
         }
@@ -689,8 +705,10 @@ namespace SUS.Shared.Objects
             {
                 m_Equipped.Remove(ItemLayers.MainHand);
                 m_Equipped.Remove(ItemLayers.Offhand);
+                m_Equipped.Remove(ItemLayers.Bow);
             }
-            else if (item.IsWeapon && m_Equipped.ContainsKey(ItemLayers.TwoHanded))
+
+            if (item.IsWeapon && m_Equipped.ContainsKey(ItemLayers.TwoHanded))
             {
                 m_Equipped.Remove(ItemLayers.TwoHanded);
             }
@@ -777,14 +795,14 @@ namespace SUS.Shared.Objects
 
         public abstract void Ressurrect();
 
-        public void MoveInDirection(MobileDirections direction, int xMax, int yMax)
+        public int MoveInDirection(MobileDirections direction, int xMax, int yMax)
         {
             if (direction == MobileDirections.None || direction == MobileDirections.Nearby)
-                return; // No desired direction, do not move.
+                return 0; // No desired direction, do not move.
 
 
-            // Gets a pseudo-random distance between our vision (default: 15) and  30 * Speed (default: 1)
-            int distance = Utility.RandomMinMax(Vision, (Vision * Speed * 2));
+            // Gets a pseudo-random distance between our vision (default: 15) and 30 * Speed (default: 2 - 3)
+            int distance = Utility.RandomMinMax(Vision, (Vision * Speed / 2));
 
             // Factor in our current direction.
             while (direction > MobileDirections.None)
@@ -820,6 +838,8 @@ namespace SUS.Shared.Objects
                     }
                 }
             }
+
+            return distance;
         }
 
         public BasicMobile Basic() { return new BasicMobile(this); }

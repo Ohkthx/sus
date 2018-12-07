@@ -326,7 +326,7 @@ namespace SUS.Server
         /// <returns>Packed "OK" server response.</returns>
         private static Packet MobileMove(MoveMobilePacket mm)
         {
-            Node loc = GameObject.MoveMobile(mm.Location, mm.Author, direction : mm.Direction);
+            Node loc = GameObject.MoveMobile(mm.Location, mm.Author, direction: mm.Direction);
             if (loc == null)
                 return new ErrorPacket("Server: Invalid location to move to.");
 

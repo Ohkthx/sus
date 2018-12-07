@@ -7,6 +7,7 @@ namespace SUS.Shared.Objects
     {
         public enum ConsumableTypes
         {
+            Gold,
             Arrows,
             Bolts,
             HealthPotion,
@@ -82,26 +83,39 @@ namespace SUS.Shared.Objects
         }
         #endregion
 
-        private void Add(int amount)
+        public int Add(int amount)
         {
             if (amount < 0)
-                return; 
+                return 0;
 
             if (Amount + amount > Maximum)
+            {
+                int amt = Maximum - Amount;
                 Amount = Maximum;
+                return amt;
+            }
             else
+            {
                 Amount += amount;
+                return amount;
+            }
         }
 
-        private void Subtract(int amount)
+        private int Subtract(int amount)
         {
             if (amount < 0)
-                return;
+                return 0;
 
             if (Amount - amount < 0)
+            {
                 Amount = 0;
+                return Amount;
+            }
             else
+            {
                 Amount -= amount;
+                return Amount - amount;
+            }
         }
     }
 }

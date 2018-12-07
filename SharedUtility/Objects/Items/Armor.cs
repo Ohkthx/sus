@@ -3,21 +3,20 @@
 namespace SUS.Shared.Objects
 {
     [Serializable]
-    public enum ArmorMaterials
-    {
-        Cloth       = 1,
-        Leather     = 2,
-        ChainMail   = 3,
-        Plate       = 4,
-    }
-
-    [Serializable]
     public class Armor : Equippable
     {
+        public enum Materials
+        {
+            Cloth       = 1,
+            Leather     = 2,
+            ChainMail   = 3,
+            Plate       = 4,
+        }
+
         private int m_ArmorRating;
 
         #region Constructors
-        public Armor(ItemLayers layer, ArmorMaterials material, string name) : base(ItemTypes.Armor, layer)
+        public Armor(ItemLayers layer, Materials material, string name) : base(ItemTypes.Armor, layer)
         {
             Name = name;
             ArmorRating = (int)material;

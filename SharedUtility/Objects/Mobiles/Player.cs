@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using SUS.Shared.Utilities;
+using SUS.Shared.Objects.Items.Equipment;
 
 namespace SUS.Shared.Objects.Mobiles
 {
@@ -30,17 +31,17 @@ namespace SUS.Shared.Objects.Mobiles
             InitStats(rawStr, rawDex, rawInt);
 
             // Create our consumables.
-            InitConsumables(10, 50);
+            InitConsumables(1000, 10, 50);
 
             // Give some basic armor and weapons.
-            EquipmentAdd(new Armor(ItemLayers.Chest, ArmorMaterials.Leather, "Leather Chest"));
-            EquipmentAdd(new Armor(ItemLayers.Legs, ArmorMaterials.Leather, "Leather Leggings"));
-            EquipmentAdd(new Armor(ItemLayers.Feet, ArmorMaterials.Leather, "Leather Boots"));
+            EquipmentAdd(new Armor(ItemLayers.Chest, Armor.Materials.Leather, "Leather Chest"));
+            EquipmentAdd(new Armor(ItemLayers.Legs, Armor.Materials.Leather, "Leather Leggings"));
+            EquipmentAdd(new Armor(ItemLayers.Feet, Armor.Materials.Leather, "Leather Boots"));
+            EquipmentAdd(new CompositeBow());
 
-            EquipmentAdd(new Weapon(ItemLayers.MainHand, WeaponMaterials.Wooden, "Short Sword", "1d6"));
-            EquipmentAdd(new Armor(ItemLayers.Offhand, ArmorMaterials.Leather, "Leather Shield"));
-
-            EquipmentAdd(new Weapon(ItemLayers.Bow, WeaponMaterials.Wooden, "Composite Bow", "1d8", range: 10));
+            ItemAdd(new TwoHandedSword());
+            ItemAdd(new ShortSword());
+            ItemAdd(new Armor(ItemLayers.Offhand, Armor.Materials.Leather, "Leather Shield"));
         }
         #endregion
 

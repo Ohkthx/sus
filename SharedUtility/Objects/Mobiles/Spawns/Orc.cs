@@ -18,9 +18,10 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
 
             SetDamage(5, 7);
 
-            InitConsumables(Utility.RandomMinMax(0,2), Utility.RandomMinMax(10, 25));
+            // Consumables and/or Equipment.
+            InitConsumables(250, Utility.RandomMinMax(0,2), Utility.RandomMinMax(10, 25));
 
-            EquipmentAdd(new Weapon(ItemLayers.Bow, WeaponMaterials.Steel, "Composite Bow", "1d8", range: 10));
+            EquipmentAdd(new Items.Equipment.CompositeBow());
         }
     }
 }

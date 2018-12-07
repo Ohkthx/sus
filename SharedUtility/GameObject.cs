@@ -250,7 +250,7 @@ namespace SUS
         /// <param name="toLocation">Node to move the mobile to.</param>
         /// <param name="mobile">Mobile to update.</param>
         /// <param name="forceMove">Overrides requirements if an admin is performing the action.</param>
-        public static Node MoveMobile(Locations toLocation, BasicMobile mobile, MobileDirections direction = MobileDirections.None,  bool forceMove = false)
+        public static Node MoveMobile(Locations toLocation, BasicMobile mobile, MobileDirections direction = MobileDirections.None, bool forceMove = false)
         {
             Mobile m = FindMobile(mobile.Guid);
             if (m == null)

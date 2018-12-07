@@ -66,7 +66,7 @@ namespace SUS
                     }
                 } catch (Exception e)
                 {
-                    Console.WriteLine($"An error occurred while processing the user's desired action. {e.Message}");
+                    Console.WriteLine($"Caught an exception: {e.Message}");
                     SocketKillPacket skp = new SocketKillPacket(null, kill: true);  // Create a new packet.
                     socketHandler.ToClient(skp.ToByte());                           // Send it to our client for a clean connection.
                     socketKill = skp;                                               // Assign our local to break the loop.

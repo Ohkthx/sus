@@ -17,6 +17,9 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
             SetMana(0);
 
             SetDamage(7, 9);
+
+            // Consumables and/or Equipment.
+            InitConsumables(gold: 50);
         }
     }
 }

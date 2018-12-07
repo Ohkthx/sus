@@ -4,25 +4,31 @@ using SUS.Shared.Utilities;
 namespace SUS.Shared.Objects
 {
     [Serializable]
-    public enum WeaponMaterials
+    public abstract class Weapon : Equippable
     {
-        None    = 0,
-        Wooden  = 1,
-        Iron    = 2,
-        Steel   = 3,
-    }
+        public enum Materials
+        {
+            None    = 0,
+            Wooden  = 1,
+            Iron    = 2,
+            Steel   = 3,
+        }
 
-    [Serializable]
-    public class Weapon : Equippable
-    {
+        public enum DamageTypes
+        {
+            Bludgeoning,
+            Piercing,
+            Slashing,
+        }
+
         private DiceRoll m_Damage;
         private int m_AttackRange;
         private int m_AttackMinimum;
         private int m_AttackMaximum;
-        private WeaponMaterials m_Material = WeaponMaterials.None;
+        private Materials m_Material = Materials.None;
 
         #region Constructors
-        public Weapon(ItemLayers layer, WeaponMaterials material, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
+        public Weapon(ItemLayers layer, Materials material, DamageTypes dmgtype, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
         {
             Name = name;
             Range = range;
@@ -64,12 +70,12 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public WeaponMaterials Material
+        public Materials Material
         {
             get { return m_Material; }
             private set
             {
-                if (value == WeaponMaterials.None || value == Material)
+                if (value == Materials.None || value == Material)
                     return;
 
                 m_Material = value;

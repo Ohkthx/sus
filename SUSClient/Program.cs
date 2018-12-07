@@ -96,6 +96,7 @@ namespace SUSClient
                         ia = new InteractiveConsole((req as AccountGameStatePacket).GameState);
                         break;
                     case PacketTypes.SocketKill:
+                        Console.WriteLine("Socket Kill sent by server.");
                         socketHandler.Kill();
                         break;
 
