@@ -7,9 +7,8 @@ namespace SUS.Shared.Objects
     {
         #region Constructors
         public Arrow() : this(0) { }
-        public Arrow(int amount) : base(ConsumableTypes.Arrows, 2000)
+        public Arrow(int amount) : base(Types.Arrows, "Arrow", 2000)
         {
-            Name = "Arrow";
             Amount = amount;
         }
         #endregion

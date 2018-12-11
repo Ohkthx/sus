@@ -88,9 +88,7 @@ namespace SUS.Server
             {
                 if (aggressor.Weapon.IsBow)
                 {
-                    Consumable c = aggressor.Arrows;
-                    --c;
-                    aggressor.ItemAdd(c);
+                    --aggressor.Arrows;
                 }
 
                 if (d20roll == 1)
@@ -128,29 +126,16 @@ namespace SUS.Server
 
         private static void loot(ref List<string> log, ref Mobile to, Mobile from)
         {
-            Dictionary<Consumable.ConsumableTypes, Consumable> fromC = new Dictionary<Consumable.ConsumableTypes, Consumable>();
-            foreach(KeyValuePair<Guid, Item> i in from.Items)
-                if (i.Value.Type == ItemTypes.Consumable)
-                    fromC.Add((i.Value as Consumable).ConsumableType, i.Value as Consumable);
+            foreach (KeyValuePair<Guid, Item> i in from.Items)
+            {   // Iterate all of the owned items from the target.
+                if (i.Value.Type != ItemTypes.Consumable)
+                    continue;
 
-            foreach (KeyValuePair<Guid, Item> i in to.Items)
-            {
-                if (i.Value.Type == ItemTypes.Consumable)
+                Consumable c = i.Value as Consumable;
+                int added = to.ConsumableAdd(c);
+                if (added > 0)
                 {
-                    Consumable c = i.Value as Consumable;
-                    if (fromC.ContainsKey(c.ConsumableType))
-                    {
-                        Consumable fromCItem = fromC[c.ConsumableType];
-                        if (fromCItem.Amount > 0)
-                        {   // Only continue if there are more than 0 to loot.
-                            int amt = c.Add(fromCItem.Amount);
-                            if (amt > 0)
-                            {   // Only add the item if 1 or more is looted.
-                                log.Add($"Looted: {amt} => {c.Name}.");
-                                to.ItemAdd(c);
-                            }
-                        }
-                    }
+                    log.Add($"Looted: {added} => {c.Name}.");
                 }
             }
         }

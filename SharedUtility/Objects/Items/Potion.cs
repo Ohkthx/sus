@@ -7,9 +7,8 @@ namespace SUS.Shared.Objects
     {
         #region Constructors
         public Potion() : this(0) { }
-        public Potion(int amount) : base(ConsumableTypes.HealthPotion, 10)
+        public Potion(int amount) : base(Types.HealthPotion, "Health Potion", 10)
         {
-            Name = "Health Potion";
             Amount = amount;
         }
         #endregion

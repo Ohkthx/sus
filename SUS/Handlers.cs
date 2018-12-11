@@ -387,28 +387,31 @@ namespace SUS.Server
             if (item.Amount <= 0)
                 return new ErrorPacket("Server: Do you not have anymore of those.");
 
-            if (item.ConsumableType != Consumable.ConsumableTypes.HealthPotion)
-                return new ErrorPacket("Server: We can only use health potions for now.");
-
-            if (mobile.Hits == mobile.HitsMax)
-                return new ErrorPacket("Server: You are already at full health.");
-
-            int effect = Potion.GetEffect(mobile.HitsMax);
-            if (mobile.Hits + effect >= mobile.HitsMax)
+            switch (item.ConsumableType)
             {
-                effect = mobile.HitsMax - mobile.Hits;
-                mobile.Hits = mobile.HitsMax;
-            }
-            else
-            {
-                mobile.Hits += effect;
+                case Consumable.Types.HealthPotion:
+                    if (mobile.Hits == mobile.HitsMax)
+                        return new ErrorPacket("Server: You are already at full health.");
+
+                    --mobile.HealthPotions; // Remove one of our health potions.
+                    int effect = Potion.GetEffect(mobile.HitsMax);
+                    if (mobile.Hits + effect >= mobile.HitsMax)
+                    {
+                        effect = mobile.HitsMax - mobile.Hits;
+                        mobile.Hits = mobile.HitsMax;
+                    }
+                    else
+                    {
+                        mobile.Hits += effect;
+                    }
+                    uip.Response = $"You used a Health Potion that healed {effect} health points. Health: {mobile.Hits} / {mobile.HitsMax}. {item.Name} remain.";
+                    break;
+
+                default:
+                    return new ErrorPacket("Server: We can only use health potions for now.");
             }
 
-            item--;                 // Decrease our consumable by 1.
-            mobile.ItemAdd(item);   // Update it.
             GameObject.UpdateMobiles(mobile);
-
-            uip.Response = $"You used a Health Potion that healed {effect} health points. Health: {mobile.Hits} / {mobile.HitsMax}. {item.Name} remain.";
 
             return uip;
         }

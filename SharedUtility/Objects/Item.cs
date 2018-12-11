@@ -235,6 +235,8 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Overrides
+        public override string ToString() { return Name; }
+
         public override int GetHashCode()
         {
             unchecked

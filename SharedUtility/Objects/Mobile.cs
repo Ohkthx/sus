@@ -189,7 +189,7 @@ namespace SUS.Shared.Objects
         private int m_Str, m_Dex, m_Int;
         private int m_Hits, m_Stam, m_Mana;
 
-        private Dictionary<int, Skill> m_Skills;  // Skills possessed by the mobile.
+        private Dictionary<Skill.Types, Skill> m_Skills;  // Skills possessed by the mobile.
 
         #region Contructors
         public Mobile(Types type)
@@ -198,8 +198,8 @@ namespace SUS.Shared.Objects
 
             m_Equipped = new Dictionary<ItemLayers, Equippable>();
 
-            m_Skills = new Dictionary<int, Skill>();
-            foreach (int skill in Enum.GetValues(typeof(Skill.Types)))
+            m_Skills = new Dictionary<Skill.Types, Skill>();
+            foreach (Skill.Types skill in Enum.GetValues(typeof(Skill.Types)))
                 m_Skills.Add(skill, new Skill(Enum.GetName(typeof(Skill.Types), skill), skill));
 
         }
@@ -230,8 +230,8 @@ namespace SUS.Shared.Objects
                 $"  |\n" +
 
                 $"  +-[ Skills ]\n";
-            foreach (KeyValuePair<int, Skill> skill in m_Skills)
-                 paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Max}]\n";
+            foreach (KeyValuePair<Skill.Types, Skill> skill in m_Skills)
+                 paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Cap}]\n";
 
             paperdoll += $"  +-[ Equipment ]\n";
             foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
@@ -422,45 +422,72 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Getters / Setters - Consumables
-        public Gold Gold 
+        public Consumable Gold 
         {
             get
             {
-                foreach (KeyValuePair<Guid, Item> i in Items)
-                    if (i.Value.Type == ItemTypes.Consumable
-                        && (i.Value as Consumable).ConsumableType == Consumable.ConsumableTypes.Gold)
-                        return i.Value as Gold;
-                Gold g = new Gold();
-                ItemAdd(g);
+                Gold g;
+                if ((g = FindConsumable(Consumable.Types.Gold) as Gold) == null)
+                {
+                    g = new Gold();
+                    ItemAdd(g);
+                }
+
                 return g;
             }
-        }
-
-        public Potion HealthPotions
-        {
-            get
+            set
             {
-                foreach (KeyValuePair<Guid, Item> i in Items)
-                    if (i.Value.Type == ItemTypes.Consumable
-                        && (i.Value as Consumable).ConsumableType == Consumable.ConsumableTypes.HealthPotion)
-                        return i.Value as Potion;
-                Potion p = new Potion();
-                ItemAdd(p);
-                return p;
+                if (value == null)
+                    return;
+                else if (!(value is Gold))
+
+                m_Items[Gold.Guid] = value as Gold;
             }
         }
 
-        public Arrow Arrows
+        public Consumable HealthPotions
         {
             get
             {
-                foreach (KeyValuePair<Guid, Item> i in Items)
-                    if (i.Value.Type == ItemTypes.Consumable
-                        && (i.Value as Consumable).ConsumableType == Consumable.ConsumableTypes.Arrows)
-                        return i.Value as Arrow;
-                Arrow a = new Arrow();
-                ItemAdd(a);
+                Potion p;
+                if ((p = FindConsumable(Consumable.Types.HealthPotion) as Potion) == null)
+                {
+                    p = new Potion();
+                    ItemAdd(p);
+                }
+                return p;
+            }
+            set
+            {
+                if (value == null)
+                    return;
+                else if (!(value is Potion))
+                    return;
+
+                m_Items[HealthPotions.Guid] = value as Potion;
+            }
+        }
+
+        public Consumable Arrows
+        {
+            get
+            {
+                Arrow a;
+                if ((a = FindConsumable(Consumable.Types.Arrows) as Arrow) == null)
+                {
+                    a = new Arrow();
+                    ItemAdd(a);
+                }
                 return a;
+            }
+            set
+            {
+                if (value == null)
+                    return;
+                if (!(value is Arrow))
+                    return;
+
+                m_Items[Arrows.Guid] = value as Arrow;
             }
         }
         #endregion
@@ -679,21 +706,13 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Skills
-        public Dictionary<int, Skill> Skills
+        public Dictionary<Skill.Types, Skill> Skills
         {
             get { return m_Skills; }
         }
         #endregion
 
-        #region Items / Equippables
-        protected void InitConsumables(int gold = 0) { InitConsumables(gold, 0, 0); }
-        protected void InitConsumables(int gold, int potions, int arrows)
-        {
-            ItemAdd(new Gold(gold));
-            ItemAdd(new Potion(potions));
-            ItemAdd(new Arrow(arrows));
-        }
-
+        #region Items / Equippables / Consumables
         public void EquipmentAdd(Equippable item)
         {
             if (item == null || !item.IsEquippable)
@@ -733,7 +752,7 @@ namespace SUS.Shared.Objects
         {
             m_Equipped.Remove(item);
         }
-
+        
         public Item FindItem(Guid item)
         {
             if (item == null || item == Guid.Empty)
@@ -743,7 +762,7 @@ namespace SUS.Shared.Objects
 
             return Items[item];
         }
-        
+
         public bool HasItem(Guid item)
         {
             if (item == null || item == Guid.Empty)
@@ -772,6 +791,57 @@ namespace SUS.Shared.Objects
 
             return m_Items.Remove(item);
         }
+
+        protected void InitConsumables(int gold = 0) { InitConsumables(gold, 0, 0); }
+        protected void InitConsumables(int gold, int potions, int arrows)
+        {
+            ItemAdd(new Gold(gold));
+            ItemAdd(new Potion(potions));
+            ItemAdd(new Arrow(arrows));
+        }
+
+        private Consumable FindConsumable(Consumable.Types type)
+        {
+            foreach (KeyValuePair<Guid, Item> i in Items)
+                if (i.Value.Type == ItemTypes.Consumable
+                    && (i.Value as Consumable).ConsumableType == type)
+                    return i.Value as Consumable;
+            return null;
+        }
+
+        public int ConsumableAdd(Consumable c) { return ConsumableAdd(c.ConsumableType, c.Amount); }
+        public int ConsumableAdd(Consumable.Types type, int amt)
+        {
+            if (amt <= 0)
+                return 0;
+
+            int tValue = 0;
+            int tMax = 0;
+            switch (type)
+            {
+                case Consumable.Types.Arrows:
+                    tValue = Arrows.Amount;
+                    tMax = Arrows.Maximum;
+                    Arrows += amt;
+                    break;
+                case Consumable.Types.HealthPotion:
+                    tValue = HealthPotions.Amount;
+                    tMax = HealthPotions.Maximum;
+                    HealthPotions += amt;
+                    break;
+                case Consumable.Types.Gold:
+                    tValue = Gold.Amount;
+                    tMax = Gold.Maximum;
+                    Gold += amt;
+                    break;
+                case Consumable.Types.ManaPotion:
+                case Consumable.Types.Bolts:
+                default:
+                    return 0;
+            }
+
+            return (tValue + amt) > tMax ? tMax - tValue : amt;
+        }
         #endregion
 
         #region Combat
@@ -782,14 +852,15 @@ namespace SUS.Shared.Objects
         /// <returns>Total amount of damage taken after potential modifiers.</returns>
         public int TakeDamage(int damage)
         {
-            int originalHP = this.m_Hits;
+            int originalHP = Hits;
 
-            if (damage > this.m_Hits)
-            {   
+            if (damage > Hits)
+            {
+                Hits = 0;
                 return originalHP;  // This is the amount of damage taken (last remaining hp.)
             }
 
-            this.m_Hits -= damage;
+            Hits -= damage;
             return damage;          // Damage taken was damage received.
         }
 

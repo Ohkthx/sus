@@ -5,7 +5,7 @@ namespace SUS.Shared.Objects
     [Serializable]
     public abstract class Consumable : Item
     {
-        public enum ConsumableTypes
+        public enum Types
         {
             Gold,
             Arrows,
@@ -14,14 +14,15 @@ namespace SUS.Shared.Objects
             ManaPotion,
         }
 
-        private ConsumableTypes m_Type;
+        private Types m_Type;
         private int m_Amount;
         private int m_AmountMaximum;
 
         #region Constructors
-        public Consumable(ConsumableTypes type, int maximum) : base (ItemTypes.Consumable)
+        public Consumable(Types type, string name, int maximum) : base (ItemTypes.Consumable)
         {
             ConsumableType = type;
+            Name = name;
             Amount = 0;
             Maximum = maximum;
         }
@@ -30,10 +31,17 @@ namespace SUS.Shared.Objects
         #region Getters / Setters
         public override string Name
         {
-            get { return $"{base.Name} ({Amount} / {Maximum})"; }
+            get
+            {
+                if (ConsumableType == Types.Gold || Amount <= 1)
+                    return base.Name;
+
+                // Make the name plural.
+                return base.Name + "s";
+            }
         }
 
-        public ConsumableTypes ConsumableType
+        public Types ConsumableType
         {
             get { return m_Type; }
             private set
@@ -70,52 +78,44 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Overrides
-        public static Consumable operator ++(Consumable c)
+        public override string ToString()
         {
-            c.Add(1);
+            return $"{Name} ({Amount} / {Maximum})";
+        }
+
+        public static Consumable operator ++(Consumable c) { return c + 1; }
+        public static Consumable operator +(Consumable c1, Consumable c2) { return c1 + c2.Amount; }
+        public static Consumable operator +(Consumable c, int amt)
+        {
+            if (amt <= 0)
+                return c;
+            else if (c.Amount == c.Maximum)
+                return c;
+
+            if (c.Amount + amt > c.Maximum)
+                c.Amount = c.Maximum;
+            else
+                c.Amount = c.Amount + amt;
+
             return c;
         }
 
-        public static Consumable operator --(Consumable c)
+        public static Consumable operator --(Consumable c) { return c - 1; }
+        public static Consumable operator -(Consumable c1, Consumable c2) { return c1 - c2.Amount; }
+        public static Consumable operator -(Consumable c, int amt)
         {
-            c.Subtract(1);
+            if (amt <= 0)
+                return c;
+            else if (c.Amount == 0)
+                return c;
+
+            if (c.Amount - amt < 0)
+                c.Amount = 0;
+            else
+                c.Amount = c.Amount - amt;
+
             return c;
         }
         #endregion
-
-        public int Add(int amount)
-        {
-            if (amount < 0)
-                return 0;
-
-            if (Amount + amount > Maximum)
-            {
-                int amt = Maximum - Amount;
-                Amount = Maximum;
-                return amt;
-            }
-            else
-            {
-                Amount += amount;
-                return amount;
-            }
-        }
-
-        private int Subtract(int amount)
-        {
-            if (amount < 0)
-                return 0;
-
-            if (Amount - amount < 0)
-            {
-                Amount = 0;
-                return Amount;
-            }
-            else
-            {
-                Amount -= amount;
-                return Amount - amount;
-            }
-        }
     }
 }

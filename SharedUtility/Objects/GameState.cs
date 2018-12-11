@@ -244,7 +244,7 @@ namespace SUS.Shared.Objects
             foreach (KeyValuePair<Guid, Item> i in m_Items)
             {
                 ++pos;
-                Console.WriteLine($" [{pos}] {i.Value.Name}");
+                Console.WriteLine($" [{pos}] {i.Value.ToString()}");
             }
 
             Console.WriteLine();
@@ -276,26 +276,6 @@ namespace SUS.Shared.Objects
             }
 
             return new UseItemPacket(Account, item.Type, item.Guid);
-        }
-
-        public Packet Heal()
-        {
-            if (m_Items == null)
-                return new GetMobilePacket(Account, GetMobilePacket.RequestReason.Items);
-
-            Potion p = null;
-            foreach (KeyValuePair<Guid, Item> i in m_Items)
-                if (i.Value.Type == ItemTypes.Consumable
-                    && (i.Value as Consumable).ConsumableType == Consumable.ConsumableTypes.HealthPotion)
-                    p = i.Value as Potion;
-
-            if (p == null)
-            {
-                Utility.ConsoleNotify("You do not have any potions in your inventory. Request an updated inventory.");
-                return null;
-            }
-
-            return new UseItemPacket(Account, ItemTypes.Consumable, p.Guid);
         }
         #endregion
 

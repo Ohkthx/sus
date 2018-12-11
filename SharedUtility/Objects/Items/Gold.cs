@@ -7,14 +7,14 @@ namespace SUS.Shared.Objects
     {
         #region Constructors
         public Gold() : this(0) { }
-        public Gold(int amount) : base(ConsumableTypes.Gold, int.MaxValue)
+        public Gold(int amount) : base(Types.Gold, "Gold", int.MaxValue)
         {
             Amount = amount;
         }
         #endregion
 
         #region Overrides
-        public override string Name { get { return $"{Amount}gp"; } }
+        public override string ToString() { return $"{Amount}gp"; }
         #endregion
     }
 }

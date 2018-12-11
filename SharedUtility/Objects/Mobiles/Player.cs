@@ -79,8 +79,8 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  |\n" +
                 $"  +-[ Skills ]\n";
 
-            foreach (KeyValuePair<int, Skill> skill in Skills)
-                paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Max}]\n";
+            foreach (KeyValuePair<Skill.Types, Skill> skill in Skills)
+                paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Cap}]\n";
 
             paperdoll += $"  |\n  +-[ Equipment ]\n";
             foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
