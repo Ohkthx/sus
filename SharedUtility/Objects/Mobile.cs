@@ -786,7 +786,6 @@ namespace SUS.Shared.Objects
 
             if (damage > this.m_Hits)
             {   
-                this.Kill();
                 return originalHP;  // This is the amount of damage taken (last remaining hp.)
             }
 

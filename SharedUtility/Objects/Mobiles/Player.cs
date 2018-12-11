@@ -135,11 +135,11 @@ namespace SUS.Shared.Objects.Mobiles
 
         private void skillIncrease() { }
 
-        public void AddKill() { m_Kills++; }
+        public void AddKill() { ++m_Kills; }
 
         public override void Kill()
         {
-            m_Deaths++;
+            ++m_Deaths;
             Hits = 0;
         }
 

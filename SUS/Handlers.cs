@@ -115,7 +115,6 @@ namespace SUS.Server
             return gsp;
         }
 
-
         private static Packet GameState(AccountGameStatePacket gsp)
         {
             GameObject.UpdateGameStates(gsp.GameState);
