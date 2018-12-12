@@ -267,6 +267,8 @@ namespace SUS.Server
                     return new ErrorPacket("Server: That target has moved or died recently.");
                 else if (initiator.Location != target.Location)
                     return new ErrorPacket("Server: That target is no longer in the area.");
+                else if (initiator.Coordinate.Distance(target.Coordinate) > initiator.Vision)
+                    return new ErrorPacket("Server: You are too far from the target.");
                 else if (target.IsPlayer)
                 {
                     Player p = target as Player;  
@@ -390,12 +392,23 @@ namespace SUS.Server
 
             switch (item.ConsumableType)
             {
+                case Consumable.Types.Bandages:
                 case Consumable.Types.HealthPotion:
                     if (mobile.Hits == mobile.HitsMax)
                         return new ErrorPacket("Server: You are already at full health.");
 
-                    --mobile.HealthPotions; // Remove one of our health potions.
-                    int effect = Potion.GetEffect(mobile.HitsMax);
+                    int effect = 0;
+                    if (item.ConsumableType == Consumable.Types.Bandages)
+                    {   // Uses a bandage.
+                        --mobile.Bandages;
+                        effect = Bandage.GetEffect(mobile.HitsMax);
+                    }
+                    else
+                    {   // Uses a health potion.
+                        --mobile.HealthPotions;
+                        effect = Potion.GetEffect(mobile.HitsMax);
+                    }
+
                     if (mobile.Hits + effect >= mobile.HitsMax)
                     {
                         effect = mobile.HitsMax - mobile.Hits;
@@ -405,11 +418,12 @@ namespace SUS.Server
                     {
                         mobile.Hits += effect;
                     }
-                    uip.Response = $"You used a Health Potion that healed {effect} health points. Health: {mobile.Hits} / {mobile.HitsMax}. {item.Name} remain.";
+
+                    uip.Response = $"You used one of your {item.Name} that heal {effect} health points.\nHealth: {mobile.Hits} / {mobile.HitsMax}. {item.Amount} {item.Name} remain.";
                     break;
 
                 default:
-                    return new ErrorPacket("Server: We can only use health potions for now.");
+                    return new ErrorPacket("Server: We can only use health potions and bandages for now.");
             }
 
             GameObject.UpdateMobiles(mobile);

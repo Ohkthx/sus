@@ -19,7 +19,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
             SetDamage(5, 7);
 
             // Consumables and/or Equipment.
-            InitConsumables(250, Utility.RandomMinMax(0,2), Utility.RandomMinMax(10, 25));
+            InitConsumables(gold: 250, potions: Utility.RandomMinMax(0,2), bandages: 20, arrows: Utility.RandomMinMax(10, 25));
 
             EquipmentAdd(new Items.Equipment.CompositeBow());
         }

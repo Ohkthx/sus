@@ -10,6 +10,7 @@ namespace SUS.Shared.Objects
             Gold,
             Arrows,
             Bolts,
+            Bandages,
             HealthPotion,
             ManaPotion,
         }

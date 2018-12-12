@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using SUS.Shared.Utilities;
+using SUS.Shared.Objects.Items;
 using SUS.Shared.Objects.Items.Equipment;
 
 namespace SUS.Shared.Objects.Mobiles
@@ -31,7 +32,7 @@ namespace SUS.Shared.Objects.Mobiles
             InitStats(rawStr, rawDex, rawInt);
 
             // Create our consumables.
-            InitConsumables(1000, 10, 50);
+            InitConsumables(gold: 1000, potions: 10, bandages: 20, arrows: 50);
 
             // Give some basic armor and weapons.
             EquipmentAdd(new Armor(ItemLayers.Head, Armor.Materials.Leather, "Leather Cap"));
@@ -52,39 +53,19 @@ namespace SUS.Shared.Objects.Mobiles
         #region Overrides
         public override string ToString()
         {
-            string paperdoll = $"                  ___________________\n" +
-                $"                  [Character Profile]\n" +
-                $"  + ---------------------------------------------------+\n" +
-                $"  | Character Name: {Name}\n" +
-                $"  | Title: {"The Player"}\n" +
-                $"  | Location: {Location.ToString()}\n" +
-                $"  |\n" +
-                $"  +-[ Attributes ]\n" +
-                $"  | +-- Health: {Hits}, Max Health: {HitsMax}\n" +
-                $"  | +-- Strength: {Str}\n" +
-                $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam}\n" +
-                $"  | +-- Intelligence: {Int}\tMana: {Mana}\n" +
-                $"  |   +-- Attack: {WeaponRating}\n" +
-                $"  |   +-- Defense: {ArmorRating}\n" +
-                $"  |\n" +
-                $"  +-[ Items ]\n" +
-                $"  | +-- Bandaids: {0}\t\tBandaid Heal Amount: {0}\n" +
-                $"  | +-- Arrows: {Arrows.Amount}\t\tReagents: {0}\n" +
-                $"  | +-- Gold: {Gold.Amount}\n" +
-                $"  | +-- Weapon: {Weapon.Name}\n" +
-                $"  |\n" +
-                $"  +-[ Statistics ]\n" +
+            string paperdoll = base.ToString();
+            paperdoll += $"\n  +-[ Statistics ]\n" +
                 $"  | +-- Deaths: {Deaths}\n" +
                 $"  | +-- Kill Count: {Kills}\n" +
                 $"  |\n" +
                 $"  +-[ Skills ]\n";
 
             foreach (KeyValuePair<Skill.Types, Skill> skill in Skills)
-                paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Cap}]\n";
+                paperdoll += $"  | +-- {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Cap}]\n";
 
             paperdoll += $"  |\n  +-[ Equipment ]\n";
             foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
-                paperdoll += $"  | +-- Item: {item.Value.Name} => {item.Value.Rating}, {item.Value.Layer.ToString()}\n";
+                paperdoll += $"  | +-- {item.Value.Name} => {item.Value.Rating}, {item.Value.Layer.ToString()}\n";
 
             paperdoll += "  +---------------------------------------------------+";
 

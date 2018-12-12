@@ -174,7 +174,7 @@ namespace SUS.Shared.Objects
         private Guid m_Guid;
         private Serial m_ID;                // ID of the mobile.
         private string m_Name;              // Name of the mobile.
-        private Types m_Type;          // Type of Mobile: NPC or Player.
+        private Types m_Type;               // Type of Mobile: NPC or Player.
         private Locations m_Location;       // Location of the mobile.
 
         // Currently owned and equipped items.
@@ -225,20 +225,12 @@ namespace SUS.Shared.Objects
                 $"  |   +-- Defense: {ArmorRating}\n" +
                 $"  |\n" +
                 $"  +-[ Items ]\n" +
-                $"  | +-- Bandaids: {0}\t\tBandaid Heal Amount: {0}\n" +
+                $"  | +-- Bandaids: {Bandages.Amount}\t\tBandaid Heal Amount: {Bandage.GetEffect(HitsMax)}\n" +
+                $"  | +-- Potions: {HealthPotions.Amount}\t\tPotion Heal Amount: {Potion.GetEffect(HitsMax)}\n" +
                 $"  | +-- Arrows: {Arrows.Amount}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {Gold.Amount}\n" +
-                $"  |\n" +
-
-                $"  +-[ Skills ]\n";
-            foreach (KeyValuePair<Skill.Types, Skill> skill in m_Skills)
-                 paperdoll += $"  | +-- Skill: {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Cap}]\n";
-
-            paperdoll += $"  +-[ Equipment ]\n";
-            foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
-                paperdoll += $"  | +-- Item: {item.Value.Name} => {item.Value.Rating}, {item.Value.Type.ToString()} {item.Value.Layer.ToString()}\n";
-
-            paperdoll += "  +---------------------------------------------------+";
+                $"  | +-- Weapon: {Weapon.Name}\n" +
+                $"  +---------------------------------------------------+";
 
             return paperdoll;
         }
@@ -466,6 +458,29 @@ namespace SUS.Shared.Objects
                     return;
 
                 m_Items[HealthPotions.Guid] = value as Potion;
+            }
+        }
+
+        public Consumable Bandages
+        {
+            get
+            {
+                Bandage b;
+                if ((b = FindConsumable(Consumable.Types.Bandages) as Bandage) == null)
+                {
+                    b = new Bandage();
+                    ItemAdd(b);
+                }
+                return b;
+            }
+            set
+            {
+                if (value == null)
+                    return;
+                else if (!(value is Bandage))
+                    return;
+
+                m_Items[Bandages.Guid] = value as Bandage;
             }
         }
 
@@ -793,11 +808,11 @@ namespace SUS.Shared.Objects
             return m_Items.Remove(item);
         }
 
-        protected void InitConsumables(int gold = 0) { InitConsumables(gold, 0, 0); }
-        protected void InitConsumables(int gold, int potions, int arrows)
+        protected void InitConsumables(int gold = 0, int potions = 0, int bandages = 0, int arrows = 0)
         {
             ItemAdd(new Gold(gold));
             ItemAdd(new Potion(potions));
+            ItemAdd(new Bandage(bandages));
             ItemAdd(new Arrow(arrows));
         }
 
