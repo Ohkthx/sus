@@ -50,6 +50,11 @@ namespace SUS.Shared.Objects.Mobiles
             ItemAdd(new TwoHandedSword(Weapon.Materials.Steel));
             ItemAdd(new ShortSword(Weapon.Materials.Steel));
             ItemAdd(new Shield(Armor.Materials.Plate));
+
+            // Skills
+            Skills[SkillCode.Archery] += 45.0;
+            Skills[SkillCode.Swordsmanship] += 72.0;
+            Skills[SkillCode.Healing] += 50.0;
         }
         #endregion
 
@@ -110,7 +115,7 @@ namespace SUS.Shared.Objects.Mobiles
         #region Combat
         public override int Attack()
         {
-            return Weapon.Damage + AbilityModifier;
+            return Weapon.Damage + ProficiencyModifier +  AbilityModifier;
         }
 
         private void statIncrease()

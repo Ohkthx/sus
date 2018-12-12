@@ -240,7 +240,7 @@ namespace SUS.Shared.Objects
                 $"  | +-- Potions: {HealthPotions.Amount}\t\tPotion Heal Amount: {Potion.GetEffect(HitsMax)}\n" +
                 $"  | +-- Arrows: {Arrows.Amount}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {Gold.Amount}\n" +
-                $"  | +-- Weapon: {Weapon.Name}\n" +
+                $"  | +-- Weapon: {Weapon.Name}\tProficiency: {ProficiencyModifier}\n" +
                 $"  +---------------------------------------------------+";
 
             return paperdoll;
@@ -778,6 +778,8 @@ namespace SUS.Shared.Objects
         }
 
         public int AbilityModifier { get { return abilityScore(); } }
+
+        public int ProficiencyModifier { get { return proficiencyScore(); } }
         #endregion
 
         #region Skills
@@ -1036,6 +1038,25 @@ namespace SUS.Shared.Objects
                 score = -5;
 
             return score;
+        }
+
+        private int proficiencyScore()
+        {
+            int val = (int)Skills[Weapon.RequiredSkill].Value;
+            if (val > 100)
+                return 6;
+            else if (val >= 100)
+                return 5;
+            else if (val > 90)
+                return 4;
+            else if (val > 80)
+                return 3;
+            else if (val > 70)
+                return 2;
+            else if (val > 60)
+                return 1;
+            else
+                return 0;
         }
         #endregion
 
