@@ -197,6 +197,7 @@ namespace SUS.Shared.Objects
         {
             Type = type;
 
+            InitConsumables();
             m_Equipped = new Dictionary<ItemLayers, Equippable>();
 
             m_Skills = new Dictionary<Skill.Types, Skill>();
@@ -808,7 +809,7 @@ namespace SUS.Shared.Objects
             return m_Items.Remove(item);
         }
 
-        protected void InitConsumables(int gold = 0, int potions = 0, int bandages = 0, int arrows = 0)
+        private void InitConsumables(int gold = 0, int potions = 0, int bandages = 0, int arrows = 0)
         {
             ItemAdd(new Gold(gold));
             ItemAdd(new Potion(potions));

@@ -19,7 +19,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
             SetDamage(7, 9);
 
             // Consumables and/or Equipment.
-            InitConsumables(gold: 50);
+            Gold += 50;
         }
     }
 }

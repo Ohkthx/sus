@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data.SQLite;
 using SUS.Shared.Utilities;
-using SUS.Shared.Objects.Items;
 using SUS.Shared.Objects.Items.Equipment;
 
 namespace SUS.Shared.Objects.Mobiles
@@ -32,7 +31,10 @@ namespace SUS.Shared.Objects.Mobiles
             InitStats(rawStr, rawDex, rawInt);
 
             // Create our consumables.
-            InitConsumables(gold: 1000, potions: 10, bandages: 20, arrows: 50);
+            Gold += 1000;
+            HealthPotions += 10;
+            Bandages += 20;
+            Arrows += 50;
 
             // Give some basic armor and weapons.
             EquipmentAdd(new Helmet(Armor.Materials.Leather));
@@ -65,7 +67,7 @@ namespace SUS.Shared.Objects.Mobiles
 
             paperdoll += $"  |\n  +-[ Equipment ]\n";
             foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
-                paperdoll += $"  | +-- {item.Value.Name} => {item.Value.Rating}, {item.Value.Layer.ToString()}\n";
+                paperdoll += $"  | +-- {item.Value.Name}  => {item.Value.Rating}\n";
 
             paperdoll += "  +---------------------------------------------------+";
 

@@ -135,7 +135,7 @@ namespace SUS.Server
                 int added = to.ConsumableAdd(c);
                 if (added > 0)
                 {
-                    log.Add($"Looted: {added} => {c.Name}.");
+                    log.Add($"Looted: {added} {c.Name}.");
                 }
             }
         }
