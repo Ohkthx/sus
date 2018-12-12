@@ -21,7 +21,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
             // Consumables and/or Equipment.
             InitConsumables(gold: 250, potions: Utility.RandomMinMax(0,2), bandages: 20, arrows: Utility.RandomMinMax(10, 25));
 
-            EquipmentAdd(new Items.Equipment.CompositeBow());
+            EquipmentAdd(new Items.Equipment.CompositeBow(Weapon.Materials.Wooden));
         }
     }
 }

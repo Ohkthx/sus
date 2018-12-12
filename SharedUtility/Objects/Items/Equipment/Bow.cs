@@ -5,18 +5,18 @@ namespace SUS.Shared.Objects.Items.Equipment
     [Serializable]
     public class ShortBow : Bow
     {
-        public ShortBow() : base("Short Bow", "1d6", 8) { }
+        public ShortBow(Materials material) : base(material, "Short Bow", "1d6", 8) { }
     }
 
     [Serializable]
     public class CompositeBow : Bow 
     {
-        public CompositeBow() : base("Composite Bow", "1d8", 10) { }
+        public CompositeBow(Materials material) : base(material, "Composite Bow", "1d8", 10) { }
     }
 
     [Serializable]
     public abstract class Bow : Weapon
     {
-        public Bow(string name, string damage, int r) : base(ItemLayers.Bow, Materials.Wooden, DamageTypes.Piercing, PrimaryStats.Dexterity, name, damage, range: r) { }
+        public Bow(Materials material, string name, string damage, int r) : base(ItemLayers.Bow, material, DamageTypes.Piercing, PrimaryStats.Dexterity, name, damage, range: r) { }
     }
 }

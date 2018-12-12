@@ -35,18 +35,18 @@ namespace SUS.Shared.Objects.Mobiles
             InitConsumables(gold: 1000, potions: 10, bandages: 20, arrows: 50);
 
             // Give some basic armor and weapons.
-            EquipmentAdd(new Armor(ItemLayers.Head, Armor.Materials.Leather, "Leather Cap"));
-            EquipmentAdd(new Armor(ItemLayers.Neck, Armor.Materials.Leather, "Leather Gorget"));
-            EquipmentAdd(new Armor(ItemLayers.Chest, Armor.Materials.Leather, "Leather Chest"));
-            EquipmentAdd(new Armor(ItemLayers.Arms, Armor.Materials.Leather, "Leather Sleeves"));
-            EquipmentAdd(new Armor(ItemLayers.Hands, Armor.Materials.Leather, "Leather Gloves"));
-            EquipmentAdd(new Armor(ItemLayers.Legs, Armor.Materials.Leather, "Leather Leggings"));
-            EquipmentAdd(new Armor(ItemLayers.Feet, Armor.Materials.Leather, "Leather Boots"));
-            EquipmentAdd(new CompositeBow());
+            EquipmentAdd(new Helmet(Armor.Materials.Leather));
+            EquipmentAdd(new Gorget(Armor.Materials.Leather));
+            EquipmentAdd(new Chest(Armor.Materials.Leather));
+            EquipmentAdd(new Sleeves(Armor.Materials.Leather));
+            EquipmentAdd(new Gloves(Armor.Materials.Leather));
+            EquipmentAdd(new Leggings(Armor.Materials.Leather));
+            EquipmentAdd(new Boots(Armor.Materials.Leather));
+            EquipmentAdd(new CompositeBow(Weapon.Materials.Iron));
 
-            ItemAdd(new TwoHandedSword());
-            ItemAdd(new ShortSword());
-            ItemAdd(new Armor(ItemLayers.Offhand, Armor.Materials.Leather, "Leather Shield"));
+            ItemAdd(new TwoHandedSword(Weapon.Materials.Steel));
+            ItemAdd(new ShortSword(Weapon.Materials.Steel));
+            ItemAdd(new Shield(Armor.Materials.Plate));
         }
         #endregion
 

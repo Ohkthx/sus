@@ -40,6 +40,9 @@ namespace SUS.Shared.Objects
             Name = name;
             Range = range;
 
+            if (material == Materials.None)
+                material = Materials.Wooden;
+
             Material = material;
             DamageType = dmgtype;
             Stat = stat;
@@ -49,6 +52,9 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Getters / Setters
+        public override string Name
+        { get { return Material == Materials.None ? base.Name : $"{Enum.GetName(typeof(Materials), Material)} {base.Name}"; } }
+
         public override int RawRating { get { return AttackRating; } }
         private int AttackRating { get { return DiceDamage.Maximum + (int)Material; } }
         public int Damage { get { return DiceDamage.Roll() + (int)Material; } }
@@ -72,7 +78,7 @@ namespace SUS.Shared.Objects
         public Materials Material
         {
             get { return m_Material; }
-            private set
+            protected set
             {
                 if (value == Materials.None || value == Material)
                     return;
