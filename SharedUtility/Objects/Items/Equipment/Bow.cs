@@ -1,4 +1,5 @@
 ﻿using System;
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects.Items.Equipment
 {
@@ -17,6 +18,7 @@ namespace SUS.Shared.Objects.Items.Equipment
     [Serializable]
     public abstract class Bow : Weapon
     {
-        public Bow(Materials material, string name, string damage, int r) : base(ItemLayers.Bow, material, DamageTypes.Piercing, StatCode.Dexterity, name, damage, range: r) { }
+        public Bow(Materials material, string name, string damage, int r) : 
+            base(ItemLayers.Bow, SkillCode.Archery, StatCode.Dexterity, material, DamageTypes.Piercing, name, damage, range: r) { }
     }
 }

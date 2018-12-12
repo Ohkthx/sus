@@ -26,19 +26,21 @@ namespace SUS.Shared.Objects
         private Materials m_Material = Materials.None;
         private DamageTypes m_DamageType;
         private StatCode m_Stat;
+        private SkillCode m_Skill;
 
         #region Constructors
-        public Weapon(ItemLayers layer, Materials material, DamageTypes dmgtype, StatCode stat, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
+        public Weapon(ItemLayers layer, SkillCode skill, StatCode stat, Materials material, DamageTypes dmgtype, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
         {
             Name = name;
             Range = range;
+            RequiredSkill = skill;
+            Stat = stat;
 
             if (material == Materials.None)
                 material = Materials.Wooden;
 
             Material = material;
             DamageType = dmgtype;
-            Stat = stat;
 
             DiceDamage = new DiceRoll(damage);
         }
@@ -101,6 +103,18 @@ namespace SUS.Shared.Objects
                     return;
 
                 m_Stat = value;
+            }
+        }
+
+        public SkillCode RequiredSkill
+        {
+            get { return m_Skill; }
+            private set
+            {
+                if (value == RequiredSkill)
+                    return;
+
+                m_Skill = value;
             }
         }
 

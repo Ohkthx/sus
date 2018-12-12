@@ -113,6 +113,11 @@ namespace SUS.Server
                     log.Add($"{aggressor.Name} performs {target.TakeDamage(atkDamage)} damage to {target.Name}.");
 
                 // Check for skill increase.
+                string skillIncrease = aggressor.SkillIncrease(aggressor.Weapon.RequiredSkill);
+                if (init == aggressor && skillIncrease != string.Empty)
+                    log.Add(skillIncrease);
+
+                // Check for stat increase.
                 string statIncrease = aggressor.StatIncrease(aggressor.Weapon.Stat);
                 if (init == aggressor && statIncrease != string.Empty)
                     log.Add(statIncrease);

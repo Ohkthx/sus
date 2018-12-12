@@ -200,7 +200,7 @@ namespace SUS.Shared.Objects
         private int m_Str, m_Dex, m_Int;
         private int m_Hits, m_Stam, m_Mana;
 
-        private Dictionary<Skill.Types, Skill> m_Skills;  // Skills possessed by the mobile.
+        private Dictionary<SkillCode, Skill> m_Skills;  // Skills possessed by the mobile.
 
         #region Contructors
         public Mobile(Types type)
@@ -213,10 +213,7 @@ namespace SUS.Shared.Objects
             m_StatTimer = new Stopwatch();
             m_StatTimer.Start();
 
-            m_Skills = new Dictionary<Skill.Types, Skill>();
-            foreach (Skill.Types skill in Enum.GetValues(typeof(Skill.Types)))
-                m_Skills.Add(skill, new Skill(Enum.GetName(typeof(Skill.Types), skill), skill));
-
+            InitSkills();
         }
         #endregion
 
@@ -784,9 +781,52 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Skills
-        public Dictionary<Skill.Types, Skill> Skills
+        public Dictionary<SkillCode, Skill> Skills
         {
-            get { return m_Skills; }
+            get
+            {
+                if (m_Skills == null)
+                {
+                    m_Skills = new Dictionary<SkillCode, Skill>();
+                    InitSkills();
+                }
+
+                return m_Skills;
+            }
+            private set
+            {
+                if (value == null)
+                    return;
+                m_Skills = value;
+            }
+        }
+
+        public string SkillIncrease(SkillCode skill)
+        {
+            double increase = Skills[skill].Increase();
+            if (increase == 0.0)
+                return string.Empty;
+
+            Skill s = Skills[skill];
+            return $"{s.Name} increased by {increase.ToString("F1")}.";
+        }
+
+        private void InitSkills()
+        {
+            if (Skills == null)
+            {   // Create our dictionary.
+                Skills = new Dictionary<SkillCode, Skill>();
+            }
+            else if (Skills.Count > 0)
+            {   // Skill list has already been populated, just return early.
+                return;
+            }
+
+            // Iterate each of the existing skills and add it to the dictionary.
+            foreach (SkillCode skill in Enum.GetValues(typeof(SkillCode)))
+            {
+                Skills.Add(skill, new Skill(Enum.GetName(typeof(SkillCode), skill), skill));
+            }
         }
         #endregion
 

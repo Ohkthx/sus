@@ -63,7 +63,7 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  |\n" +
                 $"  +-[ Skills ]\n";
 
-            foreach (KeyValuePair<Skill.Types, Skill> skill in Skills)
+            foreach (KeyValuePair<SkillCode, Skill> skill in Skills)
                 paperdoll += $"  | +-- [{skill.Value.Value.ToString("F1"),-5} / {skill.Value.Cap.ToString("F1"),-5}] {skill.Value.Name}\n";
 
             paperdoll += $"  |\n  +-[ Equipment ]\n";
