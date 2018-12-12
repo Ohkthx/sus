@@ -218,7 +218,7 @@ namespace SUS.Shared.Objects
                 $"  | Location: {Location.ToString()}\n" +
                 $"  |\n" +
                 $"  +-[ Attributes ]\n" +
-                $"  | +-- Health: {Hits}, Max Health: {HitsMax}\n" +
+                $"  | +-- Health: {Hits} / {HitsMax}\n" +
                 $"  | +-- Strength: {Str}\n" +
                 $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam}\n" +
                 $"  | +-- Intelligence: {Int}\tMana: {Mana}\n" +

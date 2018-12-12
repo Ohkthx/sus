@@ -63,11 +63,11 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  +-[ Skills ]\n";
 
             foreach (KeyValuePair<Skill.Types, Skill> skill in Skills)
-                paperdoll += $"  | +-- {skill.Value.Name} => [{skill.Value.Value}  /  {skill.Value.Cap}]\n";
+                paperdoll += $"  | +-- [{skill.Value.Value.ToString("F1"),-5} / {skill.Value.Cap.ToString("F1"),-5}] {skill.Value.Name}\n";
 
             paperdoll += $"  |\n  +-[ Equipment ]\n";
             foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
-                paperdoll += $"  | +-- {item.Value.Name}  => {item.Value.Rating}\n";
+                paperdoll += $"  | +-- {("[" + item.Value.Rating + "]"),-4} {item.Value.Name}\n";
 
             paperdoll += "  +---------------------------------------------------+";
 
