@@ -69,8 +69,8 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  |\n" +
                 $"  +-[ Items ]\n" +
                 $"  | +-- Bandaids: {0}\t\tBandaid Heal Amount: {0}\n" +
-                $"  | +-- Arrows: {0}\t\tReagents: {0}\n" +
-                $"  | +-- Gold: {0}\n" +
+                $"  | +-- Arrows: {Arrows.Amount}\t\tReagents: {0}\n" +
+                $"  | +-- Gold: {Gold.Amount}\n" +
                 $"  | +-- Weapon: {Weapon.Name}\n" +
                 $"  |\n" +
                 $"  +-[ Statistics ]\n" +

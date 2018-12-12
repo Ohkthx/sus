@@ -16,12 +16,13 @@ namespace SUS.Shared.Objects
         private BasicMobile m_Account = null;
         private BasicNode m_Location = null;
         private BasicNode m_LocationLast = null;
+        private BasicMobile m_MobileLast = null;
         private bool m_IsDead;
         private Locations m_Unlocked = Locations.None;
 
         // Objects that need to be requested from the server.
-        private HashSet<BasicMobile> m_Mobiles;                   // Local / Nearby creatures.
-        private Dictionary<Guid, Item> m_Items;                          // Items in the inventory.
+        private HashSet<BasicMobile> m_Mobiles;                 // Local / Nearby creatures.
+        private Dictionary<Guid, Item> m_Items;                 // Items in the inventory.
         private Dictionary<ItemLayers, Equippable> m_Equipped;  // Equipped items.
 
         #region Constructors
@@ -147,6 +148,12 @@ namespace SUS.Shared.Objects
             }
         }
 
+        public BasicMobile MobileLast
+        {
+            get { return m_MobileLast; }
+            set { m_MobileLast = value; }
+        }
+
         public HashSet<BasicMobile> Mobiles
         {
             get
@@ -168,11 +175,7 @@ namespace SUS.Shared.Objects
         public bool IsDead
         {
             get { return m_IsDead; }
-            set
-            {
-                if (value != IsDead)
-                    m_IsDead = value;
-            }
+            set { m_IsDead = value; }
         }
         #endregion
 
@@ -196,6 +199,9 @@ namespace SUS.Shared.Objects
         #region Mobile Actions
         public void MobileActionHandler(CombatMobilePacket cmp)
         {
+            if (cmp.IsDead)
+                IsDead = true;
+
             List<string> u = cmp.GetUpdates();
             Console.WriteLine("\nServer response:");
             if (u == null)
@@ -221,6 +227,7 @@ namespace SUS.Shared.Objects
         {
             if (rez.Author.IsPlayer && rez.Author.ID == ID)
             {   // If we are talking about our account...
+                IsDead = false;
                 if (rez.isSuccessful)
                 {   // And the server reported it was successful...
                     return new MoveMobilePacket(rez.Location, Account);

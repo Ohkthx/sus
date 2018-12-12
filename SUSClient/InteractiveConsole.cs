@@ -113,7 +113,10 @@ namespace SUSClient
                         printActions();
                         break;
                     case ConsoleActions.attack:
-                        attack();
+                        if (actions.Count() > 1)
+                            attack(actions[1]);
+                        else
+                            attack();
                         break;
                     case ConsoleActions.paperdoll:
                         Paperdoll pd = new Paperdoll(gs.Account);
@@ -357,6 +360,19 @@ namespace SUSClient
             return null;
         }
 
+        private void attack(string target)
+        {
+            if ((target.ToLower() == "last" || target.ToLower() == "l") && gs.MobileLast != null)
+            {   // Target the last mobile.
+                CombatMobilePacket attackAction = new CombatMobilePacket(gs.Account);
+                attackAction.AddTarget(gs.MobileLast);
+                clientRequest = attackAction;
+                return;
+            }
+
+            attack();
+        }
+
         /// <summary>
         ///     Initiates an attack on a mobile.
         /// </summary>
@@ -375,11 +391,11 @@ namespace SUSClient
                 return;
             }
 
-            BasicMobile targetMobile = SelectMobile(mobiles);
+            gs.MobileLast = SelectMobile(mobiles);
 
             // Our newly created action to perform.
             CombatMobilePacket attackAction = new CombatMobilePacket(gs.Account);
-            attackAction.AddTarget(targetMobile);
+            attackAction.AddTarget(gs.MobileLast);
 
             // Request to be sent to the server.
             this.clientRequest = attackAction;

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SUS.Shared.Objects
+namespace SUS.Shared.Objects.Items
 {
     [Serializable]
     public class Gold : Consumable

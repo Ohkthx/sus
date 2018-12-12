@@ -20,11 +20,7 @@ namespace SUS.Shared.Packets
         public bool IsDead
         {
             get { return m_IsDead; }
-            set
-            {
-                if (value != IsDead)
-                    m_IsDead = value;
-            }
+            set { m_IsDead = value; }
         }
         #endregion
 

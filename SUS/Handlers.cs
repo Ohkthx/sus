@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using SUS.Shared.Utilities;
 using SUS.Shared.Objects;
+using SUS.Shared.Objects.Items;
 using SUS.Shared.Objects.Mobiles;
 using SUS.Shared.Packets;
 
