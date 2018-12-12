@@ -27,8 +27,8 @@ namespace SUS.Server
                 closeDistance(ref log, ref m1, ref m2);
             }
 
-            combatTurn(ref log, ref m1, ref m2);
-            combatTurn(ref log, ref m2, ref m1);
+            combatTurn(m1, ref log, ref m1, ref m2);
+            combatTurn(m1, ref log, ref m2, ref m1);
 
             return log;
         }
@@ -58,7 +58,7 @@ namespace SUS.Server
             log.Add($"{m1.Name} and {m2.Name} moved {paces} paces towards one another.");
         }
 
-        private static void combatTurn(ref List<string> log, ref Mobile aggressor, ref Mobile target)
+        private static void combatTurn(Mobile init, ref List<string> log, ref Mobile aggressor, ref Mobile target)
         {
             if (aggressor.IsDead || target.IsDead)
                 return;
@@ -72,10 +72,14 @@ namespace SUS.Server
                 }
             }
 
-            if (aggressor.Weapon.Range < aggressor.Coordinate.Distance(target.Coordinate))
+            int distance = aggressor.Coordinate.Distance(target.Coordinate);
+            if (aggressor.Weapon.Range < distance)
             {
-                aggressor.Coordinate.MoveTowards(target.Coordinate, aggressor.Speed);
-                log.Add($"{aggressor.Name} moves towards {target.Name} and is now {target.Coordinate.Distance(aggressor.Coordinate)} paces away.");
+                distance = aggressor.Coordinate.MoveTowards(target.Coordinate, aggressor.Speed);
+                string text = $"{aggressor.Name} moves towards {target.Name}";
+                if (distance >= 1)
+                    text += $" and is now {distance} pace{(distance > 1 ? "s" : "")} away";
+                log.Add(text + ".");
             }
 
             // Base for determining miss, hit, or crit.
@@ -107,6 +111,11 @@ namespace SUS.Server
                     log.Add($"{aggressor.Name} performs a critical hit for {target.TakeDamage(atkDamage*2)} damage against {target.Name}.");
                 else
                     log.Add($"{aggressor.Name} performs {target.TakeDamage(atkDamage)} damage to {target.Name}.");
+
+                // Check for skill increase.
+                string statIncrease = aggressor.StatIncrease(aggressor.Weapon.Stat);
+                if (init == aggressor && statIncrease != string.Empty)
+                    log.Add(statIncrease);
 
                 if (target.IsDead)
                 {

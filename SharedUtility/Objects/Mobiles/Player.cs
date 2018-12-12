@@ -29,6 +29,7 @@ namespace SUS.Shared.Objects.Mobiles
             Speed = 3;
 
             InitStats(rawStr, rawDex, rawInt);
+            StatCap = 255;
 
             // Create our consumables.
             Gold += 1000;

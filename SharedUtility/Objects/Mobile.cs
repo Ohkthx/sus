@@ -2,9 +2,18 @@
 using System.Collections.Generic;
 using SUS.Shared.Utilities;
 using SUS.Shared.Objects.Items;
+using System.Diagnostics;
 
 namespace SUS.Shared.Objects
 {
+    [Serializable]
+    public enum StatCode
+    {
+        Strength,
+        Dexterity,
+        Intelligence
+    }
+
     [Serializable]
     public class BasicMobile
     {
@@ -184,8 +193,9 @@ namespace SUS.Shared.Objects
         // Mobile Properties
         private int m_Speed = 1;            // Speed that the Mobile moves at.
         private readonly int m_Vision = 15; // Distance the Mobile can see.
-        
+
         // Mobile Stats.
+        private Stopwatch m_StatTimer;
         private int m_StatCap;
         private int m_Str, m_Dex, m_Int;
         private int m_Hits, m_Stam, m_Mana;
@@ -199,6 +209,9 @@ namespace SUS.Shared.Objects
 
             InitConsumables();
             m_Equipped = new Dictionary<ItemLayers, Equippable>();
+
+            m_StatTimer = new Stopwatch();
+            m_StatTimer.Start();
 
             m_Skills = new Dictionary<Skill.Types, Skill>();
             foreach (Skill.Types skill in Enum.GetValues(typeof(Skill.Types)))
@@ -220,8 +233,8 @@ namespace SUS.Shared.Objects
                 $"  +-[ Attributes ]\n" +
                 $"  | +-- Health: {Hits} / {HitsMax}\n" +
                 $"  | +-- Strength: {Str}\n" +
-                $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam}\n" +
-                $"  | +-- Intelligence: {Int}\tMana: {Mana}\n" +
+                $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam} / {StamMax}\n" +
+                $"  | +-- Intelligence: {Int}\tMana: {Mana} / {ManaMax}\n" +
                 $"  |   +-- Attack: {WeaponRating}\n" +
                 $"  |   +-- Defense: {ArmorRating}\n" +
                 $"  |\n" +
@@ -510,7 +523,7 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Getters / Setters - Stats
-        public void InitStats(int rawStr, int rawDex, int rawInt)
+        protected void InitStats(int rawStr, int rawDex, int rawInt)
         {
             m_Str = rawStr;
             m_Dex = rawDex;
@@ -687,6 +700,54 @@ namespace SUS.Shared.Objects
                 if (m_StatCap != value)
                     m_StatCap = value;
             }
+        }
+
+        public int StatTotal { get { return Dex + Int + Str; } }
+
+        public string StatIncrease(StatCode stat)
+        {   // Do not exceed the cap.
+            if (StatTotal >= StatCap)
+            {
+                m_StatTimer.Reset();
+                return string.Empty;
+            }
+
+            if (StatTotal >= 250 && m_StatTimer.ElapsedMilliseconds >= 600000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 240 && m_StatTimer.ElapsedMilliseconds >= 540000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 230 && m_StatTimer.ElapsedMilliseconds >= 480000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 220 && m_StatTimer.ElapsedMilliseconds >= 420000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 210 && m_StatTimer.ElapsedMilliseconds >= 360000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 200 && m_StatTimer.ElapsedMilliseconds >= 300000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 175 && m_StatTimer.ElapsedMilliseconds >= 240000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 150 && m_StatTimer.ElapsedMilliseconds >= 180000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 100 && m_StatTimer.ElapsedMilliseconds >= 120000)
+                m_StatTimer.Restart();
+            else if (StatTotal >= 0 && m_StatTimer.ElapsedMilliseconds >= 660000)
+                m_StatTimer.Restart();
+            else
+                return string.Empty;
+
+            switch (stat)
+            {
+                case StatCode.Dexterity:
+                    Dex++;
+                    return $"Dexterity increased by 1.";
+                case StatCode.Intelligence:
+                    Int++;
+                    return $"Intelligence increased by 1."; ;
+                case StatCode.Strength:
+                    Str++;
+                    return $"Strength increased by 1.";
+            }
+            return string.Empty;
         }
         #endregion
 
@@ -888,13 +949,13 @@ namespace SUS.Shared.Objects
             int weaponStatVal = 0;  // Will store the value.
             switch(Weapon.Stat)
             {   // Gets the stat that is proficient for the equipped weapon.
-                case Weapon.PrimaryStats.Strength:
+                case StatCode.Strength:
                     weaponStatVal = Str;
                     break;
-                case Weapon.PrimaryStats.Dexterity:
+                case StatCode.Dexterity:
                     weaponStatVal = Dex;
                     break;
-                case Weapon.PrimaryStats.Intelligence:
+                case StatCode.Intelligence:
                     weaponStatVal = Int;
                     break;
             }

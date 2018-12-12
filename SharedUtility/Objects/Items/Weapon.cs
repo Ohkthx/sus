@@ -21,21 +21,14 @@ namespace SUS.Shared.Objects
             Slashing,
         }
 
-        public enum PrimaryStats
-        {
-            Strength        = 1,
-            Dexterity       = 2,
-            Intelligence    = 4,
-        }
-
         private DiceRoll m_Damage;
         private int m_AttackRange;
         private Materials m_Material = Materials.None;
         private DamageTypes m_DamageType;
-        private PrimaryStats m_Stat;
+        private StatCode m_Stat;
 
         #region Constructors
-        public Weapon(ItemLayers layer, Materials material, DamageTypes dmgtype, PrimaryStats stat, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
+        public Weapon(ItemLayers layer, Materials material, DamageTypes dmgtype, StatCode stat, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
         {
             Name = name;
             Range = range;
@@ -99,7 +92,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public PrimaryStats Stat
+        public StatCode Stat
         {
             get { return m_Stat; }
             private set

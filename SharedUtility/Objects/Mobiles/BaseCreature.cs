@@ -15,7 +15,7 @@ namespace SUS.Shared.Objects.Mobiles
         private Guid m_OwningSpawner;
 
         #region Constructors
-        public BaseCreature() : base(Types.Creature) { ID = Serial.NewObject; }
+        public BaseCreature() : base(Types.Creature) { ID = Serial.NewObject; StatCap = int.MaxValue; }
         #endregion
 
         #region Getters / Setters
