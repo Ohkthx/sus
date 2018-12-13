@@ -91,7 +91,7 @@ namespace SUS.Server
             if (aggressor.Weapon.Range >= aggressor.Coordinate.Distance(target.Coordinate))
             {
                 if (aggressor.Weapon.IsBow)
-                {
+                {   // Remove the consumable.
                     --aggressor.Arrows;
                 }
 
@@ -101,16 +101,21 @@ namespace SUS.Server
                     return;
                 }
                 else if (totalroll < target.ArmorRating)
-                {
+                {   // Unable to damage the target.
                     log.Add($"{aggressor.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
                     return;
                 }
 
                 int atkDamage = aggressor.Attack();
                 if (d20roll == 20)
-                    log.Add($"{aggressor.Name} performs a critical hit for {target.TakeDamage(atkDamage*2)} damage against {target.Name}.");
+                {   // Perform another damage roll on the weapon because it is a crit.
+                    atkDamage += aggressor.Weapon.Damage;
+                    log.Add($"{aggressor.Name} performs a critical hit for {target.TakeDamage(atkDamage)} damage against {target.Name}.");
+                }
                 else
+                {   // Perform normal damage.
                     log.Add($"{aggressor.Name} performs {target.TakeDamage(atkDamage)} damage to {target.Name}.");
+                }
 
                 // Check for skill increase.
                 string skillIncrease = aggressor.SkillIncrease(aggressor.Weapon.RequiredSkill);
@@ -123,7 +128,7 @@ namespace SUS.Server
                     log.Add(statIncrease);
 
                 if (target.IsDead)
-                {
+                {   // Killed the target, print and loot.
                     log.Add($"{aggressor.Name} has killed {target.Name}.");
                     exchangeLoot(ref log, ref aggressor, ref target);
                 }
