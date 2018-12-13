@@ -236,7 +236,7 @@ namespace SUS.Shared.Objects
                 $"  |   +-- Defense: {ArmorRating}\n" +
                 $"  |\n" +
                 $"  +-[ Items ]\n" +
-                $"  | +-- Bandaids: {Bandages.Amount}\t\tBandaid Heal Amount: {Bandage.GetEffect(HitsMax)}\n" +
+                $"  | +-- Bandaids: {Bandages.Amount}\t\tBandaid Heal Amount: {Bandage.GetEffect(HitsMax, Skills[SkillCode.Healing].Value)}\n" +
                 $"  | +-- Potions: {HealthPotions.Amount}\t\tPotion Heal Amount: {Potion.GetEffect(HitsMax)}\n" +
                 $"  | +-- Arrows: {Arrows.Amount}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {Gold.Amount}\n" +

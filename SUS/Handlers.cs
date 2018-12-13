@@ -401,7 +401,13 @@ namespace SUS.Server
                     if (item.ConsumableType == Consumable.Types.Bandages)
                     {   // Uses a bandage.
                         --mobile.Bandages;
-                        effect = Bandage.GetEffect(mobile.HitsMax);
+                        effect = Bandage.GetEffect(mobile.HitsMax, mobile.Skills[SkillCode.Healing].Value);
+                        string increase = mobile.SkillIncrease(SkillCode.Healing);
+                        if (increase != string.Empty)
+                            uip.Response += $"{increase}\n";
+                        increase = mobile.StatIncrease(StatCode.Dexterity);
+                        if (increase != string.Empty)
+                            uip.Response += $"{increase}\n";
                     }
                     else
                     {   // Uses a health potion.
@@ -419,7 +425,7 @@ namespace SUS.Server
                         mobile.Hits += effect;
                     }
 
-                    uip.Response = $"You used one of your {item.Name} that heal {effect} health points.\nHealth: {mobile.Hits} / {mobile.HitsMax}. {item.Amount} {item.Name} remain.";
+                    uip.Response += $"You used one of your {item.Name} that heal {effect} health points.\nHealth: {mobile.Hits} / {mobile.HitsMax}. {item.Amount} {item.Name} remain.";
                     break;
 
                 default:

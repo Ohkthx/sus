@@ -13,9 +13,9 @@ namespace SUS.Shared.Objects.Items
         }
         #endregion
 
-        public static int GetEffect(int baseMax)
+        public static int GetEffect(int maxHits, double skillLvl = 1.0)
         {
-            return (int)(baseMax * 0.20);
+            return (int)((maxHits * 0.20) + (skillLvl / 5));
         }
     }
 }

@@ -54,7 +54,7 @@ namespace SUS.Shared.Objects
     {
         private Guid m_Guid;
         private Coordinate m_Coord;     // Location of the Spawner on the map.
-        private Timer m_Timer;          // Responsible for Keeping track.
+        private System.Timers.Timer m_Timer;          // Responsible for Keeping track.
         private Locations m_Location;   // Location the Spawner exists.
         private Spawnables m_Spawns;    // Types of spawns that are acceptable.
 
@@ -80,7 +80,7 @@ namespace SUS.Shared.Objects
 
 
             // Start the timer.
-            m_Timer = new Timer(SPAWNTIME);     // Create the timer with a 15sec counter.
+            m_Timer = new System.Timers.Timer(SPAWNTIME);     // Create the timer with a 15sec counter.
             m_Timer.Elapsed += Spawn;           // Calls "CheckSpawns" when it hits the interval.
             m_Timer.AutoReset = true;           // Timer to reset or not once it hits it's limit.
             m_Timer.Enabled = true;             // Enable it.

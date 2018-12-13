@@ -139,7 +139,10 @@ namespace SUS.Server
         }
 
         private static void loot(ref List<string> log, ref Mobile to, Mobile from)
-        {
+        {   // Prevent looting from players. TODO: Subtract from players loots and re-enable.
+            if (from.IsPlayer)
+                return;
+
             foreach (KeyValuePair<Guid, Item> i in from.Items)
             {   // Iterate all of the owned items from the target.
                 if (i.Value.Type != ItemTypes.Consumable)

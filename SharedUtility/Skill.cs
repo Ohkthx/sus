@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 
 namespace SUS.Shared.Utilities
 {
@@ -36,7 +35,7 @@ namespace SUS.Shared.Utilities
         private SkillCode m_Type;
         private double m_Value;
         private double m_Cap;
-        private Stopwatch m_Timer;
+        private Timer m_Timer;
 
         #region Constructors
         public Skill(string name, SkillCode type, double value = 0.0, double cap = 100.0)
@@ -46,7 +45,7 @@ namespace SUS.Shared.Utilities
             Cap = cap;
             Value = value;
 
-            m_Timer = new Stopwatch();
+            m_Timer = new Timer();
             m_Timer.Start();
         }
         #endregion
@@ -153,7 +152,7 @@ namespace SUS.Shared.Utilities
         {
             if (Value >= Cap)
             {   // No need to try and increase skill.
-                m_Timer.Reset();
+                m_Timer.Restart();
                 return 0.0;
             }
 
@@ -222,7 +221,7 @@ namespace SUS.Shared.Utilities
             }
 
             int d11 = Utility.RandomMinMax(0, 10);
-            if (d11 >= chance && m_Timer.ElapsedMilliseconds > time)
+            if (d11 >= chance && m_Timer.ElapsedTime > time)
             {   // chance is right, and timer is exceeded.
                 m_Timer.Restart();
                 double tValue = Value;

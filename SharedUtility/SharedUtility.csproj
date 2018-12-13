@@ -108,6 +108,7 @@
     <Compile Include="Serial.cs" />
     <Compile Include="Skill.cs" />
     <Compile Include="SQLite.cs" />
+    <Compile Include="Timer.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>

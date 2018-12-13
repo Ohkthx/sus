@@ -3,7 +3,6 @@ using System.Net.Sockets;
 using SUS.Server;
 using SUS.Shared.Utilities;
 using SUS.Shared.Packets;
-using System.Timers;
 
 namespace SUS
 {
@@ -23,28 +22,27 @@ namespace SUS
             SocketKillPacket socketKill = new SocketKillPacket(null, false);
             SocketHandler socketHandler = new SocketHandler(client, SocketHandler.Types.Client, debug: true);
 
-            int timeout = 5000;
             int requests = 0;
             int requestCap = 15;
-            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-            stopwatch.Start();
-
+            Timer timer = new Timer(5, Timer.Formats.Seconds);
+            timer.Start();
+            
 
             while (socketKill.Kill == false)
             {
                 Object obj = socketHandler.FromClient();
 
                 #region Check Timeout
-                if (stopwatch.ElapsedMilliseconds >= timeout)
+                if (timer.Completed)
                 {
-                    stopwatch.Restart();
+                    timer.Restart();
                     requests = 0;
                 }
-                else if (stopwatch.ElapsedMilliseconds < timeout && requests >= requestCap)
+                else if (!timer.Completed && requests >= requestCap)
                 {
-                    socketHandler.ToClient(new ErrorPacket($"Server: You have exceeded {requestCap} requests in {timeout / 1000} seconds and now on cooldown.").ToByte());
-                    System.Threading.Thread.Sleep(timeout * 3);
-                    stopwatch.Restart();
+                    socketHandler.ToClient(new ErrorPacket($"Server: You have exceeded {requestCap} requests in {timer.Limit / 1000} seconds and now on cooldown.").ToByte());
+                    System.Threading.Thread.Sleep(timer.Limit * 3);
+                    timer.Restart();
                     requests = 0;
                     continue;
                 }
