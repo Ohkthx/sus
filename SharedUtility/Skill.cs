@@ -8,6 +8,7 @@ namespace SUS.Shared.Utilities
         Archery,
         Fencing,
         Healing,
+        Macefighting,
         Magery,
         Swordsmanship,
         Wrestling,

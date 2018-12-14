@@ -27,10 +27,28 @@ namespace SUS.Server
                 closeDistance(ref log, ref m1, ref m2);
             }
 
-            combatTurn(m1, ref log, ref m1, ref m2);
-            combatTurn(m1, ref log, ref m2, ref m1);
+            performAttack(m1, ref log, ref m1, ref m2);
+            performAttack(m1, ref log, ref m2, ref m1);
 
             return log;
+        }
+
+        private static void performAttack(Mobile init, ref List<string> log, ref Mobile aggressor, ref Mobile target)
+        {
+            int attackLimit = 1;
+            if (aggressor.IsPlayer && !target.IsPlayer)
+            {   // Only perform the extra attack if the aggressor is a player.
+                int CR = aggressor.CR;
+                int attackChances = CR > 4 ? CR > 10 ? CR > 19 ? 3 : 2 : 1 : 0;
+                attackLimit = Utility.Random(20) > attackChances ? 1 : 2;
+            }
+
+            int attacksRemaining = attackLimit;
+            do
+            {
+                --attacksRemaining;
+                combatTurn(init, ref log, ref aggressor, ref target, extra: attackLimit > 1 && attacksRemaining == 0);
+            } while (attacksRemaining > 0);
         }
 
         private static void closeDistance(ref List<string> log, ref Mobile m1, ref Mobile m2)
@@ -58,10 +76,13 @@ namespace SUS.Server
             log.Add($"{m1.Name} and {m2.Name} moved {paces} paces towards one another.");
         }
 
-        private static void combatTurn(Mobile init, ref List<string> log, ref Mobile aggressor, ref Mobile target)
+        private static void combatTurn(Mobile init, ref List<string> log, ref Mobile aggressor, ref Mobile target, bool extra = false)
         {
             if (aggressor.IsDead || target.IsDead)
                 return;
+
+            if (extra)
+                log.Add("[Attempting an Extra Attack]");
 
             if (aggressor.Weapon.IsBow)
             {

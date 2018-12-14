@@ -38,7 +38,7 @@ namespace SUS.Shared.Objects.Mobiles
             Arrows += 50;
 
             // Give some basic armor and weapons.
-            EquipmentAdd(new ArmorSuit(Armor.Materials.Plate));
+            EquipmentAdd(new ArmorSuit(Armor.Materials.Chainmail));
             EquipmentAdd(new CompositeBow(Weapon.Materials.Iron));
 
             ItemAdd(new TwoHandedSword(Weapon.Materials.Steel));
@@ -46,9 +46,9 @@ namespace SUS.Shared.Objects.Mobiles
             ItemAdd(new Shield());
 
             // Skills
-            Skills[SkillCode.Archery] += 45.0;
+            Skills[SkillCode.Archery] += 83.0;
             Skills[SkillCode.Swordsmanship] += 72.0;
-            Skills[SkillCode.Healing] += 50.0;
+            Skills[SkillCode.Healing] += 67.0;
         }
         #endregion
 
@@ -60,7 +60,8 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  | +-- Deaths: {Deaths}\n" +
                 $"  | +-- Kill Count: {Kills}\n" +
                 $"  |\n" +
-                $"  +-[ Skills ]\n";
+                $"  +-[ Skills ]\n" +
+                $"  | +-- Skills Total: {SkillTotal.ToString("F1")}\n";
 
             foreach (KeyValuePair<SkillCode, Skill> skill in Skills)
                 paperdoll += $"  | +-- [{skill.Value.Value.ToString("F1"),-5} / {skill.Value.Cap.ToString("F1"),-5}] {skill.Value.Name}\n";
@@ -76,6 +77,8 @@ namespace SUS.Shared.Objects.Mobiles
         #endregion
 
         #region Getters / Setters
+        public override int CR { get { return (int)SkillTotal / 36; } }
+
         public int Deaths
         {
             get { return m_Deaths; }
@@ -111,12 +114,6 @@ namespace SUS.Shared.Objects.Mobiles
         {
             return Weapon.Damage + ProficiencyModifier +  AbilityModifier;
         }
-
-        private void statIncrease()
-        {
-        }
-
-        private void skillIncrease() { }
 
         public void AddKill() { ++m_Kills; }
 

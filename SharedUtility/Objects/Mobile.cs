@@ -226,6 +226,7 @@ namespace SUS.Shared.Objects
                 $"  | Character Name: {Name}\n" +
                 $"  | Title: {"The Player"}\n" +
                 $"  | Location: {Location.ToString()}\n" +
+                $"  | Level: {CR}\n" +
                 $"  |\n" +
                 $"  +-[ Attributes ]\n" +
                 $"  | +-- Health: {Hits} / {HitsMax}\n" +
@@ -241,7 +242,7 @@ namespace SUS.Shared.Objects
                 $"  | +-- Arrows: {Arrows.Amount}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {Gold.Amount}\n" +
                 $"  | +-- Weapon: {Weapon.Name}\n" +
-                $"  |     Proficiency: {ProficiencyModifier}\n" +
+                $"  |   +-- Proficiency: {ProficiencyModifier}\n" +
                 $"  +---------------------------------------------------+";
 
             return paperdoll;
@@ -295,6 +296,8 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Getters / Setters - Basic
+        public virtual int CR { get { return 0; } }
+
         public Coordinate Coordinate
         {
             get { return m_Coord; }
@@ -819,8 +822,22 @@ namespace SUS.Shared.Objects
             }
         }
 
+        public double SkillTotal
+        {
+            get
+            {
+                double value = 0.0;
+                foreach (KeyValuePair<SkillCode, Skill> kp in Skills)
+                    value += kp.Value.Value;
+                return value;
+            }
+        }
+
         public string SkillIncrease(SkillCode skill)
         {
+            if (IsPlayer && SkillTotal >= 720.0)
+                return string.Empty;
+
             double increase = Skills[skill].Increase();
             if (increase == 0.0)
                 return string.Empty;

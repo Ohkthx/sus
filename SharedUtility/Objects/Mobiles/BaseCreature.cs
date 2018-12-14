@@ -34,7 +34,7 @@ namespace SUS.Shared.Objects.Mobiles
             }
         }
 
-        private int CR { get { return HitsMax / 50; } }
+        public override int CR { get { return HitsMax / 50; } }
 
         public void SetDamage(int val)
         {
@@ -175,7 +175,7 @@ namespace SUS.Shared.Objects.Mobiles
         #region Combat
         public override int ArmorClass => base.ArmorClass;
 
-        public override int ProficiencyModifier { get { return (CR / 4) + 2; } }
+        public override int ProficiencyModifier { get { return (CR / 4) + 2 > 9 ? 9 : (CR / 4) +2; } }
 
         public override int Attack()
         {
