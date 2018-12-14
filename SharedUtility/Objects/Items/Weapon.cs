@@ -75,7 +75,7 @@ namespace SUS.Shared.Objects
             get { return m_Material; }
             protected set
             {
-                if (value == Materials.None || value == Material)
+                if (value == Material)
                     return;
 
                 m_Material = value;

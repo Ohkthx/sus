@@ -65,15 +65,9 @@
     <Compile Include="Objects\Items\Consumables\Gold.cs" />
     <Compile Include="Objects\Items\Consumables\Bandage.cs" />
     <Compile Include="Objects\Items\Consumables\Potion.cs" />
+    <Compile Include="Objects\Items\Equipment\ArmorSuit.cs" />
     <Compile Include="Objects\Items\Equipment\Bow.cs" />
-    <Compile Include="Objects\Items\Equipment\Boots.cs" />
     <Compile Include="Objects\Items\Equipment\Shield.cs" />
-    <Compile Include="Objects\Items\Equipment\Leggings.cs" />
-    <Compile Include="Objects\Items\Equipment\Gloves.cs" />
-    <Compile Include="Objects\Items\Equipment\Sleeves.cs" />
-    <Compile Include="Objects\Items\Equipment\Chest.cs" />
-    <Compile Include="Objects\Items\Equipment\Gorget.cs" />
-    <Compile Include="Objects\Items\Equipment\Helmet.cs" />
     <Compile Include="Objects\Items\Equipment\Sword.cs" />
     <Compile Include="Objects\Items\Equipment\Unarmed.cs" />
     <Compile Include="Objects\Items\Consumable.cs" />

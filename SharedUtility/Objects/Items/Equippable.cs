@@ -7,22 +7,15 @@ namespace SUS.Shared.Objects
     {
         None        = 0x00000000,
 
-        Head        = 0x00000001,
-        Neck        = 0x00000002,
-        Chest       = 0x00000004,
-        Legs        = 0x00000008,
-        Arms        = 0x00000010,
-        Hands       = 0x00000020,
-        Feet        = 0x00000040,
+        Melee       = 0x00000001,
+        Ranged      = 0x00000002,
 
-        MainHand    = 0x00000080,
-        Offhand     = 0x00000100,
+        MainHand    = 0x00000004,
+        Offhand     = 0x00000008,
         TwoHanded   = MainHand | Offhand,
-
-        Melee       = 0x00000200,
-        Ranged      = 0x00000400,
-
         Bow         = TwoHanded | Ranged,
+
+        Armor       = 0x00000010,
     }
 
     [Serializable]

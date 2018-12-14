@@ -84,8 +84,7 @@ namespace SUS.Server
 
             // Base for determining miss, hit, or crit.
             DiceRoll d20 = new DiceRoll("1d20");
-            int d20roll = d20.Roll();                               // The roll.
-            int totalroll = d20roll + aggressor.AbilityModifier;    // Roll w/ Ability Modifier.
+            int d20roll = d20.Roll();                                // The rolls.
             
             // If the target's distance is less than (or equal) to the distance.
             if (aggressor.Weapon.Range >= aggressor.Coordinate.Distance(target.Coordinate))
@@ -95,27 +94,15 @@ namespace SUS.Server
                     --aggressor.Arrows;
                 }
 
-                if (d20roll == 1)
-                {   // Attack misses.
-                    log.Add($"{aggressor.Name} attempted but failed to land the attack.");
-                    return;
-                }
-                else if (totalroll < target.ArmorRating)
-                {   // Unable to damage the target.
-                    log.Add($"{aggressor.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
-                    return;
-                }
-
                 int atkDamage = aggressor.Attack();
                 if (d20roll == 20)
-                {   // Perform another damage roll on the weapon because it is a crit.
-                    atkDamage += aggressor.Weapon.Damage;
-                    log.Add($"{aggressor.Name} performs a critical hit for {target.TakeDamage(atkDamage)} damage against {target.Name}.");
-                }
+                    log.Add($"{aggressor.Name} performs a critical hit for {target.TakeDamage(atkDamage + aggressor.Weapon.Damage)} damage against {target.Name}.");
+                else if (d20roll == 1)
+                    log.Add($"{aggressor.Name} attempted but failed to land the attack.");
+                else if ((d20roll + aggressor.AbilityModifier) < target.ArmorClass)
+                    log.Add($"{aggressor.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
                 else
-                {   // Perform normal damage.
                     log.Add($"{aggressor.Name} performs {target.TakeDamage(atkDamage)} damage to {target.Name}.");
-                }
 
                 // Check for skill increase.
                 string skillIncrease = aggressor.SkillIncrease(aggressor.Weapon.RequiredSkill);

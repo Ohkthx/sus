@@ -38,18 +38,12 @@ namespace SUS.Shared.Objects.Mobiles
             Arrows += 50;
 
             // Give some basic armor and weapons.
-            EquipmentAdd(new Helmet(Armor.Materials.Leather));
-            EquipmentAdd(new Gorget(Armor.Materials.Leather));
-            EquipmentAdd(new Chest(Armor.Materials.Leather));
-            EquipmentAdd(new Sleeves(Armor.Materials.Leather));
-            EquipmentAdd(new Gloves(Armor.Materials.Leather));
-            EquipmentAdd(new Leggings(Armor.Materials.Leather));
-            EquipmentAdd(new Boots(Armor.Materials.Leather));
+            EquipmentAdd(new ArmorSuit(Armor.Materials.Plate));
             EquipmentAdd(new CompositeBow(Weapon.Materials.Iron));
 
             ItemAdd(new TwoHandedSword(Weapon.Materials.Steel));
             ItemAdd(new ShortSword(Weapon.Materials.Steel));
-            ItemAdd(new Shield(Armor.Materials.Plate));
+            ItemAdd(new Shield());
 
             // Skills
             Skills[SkillCode.Archery] += 45.0;

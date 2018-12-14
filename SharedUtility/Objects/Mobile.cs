@@ -233,14 +233,15 @@ namespace SUS.Shared.Objects
                 $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam} / {StamMax}\n" +
                 $"  | +-- Intelligence: {Int}\tMana: {Mana} / {ManaMax}\n" +
                 $"  |   +-- Attack: {WeaponRating}\n" +
-                $"  |   +-- Defense: {ArmorRating}\n" +
+                $"  |   +-- Defense: {ArmorClass}\n" +
                 $"  |\n" +
                 $"  +-[ Items ]\n" +
                 $"  | +-- Bandaids: {Bandages.Amount}\t\tBandaid Heal Amount: {Bandage.GetEffect(HitsMax, Skills[SkillCode.Healing].Value)}\n" +
                 $"  | +-- Potions: {HealthPotions.Amount}\t\tPotion Heal Amount: {Potion.GetEffect(HitsMax)}\n" +
                 $"  | +-- Arrows: {Arrows.Amount}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {Gold.Amount}\n" +
-                $"  | +-- Weapon: {Weapon.Name}\tProficiency: {ProficiencyModifier}\n" +
+                $"  | +-- Weapon: {Weapon.Name}\n" +
+                $"  |     Proficiency: {ProficiencyModifier}\n" +
                 $"  +---------------------------------------------------+";
 
             return paperdoll;
@@ -749,20 +750,6 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Getters / Setters - Combat
-        public int ArmorRating
-        {
-            get
-            {
-                int rating = 0;
-                foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
-                {
-                    if (item.Value.IsArmor)
-                        rating += item.Value.Rating;
-                }
-                return rating;
-            }
-        }
-
         public int WeaponRating
         {
             get
@@ -777,9 +764,38 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public int AbilityModifier { get { return abilityScore(); } }
+        public virtual int ArmorClass
+        {
+            get
+            {
+                int rating = 0;
+                if (Equipment.ContainsKey(ItemLayers.Armor))
+                {
+                    int r = Equipment[ItemLayers.Armor].Rating;
+                    if (r < 12)
+                        rating += r + DexterityModifier;
+                    else if (r < 16)
+                        rating += r + (DexterityModifier >= 2 ? 2 : DexterityModifier);
+                    else
+                        rating += r;
+                }
 
-        public int ProficiencyModifier { get { return proficiencyScore(); } }
+                if (Equipment.ContainsKey(ItemLayers.Offhand) && Equipment[ItemLayers.Offhand].IsArmor)
+                    rating += Equipment[ItemLayers.Offhand].Rating;
+
+                return rating > 0 ? rating : IsPlayer ? 10 + DexterityModifier : 0;
+            }
+        }
+
+        public virtual int ProficiencyModifier { get { return ConvertProficiencyScore(); } }
+
+        public int AbilityModifier { get { return ConvertAbilityScore(Weapon.Stat); } }
+
+        public int DexterityModifier { get { return ConvertAbilityScore(StatCode.Dexterity); } }
+        
+        public int IntelligenceModifier { get { return ConvertAbilityScore(StatCode.Intelligence); } }
+
+        public int StrengthModifier { get { return ConvertAbilityScore(StatCode.Strength); } }
         #endregion
 
         #region Skills
@@ -855,11 +871,11 @@ namespace SUS.Shared.Objects
                 m_Equipped.Remove(ItemLayers.Bow);
             }
 
-            if (item.IsWeapon && m_Equipped.ContainsKey(ItemLayers.TwoHanded))
+            if (m_Equipped.ContainsKey(ItemLayers.TwoHanded))
             {
                 m_Equipped.Remove(ItemLayers.TwoHanded);
             }
-            else if (item.IsWeapon && m_Equipped.ContainsKey(ItemLayers.Bow))
+            else if (m_Equipped.ContainsKey(ItemLayers.Bow))
             {
                 m_Equipped.Remove(ItemLayers.Bow);
             }
@@ -986,77 +1002,31 @@ namespace SUS.Shared.Objects
 
         public abstract int Attack();
 
-        private int abilityScore()
+        private int ConvertAbilityScore(StatCode stat)
         {
-            int weaponStatVal = 0;  // Will store the value.
-            switch(Weapon.Stat)
+            int statValue = 0;
+            switch(stat)
             {   // Gets the stat that is proficient for the equipped weapon.
                 case StatCode.Strength:
-                    weaponStatVal = Str;
+                    statValue = Str;
                     break;
                 case StatCode.Dexterity:
-                    weaponStatVal = Dex;
+                    statValue = Dex;
                     break;
                 case StatCode.Intelligence:
-                    weaponStatVal = Int;
+                    statValue = Int;
                     break;
             }
 
-            int score = 0;
-            weaponStatVal /= 4;
-            if (weaponStatVal >= 30)
-                score = 10;
-            else if (weaponStatVal >= 28)
-                score = 9;
-            else if (weaponStatVal >= 26)
-                score = 8;
-            else if (weaponStatVal >= 24)
-                score = 7;
-            else if (weaponStatVal >= 22)
-                score = 6;
-            else if (weaponStatVal >= 20)
-                score = 5;
-            else if (weaponStatVal >= 18)
-                score = 4;
-            else if (weaponStatVal >= 16)
-                score = 3;
-            else if (weaponStatVal >= 14)
-                score = 2;
-            else if (weaponStatVal >= 12)
-                score = 1;
-            else if (weaponStatVal >= 10)
-                score = 0;
-            else if (weaponStatVal >= 8)
-                score = -1;
-            else if (weaponStatVal >= 6)
-                score = -2;
-            else if (weaponStatVal >= 4)
-                score = -3;
-            else if (weaponStatVal >= 2)
-                score = -4;
-            else
-                score = -5;
+            int modifier = statValue / 8 - 5;
 
-            return score;
+            return modifier > 10 ? 10 : modifier;
         }
 
-        private int proficiencyScore()
+        private int ConvertProficiencyScore()
         {
-            int val = (int)Skills[Weapon.RequiredSkill].Value;
-            if (val > 100)
-                return 6;
-            else if (val >= 100)
-                return 5;
-            else if (val > 90)
-                return 4;
-            else if (val > 80)
-                return 3;
-            else if (val > 70)
-                return 2;
-            else if (val > 60)
-                return 1;
-            else
-                return 0;
+            int val = ((int)Skills[Weapon.RequiredSkill].Value - 60) / 10;
+            return val > 0 ? val > 6 ? 6 : val : 0;
         }
         #endregion
 

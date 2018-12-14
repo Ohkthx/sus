@@ -7,10 +7,11 @@ namespace SUS.Shared.Objects
     {
         public enum Materials
         {
-            Cloth       = 1,
-            Leather     = 2,
-            Chain       = 3,
-            Plate       = 4,
+            Cloth       = 0,
+            Leather     = 11,
+            Hide        = 12,
+            Chainmail   = 16,
+            Plate       = 18,
         }
 
         private int m_ArmorRating;

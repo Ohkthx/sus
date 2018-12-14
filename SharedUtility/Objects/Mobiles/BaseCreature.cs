@@ -34,6 +34,8 @@ namespace SUS.Shared.Objects.Mobiles
             }
         }
 
+        private int CR { get { return HitsMax / 50; } }
+
         public void SetDamage(int val)
         {
             m_DamageMin = val;
@@ -46,6 +48,7 @@ namespace SUS.Shared.Objects.Mobiles
             m_DamageMax = max;
         }
 
+        #region Stats
         public void SetStr(int val)
         {
             RawStr = val;
@@ -167,7 +170,13 @@ namespace SUS.Shared.Objects.Mobiles
         }
         #endregion
 
+        #endregion
+
         #region Combat
+        public override int ArmorClass => base.ArmorClass;
+
+        public override int ProficiencyModifier { get { return (CR / 4) + 2; } }
+
         public override int Attack()
         {
             return Utility.RandomMinMax(m_DamageMax / 2, m_DamageMax);
