@@ -186,6 +186,8 @@ namespace SUS.Shared.Objects
         private Types m_Type;               // Type of Mobile: NPC or Player.
         private Locations m_Location;       // Location of the mobile.
 
+        private BasicMobile m_Target;       // Current target.
+
         // Currently owned and equipped items.
         protected Dictionary<Guid, Item> m_Items;
         private Dictionary<ItemLayers, Equippable> m_Equipped;
@@ -297,6 +299,17 @@ namespace SUS.Shared.Objects
 
         #region Getters / Setters - Basic
         public virtual int CR { get { return 0; } }
+
+        public BasicMobile Target
+        {
+            get { return m_Target; }
+            set
+            {
+                if (value == Target)
+                    return;
+                m_Target = value;
+            }
+        }
 
         public Coordinate Coordinate
         {
@@ -425,6 +438,17 @@ namespace SUS.Shared.Objects
                     return Equipment[ItemLayers.MainHand] as Weapon;
                 else
                     return new Items.Equipment.Unarmed();
+            }
+        }
+
+        public Armor Armor
+        {
+            get
+            {
+                if (Equipment.ContainsKey(ItemLayers.Armor))
+                    return Equipment[ItemLayers.Armor] as Armor;
+
+                return new Items.Equipment.ArmorSuit(Armor.Materials.Cloth) as Armor;
             }
         }
         #endregion
@@ -773,12 +797,13 @@ namespace SUS.Shared.Objects
             {
                 int rating = 0;
                 if (Equipment.ContainsKey(ItemLayers.Armor))
-                {
+                {   // dexModMax allows for + 3 AC to medium armor if dex is GTE 16. Default: 2, >= 16: 3.
+                    int dexModMax = DexterityModifier > 15 ? 3 : 2;
                     int r = Equipment[ItemLayers.Armor].Rating;
                     if (r < 12)
                         rating += r + DexterityModifier;
                     else if (r < 16)
-                        rating += r + (DexterityModifier >= 2 ? 2 : DexterityModifier);
+                        rating += r + (DexterityModifier >= dexModMax ? dexModMax : DexterityModifier);
                     else
                         rating += r;
                 }
@@ -1003,10 +1028,19 @@ namespace SUS.Shared.Objects
         /// </summary>
         /// <param name="damage">Amount of base damage to take.</param>
         /// <returns>Total amount of damage taken after potential modifiers.</returns>
-        public int TakeDamage(int damage)
+        public int TakeDamage(int damage, bool isMagical = false)
         {
-            int originalHP = Hits;
+            if (!isMagical)
+            {   // Only apply this if the source of the damage is not magical.
+                if (Armor.Weight == Weights.Heavy)
+                    damage -= 3;
+            }
 
+            // Do not allow negative damage that would otherwise heal.
+            if (damage <= 0)
+                return 0;
+
+            int originalHP = Hits;
             if (damage > Hits)
             {
                 Hits = 0;

@@ -23,6 +23,7 @@ namespace SUS.Shared.Objects
             Name = name;
             Material = material;
             ArmorRating = (int)Material;
+            Weight = Weights.Light;
         }
         #endregion
 

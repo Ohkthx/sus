@@ -6,9 +6,15 @@ namespace SUS.Shared.Objects.Items.Equipment
     [Serializable]
     public class Unarmed : Weapon
     {
-        public Unarmed() : base(ItemLayers.MainHand, SkillCode.Wrestling, StatCode.Strength, Materials.None, DamageTypes.Bludgeoning, "unarmed", "1d4")
+        public Unarmed() : base(ItemLayers.MainHand, Materials.None, "1d4")
         {
+            Name = "unarmed";
+            RequiredSkill = SkillCode.Wrestling;
+            Stat = StatCode.Strength;
+            DamageType = DamageTypes.Bludgeoning;
+
             Material = Materials.None;
+            Weight = Weights.Light;
         }
     }
 }

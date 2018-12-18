@@ -253,8 +253,9 @@ namespace SUS.Server
             if (initiator.IsDead)
                 return new ErrorPacket("Server: You are dead and need to ressurrect.");
 
-            List<Mobile> mobiles = new List<Mobile>();                              // This will hold all good mobiles.
-            List<BasicMobile> targets = cmp.GetTargets();    // List containing <Type, Serial>
+            initiator.Target = null;                        // Reset the target.
+            List<Mobile> mobiles = new List<Mobile>();      // This will hold all good mobiles.
+            List<BasicMobile> targets = cmp.GetTargets();   // List containing basic mobiles representing targets.
             if (targets.Count == 0)
                 return new ErrorPacket("Server: No targets provided for attacking.");
 

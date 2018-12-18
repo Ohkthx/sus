@@ -18,10 +18,18 @@ namespace SUS.Shared.Objects
         Armor       = 0x00000010,
     }
 
+    public enum Weights
+    {
+        Light,
+        Medium,
+        Heavy,
+    }
+
     [Serializable]
     public abstract class Equippable : Item
     {
         protected ItemLayers m_Layer;
+        protected Weights m_Weight;
         protected int m_MagicRating;
 
         #region Constructors
@@ -49,6 +57,17 @@ namespace SUS.Shared.Objects
             {
                 if (value != ItemLayers.None && value != Layer)
                     m_Layer = value;
+            }
+        }
+
+        public Weights Weight 
+        {
+            get { return m_Weight; }
+            protected set
+            {
+                if (value == Weight)
+                    return;
+                m_Weight = value;
             }
         }
 

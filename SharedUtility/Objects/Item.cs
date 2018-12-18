@@ -173,7 +173,6 @@ namespace SUS.Shared.Objects
         protected Guid m_Guid;
         protected string m_Name;
         private ItemTypes m_Type;
-        protected int m_Weight;
         protected bool m_isDestroyable;
 
         #region Constructors
@@ -218,16 +217,6 @@ namespace SUS.Shared.Objects
             {
                 if (value != ItemTypes.None && value != Type)
                     m_Type = value;
-            }
-        }
-
-        public int Weight 
-        {
-            get { return m_Weight; }
-            protected set
-            {
-                if (value != Weight)
-                    m_Weight = value;
             }
         }
 

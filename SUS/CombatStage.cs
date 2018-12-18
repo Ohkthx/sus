@@ -21,6 +21,9 @@ namespace SUS.Server
             }
             #endregion
 
+            m1.Target = m2.Basic();
+            m2.Target = m1.Basic();
+
             int d = m1.Coordinate.Distance(m2.Coordinate);
             if (m1.Weapon.Range < d && m2.Weapon.Range < d)
             {   // Have the targets move towards each other.
@@ -106,7 +109,7 @@ namespace SUS.Server
             // Base for determining miss, hit, or crit.
             DiceRoll d20 = new DiceRoll("1d20");
             int d20roll = d20.Roll();                                // The rolls.
-            
+
             // If the target's distance is less than (or equal) to the distance.
             if (aggressor.Weapon.Range >= aggressor.Coordinate.Distance(target.Coordinate))
             {
@@ -115,15 +118,33 @@ namespace SUS.Server
                     --aggressor.Arrows;
                 }
 
-                int atkDamage = aggressor.Attack();
-                if (d20roll == 20)
-                    log.Add($"{aggressor.Name} performs a critical hit for {target.TakeDamage(atkDamage + aggressor.Weapon.Damage)} damage against {target.Name}.");
-                else if (d20roll == 1)
+                bool hit = false;
+
+                if (d20roll == 1)
                     log.Add($"{aggressor.Name} attempted but failed to land the attack.");
                 else if ((d20roll + aggressor.AbilityModifier) < target.ArmorClass)
                     log.Add($"{aggressor.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
                 else
-                    log.Add($"{aggressor.Name} performs {target.TakeDamage(atkDamage)} damage to {target.Name}.");
+                    hit = true;
+
+                if (hit)
+                {   // Hit the target, need to calculate additional damage (if it was a critical)
+                    bool crit = false;
+                    int atkDamage = aggressor.Attack();
+                    if (d20roll == 20)
+                    {   // A Critical hit, add another attack.
+                        crit = true;
+                        atkDamage += aggressor.Weapon.Damage;
+                    }
+
+                    int damageDealt = target.TakeDamage(atkDamage, isMagical: aggressor.Weapon.IsMagical);
+                    if (damageDealt == 0)   // Failed to do enough damage versus the armor of the target.
+                        log.Add($"{aggressor.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
+                    else if (crit)          // Performed a critical hit, display the appropriate message.
+                        log.Add($"{aggressor.Name} performs a critical hit for {damageDealt} damage against {target.Name}.");
+                    else                    // Normal hit, nothing special.
+                        log.Add($"{aggressor.Name} performs {damageDealt} damage to {target.Name}.");
+                }
 
                 // Check for skill increase.
                 string skillIncrease = aggressor.SkillIncrease(aggressor.Weapon.RequiredSkill);
@@ -137,6 +158,7 @@ namespace SUS.Server
 
                 if (target.IsDead)
                 {   // Killed the target, print and loot.
+                    aggressor.Target = null;
                     log.Add($"{aggressor.Name} has killed {target.Name}.");
                     exchangeLoot(ref log, ref aggressor, ref target);
                 }

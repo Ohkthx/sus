@@ -4,6 +4,26 @@ using SUS.Shared.Utilities;
 namespace SUS.Shared.Objects
 {
     [Serializable]
+    public abstract class TwoHanded : Weapon
+    {
+        public TwoHanded(Materials material, string damage) :
+            base(ItemLayers.TwoHanded, material, damage)
+        {
+            Weight = Weights.Heavy;
+        }
+    }
+
+    [Serializable]
+    public abstract class OneHanded : Weapon
+    {
+        public OneHanded(Materials material, string damage) :
+            base(ItemLayers.MainHand, material, damage)
+        {
+            Weight = Weights.Light;
+        }
+    }
+
+    [Serializable]
     public abstract class Weapon : Equippable
     {
         public enum Materials
@@ -29,18 +49,14 @@ namespace SUS.Shared.Objects
         private SkillCode m_Skill;
 
         #region Constructors
-        public Weapon(ItemLayers layer, SkillCode skill, StatCode stat, Materials material, DamageTypes dmgtype, string name, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
+        public Weapon(ItemLayers layer, Materials material, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
         {
-            Name = name;
-            Range = range;
-            RequiredSkill = skill;
-            Stat = stat;
-
             if (material == Materials.None)
                 material = Materials.Wooden;
 
             Material = material;
-            DamageType = dmgtype;
+            Range = range;
+            Weight = Weights.Medium;
 
             DiceDamage = new DiceRoll(damage);
         }
@@ -85,7 +101,7 @@ namespace SUS.Shared.Objects
         public DamageTypes DamageType
         {
             get { return m_DamageType; }
-            private set
+            protected set
             {
                 if (value == DamageType)
                     return;
@@ -97,7 +113,7 @@ namespace SUS.Shared.Objects
         public StatCode Stat
         {
             get { return m_Stat; }
-            private set
+            protected set
             {
                 if (value == Stat)
                     return;
@@ -109,7 +125,7 @@ namespace SUS.Shared.Objects
         public SkillCode RequiredSkill
         {
             get { return m_Skill; }
-            private set
+            protected set
             {
                 if (value == RequiredSkill)
                     return;

@@ -67,7 +67,9 @@
     <Compile Include="Objects\Items\Consumables\Potion.cs" />
     <Compile Include="Objects\Items\Equipment\ArmorSuit.cs" />
     <Compile Include="Objects\Items\Equipment\Bow.cs" />
+    <Compile Include="Objects\Items\Equipment\Fencing.cs" />
     <Compile Include="Objects\Items\Equipment\Shield.cs" />
+    <Compile Include="Objects\Items\Equipment\Mace.cs" />
     <Compile Include="Objects\Items\Equipment\Sword.cs" />
     <Compile Include="Objects\Items\Equipment\Unarmed.cs" />
     <Compile Include="Objects\Items\Consumable.cs" />
