@@ -34,13 +34,6 @@ namespace SUS.Shared.Objects
             Steel   = 3,
         }
 
-        public enum DamageTypes
-        {
-            Bludgeoning,
-            Piercing,
-            Slashing,
-        }
-
         private DiceRoll m_Damage;
         private int m_AttackRange;
         private Materials m_Material = Materials.None;
@@ -100,10 +93,10 @@ namespace SUS.Shared.Objects
 
         public DamageTypes DamageType
         {
-            get { return m_DamageType; }
-            protected set
+            get { return m_DamageType == DamageTypes.None ? DamageTypes.Bludgeoning : m_DamageType; }
+            set
             {
-                if (value == DamageType)
+                if (value == DamageTypes.None || value == DamageType)
                     return;
 
                 m_DamageType = value;

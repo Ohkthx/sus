@@ -1,4 +1,5 @@
 ﻿using System;
+using SUS.Shared.Utilities;
 
 namespace SUS.Shared.Objects.Mobiles.Spawns
 {
@@ -17,8 +18,11 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
 
             SetDamage(3, 7);
 
+            DamageOverride = DamageTypes.Slashing;
+
             // Consumables and/or Equipment.
-            Gold += 50;
+            Gold += Utility.RandomMinMax(35, 50);
+            Bandages += Utility.Random(2);
         }
     }
 }

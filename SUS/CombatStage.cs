@@ -84,8 +84,22 @@ namespace SUS.Server
             if (aggressor.IsDead || target.IsDead)
                 return;
 
-            if (extra)
+            #region Check Ranges
+            int distance = aggressor.Coordinate.Distance(target.Coordinate);
+            if (extra && aggressor.Weapon.Range < distance)
+                return;     // Return because not in range to perform the extra attack.
+            else if (extra)
                 log.Add("[Attempting an Extra Attack]");
+
+            if (aggressor.Weapon.Range < distance)
+            {
+                distance = aggressor.Coordinate.MoveTowards(target.Coordinate, aggressor.Speed);
+                string text = $"{aggressor.Name} moves towards {target.Name}";
+                if (distance >= 1)
+                    text += $" and is now {distance} pace{(distance > 1 ? "s" : "")} away";
+                log.Add(text + ".");
+            }
+            #endregion
 
             if (aggressor.Weapon.IsBow)
             {
@@ -94,16 +108,6 @@ namespace SUS.Server
                     log.Add($"{aggressor.Name} ran out of arrows. [{aggressor.Weapon.Name}] was unequipped.");
                     aggressor.Unequip(aggressor.Weapon);
                 }
-            }
-
-            int distance = aggressor.Coordinate.Distance(target.Coordinate);
-            if (aggressor.Weapon.Range < distance)
-            {
-                distance = aggressor.Coordinate.MoveTowards(target.Coordinate, aggressor.Speed);
-                string text = $"{aggressor.Name} moves towards {target.Name}";
-                if (distance >= 1)
-                    text += $" and is now {distance} pace{(distance > 1 ? "s" : "")} away";
-                log.Add(text + ".");
             }
 
             // Base for determining miss, hit, or crit.
@@ -131,11 +135,15 @@ namespace SUS.Server
                 {   // Hit the target, need to calculate additional damage (if it was a critical)
                     bool crit = false;
                     int atkDamage = aggressor.Attack();
+
                     if (d20roll == 20)
                     {   // A Critical hit, add another attack.
                         crit = true;
                         atkDamage += aggressor.Weapon.Damage;
                     }
+
+                    int tatk = atkDamage;
+                    atkDamage = target.ApplyResistance(aggressor.Weapon.DamageType, atkDamage);
 
                     int damageDealt = target.TakeDamage(atkDamage, isMagical: aggressor.Weapon.IsMagical);
                     if (damageDealt == 0)   // Failed to do enough damage versus the armor of the target.

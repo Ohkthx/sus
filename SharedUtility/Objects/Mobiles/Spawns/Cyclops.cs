@@ -19,9 +19,12 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
 
             SetDamage(7, 23);
 
+            DamageOverride = DamageTypes.Bludgeoning;
+
             // Consumables and/or Equipment.
-            Gold += 350;
-            HealthPotions += Utility.RandomMinMax(0, 3);
+            Gold += Utility.RandomMinMax(375, 350);
+            HealthPotions += Utility.Random(1);
+            Bandages += Utility.Random(5);
         }
     }
 }

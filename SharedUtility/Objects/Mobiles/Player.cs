@@ -79,6 +79,21 @@ namespace SUS.Shared.Objects.Mobiles
         #region Getters / Setters
         public override int CR { get { return (int)SkillTotal / 36; } }
 
+        public override DamageTypes Resistances
+        {
+            get
+            {
+                DamageTypes resist = DamageTypes.None;
+                if (Equipment.ContainsKey(ItemLayers.Armor))
+                    resist |= (Equipment[ItemLayers.Armor] as Armor).Resistances;
+
+                if (Equipment.ContainsKey(ItemLayers.Offhand) && Equipment[ItemLayers.Offhand].IsArmor)
+                    resist |= (Equipment[ItemLayers.Offhand] as Armor).Resistances;
+
+                return resist;
+            }
+        }
+
         public int Deaths
         {
             get { return m_Deaths; }

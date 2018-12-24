@@ -7,12 +7,24 @@ namespace SUS.Shared.Objects.Items.Equipment
     {
         public ArmorSuit(Materials material) : base(ItemLayers.Armor, material, "Suit")
         {
-            if (material == Materials.Cloth)
-                Weight = Weights.Light;
-            else if (material < Materials.Chainmail)
-                Weight = Weights.Medium;
-            else
-                Weight = Weights.Heavy;
+            switch(material)
+            {
+                case Materials.Plate:
+                case Materials.Chainmail:
+                    Weight = Weights.Heavy;
+                    Resistances = DamageTypes.Slashing | DamageTypes.Bludgeoning;
+                    break;
+                case Materials.Hide:
+                case Materials.Leather:
+                    Weight = Weights.Medium;
+                    Resistances = DamageTypes.Elemental;
+                    break;
+                case Materials.Cloth:
+                default:
+                    Weight = Weights.Medium;
+                    Resistances = DamageTypes.None;
+                    break;
+            }
         }
     }
 }

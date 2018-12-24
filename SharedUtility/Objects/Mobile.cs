@@ -14,6 +14,25 @@ namespace SUS.Shared.Objects
         Intelligence
     }
 
+    [Serializable, Flags]
+    public enum DamageTypes
+    {   
+        None = 0,
+
+        // Physical Damage Types
+        Bludgeoning = 1,
+        Piercing = 2,
+        Slashing = 4,
+        Physical = Bludgeoning | Piercing | Slashing,
+
+        // Elemental Damage Types
+        Fire = 8,
+        Cold = 16,
+        Poison = 32,
+        Energy = 64,
+        Elemental = Fire | Cold | Poison | Energy,
+    }
+
     [Serializable]
     public class BasicMobile
     {
@@ -195,6 +214,7 @@ namespace SUS.Shared.Objects
         // Mobile Properties
         private int m_Speed = 1;            // Speed that the Mobile moves at.
         private readonly int m_Vision = 15; // Distance the Mobile can see.
+        private DamageTypes m_Resistances;
 
         // Mobile Stats.
         private Stopwatch m_StatTimer;
@@ -426,7 +446,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public Weapon Weapon
+        public virtual Weapon Weapon
         {
             get
             {
@@ -815,6 +835,17 @@ namespace SUS.Shared.Objects
             }
         }
 
+        public virtual DamageTypes Resistances
+        {
+            get { return m_Resistances; }
+            protected set
+            {
+                if (value == Resistances)
+                    return;
+                m_Resistances = value;
+            }
+        }
+
         public virtual int ProficiencyModifier { get { return ConvertProficiencyScore(); } }
 
         public int AbilityModifier { get { return ConvertAbilityScore(Weapon.Stat); } }
@@ -1007,6 +1038,11 @@ namespace SUS.Shared.Objects
                     tMax = HealthPotions.Maximum;
                     HealthPotions += amt;
                     break;
+                case Consumable.Types.Bandages:
+                    tValue = Bandages.Amount;
+                    tMax = Bandages.Maximum;
+                    Bandages += amt;
+                    break;
                 case Consumable.Types.Gold:
                     tValue = Gold.Amount;
                     tMax = Gold.Maximum;
@@ -1052,6 +1088,34 @@ namespace SUS.Shared.Objects
         }
 
         public abstract int Attack();
+
+        public int ApplyResistance(DamageTypes damageType, int damage)
+        {
+            if (Resistances == DamageTypes.None)
+                return damage;
+            else if (damageType == DamageTypes.None)
+                damageType = DamageTypes.Bludgeoning;
+
+            int armorResists = 0;
+            while(damageType != DamageTypes.None)
+            {
+                foreach (DamageTypes dt in Enum.GetValues(typeof(DamageTypes)))
+                {   // Ignore values that are either 'None' or not part of the damageType.
+                    if (dt == DamageTypes.None || (damageType & dt) != dt)
+                        continue;
+
+                    // Compare the value to the Resistances.
+                    if ((Resistances & dt) == dt)
+                        ++armorResists;
+
+                    damageType &= ~(dt);    // Remove the value.
+                }
+            }
+
+            int dmg = (int)(damage * (1 - ((0.1) * armorResists)));
+
+            return dmg < 0 ? 0 : dmg;
+        }
 
         private int ConvertAbilityScore(StatCode stat)
         {

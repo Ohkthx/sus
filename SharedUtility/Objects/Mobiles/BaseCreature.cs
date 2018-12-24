@@ -1,5 +1,6 @@
 ﻿using System;
 using SUS.Shared.Utilities;
+using SUS.Shared.Objects.Items.Equipment;
 
 namespace SUS.Shared.Objects.Mobiles
 {
@@ -13,6 +14,8 @@ namespace SUS.Shared.Objects.Mobiles
         private int m_DamageMax = -1;
 
         private Guid m_OwningSpawner;
+
+        protected DamageTypes m_DamageType = DamageTypes.None;
 
         #region Constructors
         public BaseCreature() : base(Types.Creature) { ID = Serial.NewObject; StatCap = int.MaxValue; }
@@ -173,13 +176,40 @@ namespace SUS.Shared.Objects.Mobiles
         #endregion
 
         #region Combat
+        protected DamageTypes DamageOverride
+        {
+            get { return m_DamageType; }
+            set
+            {
+                if (value == DamageTypes.None || value == DamageOverride)
+                    return;
+
+                m_DamageType = value;
+            }
+        }
+
+        public override Weapon Weapon
+        {
+            get
+            {
+                Weapon weapon = base.Weapon;
+                if (weapon is Unarmed && weapon.DamageType != DamageOverride)
+                    weapon.DamageType = DamageOverride;
+                return weapon;
+            }
+        }
+
         public override int ArmorClass => base.ArmorClass;
 
         public override int ProficiencyModifier { get { return (CR / 4) + 2 > 9 ? 9 : (CR / 4) +2; } }
 
         public override int Attack()
         {
-            return Utility.RandomMinMax(m_DamageMax / 2, m_DamageMax);
+            if (Weapon is Unarmed)
+            {
+                return Utility.RandomMinMax(m_DamageMin, m_DamageMax);
+            }
+            return Weapon.Damage;
         }
 
         public override void Kill() { Hits = 0; }
