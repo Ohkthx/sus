@@ -9,7 +9,7 @@ namespace SUS.Shared.Objects.Items.Equipment
         public Mace(Materials material) : base(material, "1d6")
         {
             Name = "Mace";
-            RequiredSkill = SkillCode.Macefighting;
+            RequiredSkill = SkillName.Macefighting;
             Stat = StatCode.Strength;
             DamageType = DamageTypes.Bludgeoning;
         }
@@ -21,7 +21,7 @@ namespace SUS.Shared.Objects.Items.Equipment
         public Maul(Materials material) : base(material, "2d6")
         {
             Name = "Maul";
-            RequiredSkill = SkillCode.Macefighting;
+            RequiredSkill = SkillName.Macefighting;
             Stat = StatCode.Strength;
             DamageType = DamageTypes.Bludgeoning;
         }

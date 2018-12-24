@@ -27,7 +27,7 @@ namespace SUS.Shared.Objects.Items.Equipment
         public Bow(Materials material, string damage, int r) : 
             base(ItemLayers.Bow, material, damage, range: r)
         {
-            RequiredSkill = SkillCode.Archery;
+            RequiredSkill = SkillName.Archery;
             Stat = StatCode.Dexterity;
             DamageType = DamageTypes.Piercing;
         }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using SUS.Shared;
 using SUS.Shared.Objects;
+using SUS.Shared.Objects.Mobiles;
 using SUS.Shared.Utilities;
 
 namespace SUS.Server
@@ -86,6 +88,9 @@ namespace SUS.Server
 
             #region Check Ranges
             int distance = aggressor.Coordinate.Distance(target.Coordinate);
+            if (aggressor is BaseCreature)
+                AI.PerformAction(ref aggressor, AI.Actions.Attack, distance);
+
             if (extra && aggressor.Weapon.Range < distance)
                 return;     // Return because not in range to perform the extra attack.
             else if (extra)

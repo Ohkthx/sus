@@ -9,7 +9,7 @@ namespace SUS.Shared.Objects.Items.Equipment
         public Unarmed() : base(ItemLayers.MainHand, Materials.None, "1d4")
         {
             Name = "unarmed";
-            RequiredSkill = SkillCode.Wrestling;
+            RequiredSkill = SkillName.Wrestling;
             Stat = StatCode.Strength;
             DamageType = DamageTypes.Bludgeoning;
 

@@ -39,7 +39,7 @@ namespace SUS.Shared.Objects
         private Materials m_Material = Materials.None;
         private DamageTypes m_DamageType;
         private StatCode m_Stat;
-        private SkillCode m_Skill;
+        private SkillName m_Skill;
 
         #region Constructors
         public Weapon(ItemLayers layer, Materials material, string damage, int range = 1) : base(ItemTypes.Weapon, layer)
@@ -115,7 +115,7 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public SkillCode RequiredSkill
+        public SkillName RequiredSkill
         {
             get { return m_Skill; }
             protected set

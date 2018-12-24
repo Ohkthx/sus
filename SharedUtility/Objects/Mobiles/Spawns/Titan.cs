@@ -20,6 +20,9 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
 
             DamageOverride = DamageTypes.Bludgeoning | DamageTypes.Energy;
 
+            SetSkill(SkillName.Magery, 85.1, 100.0);
+            SetSkill(SkillName.Wrestling, 40.1, 50.0);
+
             // Consumables and/or Equipment.
             Gold += Utility.Random(350, 450);
             HealthPotions += Utility.Random(3);

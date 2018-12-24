@@ -222,7 +222,7 @@ namespace SUS.Shared.Objects
         private int m_Str, m_Dex, m_Int;
         private int m_Hits, m_Stam, m_Mana;
 
-        private Dictionary<SkillCode, Skill> m_Skills;  // Skills possessed by the mobile.
+        private Dictionary<SkillName, Skill> m_Skills;  // Skills possessed by the mobile.
 
         #region Contructors
         public Mobile(Types type)
@@ -255,11 +255,11 @@ namespace SUS.Shared.Objects
                 $"  | +-- Strength: {Str}\n" +
                 $"  | +-- Dexterity: {Dex}\t\tStamina: {Stam} / {StamMax}\n" +
                 $"  | +-- Intelligence: {Int}\tMana: {Mana} / {ManaMax}\n" +
-                $"  |   +-- Attack: {WeaponRating}\n" +
+                $"  |   +-- Attack: {AttackRating}\n" +
                 $"  |   +-- Defense: {ArmorClass}\n" +
                 $"  |\n" +
                 $"  +-[ Items ]\n" +
-                $"  | +-- Bandaids: {Bandages.Amount}\t\tBandaid Heal Amount: {Bandage.GetEffect(HitsMax, Skills[SkillCode.Healing].Value)}\n" +
+                $"  | +-- Bandaids: {Bandages.Amount}\t\tBandaid Heal Amount: {Bandage.GetEffect(HitsMax, Skills[SkillName.Healing].Value)}\n" +
                 $"  | +-- Potions: {HealthPotions.Amount}\t\tPotion Heal Amount: {Potion.GetEffect(HitsMax)}\n" +
                 $"  | +-- Arrows: {Arrows.Amount}\t\tReagents: {0}\n" +
                 $"  | +-- Gold: {Gold.Amount}\n" +
@@ -797,7 +797,7 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Getters / Setters - Combat
-        public int WeaponRating
+        public virtual int AttackRating
         {
             get
             {
@@ -858,13 +858,13 @@ namespace SUS.Shared.Objects
         #endregion
 
         #region Skills
-        public Dictionary<SkillCode, Skill> Skills
+        public Dictionary<SkillName, Skill> Skills
         {
             get
             {
                 if (m_Skills == null)
                 {
-                    m_Skills = new Dictionary<SkillCode, Skill>();
+                    m_Skills = new Dictionary<SkillName, Skill>();
                     InitSkills();
                 }
 
@@ -883,13 +883,13 @@ namespace SUS.Shared.Objects
             get
             {
                 double value = 0.0;
-                foreach (KeyValuePair<SkillCode, Skill> kp in Skills)
+                foreach (KeyValuePair<SkillName, Skill> kp in Skills)
                     value += kp.Value.Value;
                 return value;
             }
         }
 
-        public string SkillIncrease(SkillCode skill)
+        public string SkillIncrease(SkillName skill)
         {
             if (IsPlayer && SkillTotal >= 720.0)
                 return string.Empty;
@@ -906,7 +906,7 @@ namespace SUS.Shared.Objects
         {
             if (Skills == null)
             {   // Create our dictionary.
-                Skills = new Dictionary<SkillCode, Skill>();
+                Skills = new Dictionary<SkillName, Skill>();
             }
             else if (Skills.Count > 0)
             {   // Skill list has already been populated, just return early.
@@ -914,9 +914,9 @@ namespace SUS.Shared.Objects
             }
 
             // Iterate each of the existing skills and add it to the dictionary.
-            foreach (SkillCode skill in Enum.GetValues(typeof(SkillCode)))
+            foreach (SkillName skill in Enum.GetValues(typeof(SkillName)))
             {
-                Skills.Add(skill, new Skill(Enum.GetName(typeof(SkillCode), skill), skill));
+                Skills.Add(skill, new Skill(skill));
             }
         }
         #endregion

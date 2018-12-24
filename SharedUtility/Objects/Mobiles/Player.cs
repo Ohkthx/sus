@@ -46,9 +46,9 @@ namespace SUS.Shared.Objects.Mobiles
             ItemAdd(new Shield());
 
             // Skills
-            Skills[SkillCode.Archery] += 83.0;
-            Skills[SkillCode.Swordsmanship] += 72.0;
-            Skills[SkillCode.Healing] += 67.0;
+            Skills[SkillName.Archery].Value = 83.0;
+            Skills[SkillName.Swordsmanship].Value = 72.0;
+            Skills[SkillName.Healing].Value = 67.0;
         }
         #endregion
 
@@ -63,7 +63,7 @@ namespace SUS.Shared.Objects.Mobiles
                 $"  +-[ Skills ]\n" +
                 $"  | +-- Skills Total: {SkillTotal.ToString("F1")}\n";
 
-            foreach (KeyValuePair<SkillCode, Skill> skill in Skills)
+            foreach (KeyValuePair<SkillName, Skill> skill in Skills)
                 paperdoll += $"  | +-- [{skill.Value.Value.ToString("F1"),-5} / {skill.Value.Cap.ToString("F1"),-5}] {skill.Value.Name}\n";
 
             paperdoll += $"  |\n  +-[ Equipment ]\n";

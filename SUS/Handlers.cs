@@ -402,8 +402,8 @@ namespace SUS.Server
                     if (item.ConsumableType == Consumable.Types.Bandages)
                     {   // Uses a bandage.
                         --mobile.Bandages;
-                        effect = Bandage.GetEffect(mobile.HitsMax, mobile.Skills[SkillCode.Healing].Value);
-                        string increase = mobile.SkillIncrease(SkillCode.Healing);
+                        effect = Bandage.GetEffect(mobile.HitsMax, mobile.Skills[SkillName.Healing].Value);
+                        string increase = mobile.SkillIncrease(SkillName.Healing);
                         if (increase != string.Empty)
                             uip.Response += $"{increase}\n";
                         increase = mobile.StatIncrease(StatCode.Dexterity);

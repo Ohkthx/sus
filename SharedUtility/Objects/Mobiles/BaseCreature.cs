@@ -173,8 +173,6 @@ namespace SUS.Shared.Objects.Mobiles
         }
         #endregion
 
-        #endregion
-
         #region Combat
         protected DamageTypes DamageOverride
         {
@@ -195,13 +193,26 @@ namespace SUS.Shared.Objects.Mobiles
                 Weapon weapon = base.Weapon;
                 if (weapon is Unarmed && weapon.DamageType != DamageOverride)
                     weapon.DamageType = DamageOverride;
+
                 return weapon;
+            }
+        }
+
+        public override int AttackRating
+        {
+            get
+            {   // If the creature is unarmed, the AttackRating is maximum damage.
+                if (Weapon is Unarmed)
+                    return m_DamageMax;
+
+                // Return the base AttackRating instead.
+                return base.AttackRating;
             }
         }
 
         public override int ArmorClass => base.ArmorClass;
 
-        public override int ProficiencyModifier { get { return (CR / 4) + 2 > 9 ? 9 : (CR / 4) +2; } }
+        public override int ProficiencyModifier { get { return (CR / 4) + 2 > 9 ? 9 : (CR / 4) + 2; } }
 
         public override int Attack()
         {
@@ -209,7 +220,8 @@ namespace SUS.Shared.Objects.Mobiles
             {
                 return Utility.RandomMinMax(m_DamageMin, m_DamageMax);
             }
-            return Weapon.Damage;
+
+            return Weapon.Damage + ProficiencyModifier;
         }
 
         public override void Kill() { Hits = 0; }
@@ -221,5 +233,19 @@ namespace SUS.Shared.Objects.Mobiles
             Stam = StamMax / 2;
         }
         #endregion
+
+        #endregion
+
+        protected void SetSkill(SkillName skill, double min, double max)
+        {
+            if (min > max)
+            {
+                double tval = min;
+                min = max;
+                max = tval;
+            }
+
+            Skills[skill].Value = Utility.RandomMinMax(min, max);
+        }
     }
 }

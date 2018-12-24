@@ -9,7 +9,7 @@ namespace SUS.Shared.Objects.Items.Equipment
         public Dagger(Materials material) : base(material, "1d6")
         {
             Name = "Dagger";
-            RequiredSkill = SkillCode.Fencing;
+            RequiredSkill = SkillName.Fencing;
             Stat = StatCode.Dexterity;
             DamageType = DamageTypes.Piercing;
         }
@@ -21,7 +21,7 @@ namespace SUS.Shared.Objects.Items.Equipment
         public Kryss(Materials material) : base(material, "1d8")
         {
             Name = "Kryss";
-            RequiredSkill = SkillCode.Fencing;
+            RequiredSkill = SkillName.Fencing;
             Stat = StatCode.Dexterity;
             DamageType = DamageTypes.Piercing;
         }

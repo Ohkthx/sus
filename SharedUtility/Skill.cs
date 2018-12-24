@@ -3,7 +3,7 @@
 namespace SUS.Shared.Utilities
 {
     [Serializable]
-    public enum SkillCode
+    public enum SkillName
     {
         Archery,
         Fencing,
@@ -33,15 +33,15 @@ namespace SUS.Shared.Utilities
         }
 
         private string m_Name;
-        private SkillCode m_Type;
+        private SkillName m_Type;
         private double m_Value;
         private double m_Cap;
         private Timer m_Timer;
 
         #region Constructors
-        public Skill(string name, SkillCode type, double value = 0.0, double cap = 100.0)
+        public Skill(SkillName type, double value = 0.0, double cap = 100.0)
         {
-            Name = name;
+            Name = Enum.GetName(typeof(SkillName), type);
             Type = type;
             Cap = cap;
             Value = value;
@@ -68,7 +68,7 @@ namespace SUS.Shared.Utilities
             }
         }
 
-        public SkillCode Type
+        public SkillName Type
         {
             get { return m_Type; }
             private set
