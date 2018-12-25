@@ -12,12 +12,12 @@ namespace SUSClient
     {
         private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, actions, use, update, paperdoll, exit }
 
-        private static GameState gs = null;
+        private static Gamestate gs = null;
         public Packet clientRequest = null;    // Temporary storage for a request sent by the client.
 
         private ConsoleActions lastAction = ConsoleActions.none;
 
-        public InteractiveConsole(GameState gamestate) { gs = gamestate; }
+        public InteractiveConsole(Gamestate gamestate) { gs = gamestate; }
         private static ulong rounds = 0;        // Amount of turns the client has performed.
 
 
@@ -25,7 +25,7 @@ namespace SUSClient
         ///     Prompts and processes user input.
         /// </summary>
         /// <returns>Updated GameState object.</returns>
-        public GameState Core()
+        public Gamestate Core()
         {   // If our last console action required a response, process it.
             if (lastAction != ConsoleActions.none)
             {

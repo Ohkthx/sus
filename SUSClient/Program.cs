@@ -36,7 +36,7 @@ namespace SUSClient
                 }
             }
 
-            Console.WriteLine($"Version: {GameState.Version}");
+            Console.WriteLine($"Version: {Gamestate.Version}");
 
             AsynchronousClient.StartClient();   // Starts the Client.
             Console.Read();
@@ -70,7 +70,7 @@ namespace SUSClient
 
         private static void ServerHandler(ref SocketHandler socketHandler, ulong id, string username)
         {
-            GameState gamestate = null;     // Gamestate of this client.
+            Gamestate gamestate = null;     // Gamestate of this client.
             InteractiveConsole ia = null;   // Interactive console tracks user actions and sends data.
             Packet creq = null;            // Client REQuest. Used by functions not called in interactive console. 
 
@@ -90,7 +90,7 @@ namespace SUSClient
                         ia.Reset();
                         break;
                     case PacketTypes.Authenticate:
-                        ia = new InteractiveConsole(new GameState((req as AccountAuthenticatePacket).Player));
+                        ia = new InteractiveConsole(new Gamestate((req as AccountAuthenticatePacket).Player));
                         break;
                     case PacketTypes.GameState:
                         ia = new InteractiveConsole((req as AccountGameStatePacket).GameState);

@@ -9,7 +9,7 @@ namespace SUS.Server
 {
     public static class CombatStage
     {
-        public static List<string> Combat(ref Mobile m1, ref Mobile m2)
+        public static List<string> Combat(Mobile m1, Mobile m2)
         {
             List<string> log = new List<string>();
 
@@ -29,16 +29,16 @@ namespace SUS.Server
             int d = m1.Coordinate.Distance(m2.Coordinate);
             if (m1.Weapon.Range < d && m2.Weapon.Range < d)
             {   // Have the targets move towards each other.
-                closeDistance(ref log, ref m1, ref m2);
+                closeDistance(ref log, m1, m2);
             }
 
-            performAttack(m1, ref log, ref m1, ref m2);
-            performAttack(m1, ref log, ref m2, ref m1);
+            performAttack(m1, ref log, m1, m2);
+            performAttack(m1, ref log, m2, m1);
 
             return log;
         }
 
-        private static void performAttack(Mobile init, ref List<string> log, ref Mobile aggressor, ref Mobile target)
+        private static void performAttack(Mobile init, ref List<string> log, Mobile aggressor, Mobile target)
         {
             int attackLimit = 1;
             if (aggressor.IsPlayer && !target.IsPlayer)
@@ -52,11 +52,11 @@ namespace SUS.Server
             do
             {
                 --attacksRemaining;
-                combatTurn(init, ref log, ref aggressor, ref target, extra: attackLimit > 1 && attacksRemaining == 0);
+                combatTurn(init, ref log, aggressor, target, extra: attackLimit > 1 && attacksRemaining == 0);
             } while (attacksRemaining > 0);
         }
 
-        private static void closeDistance(ref List<string> log, ref Mobile m1, ref Mobile m2)
+        private static void closeDistance(ref List<string> log, Mobile m1, Mobile m2)
         {
             int paces, d;
             paces = d = 0;
@@ -81,7 +81,7 @@ namespace SUS.Server
             log.Add($"{m1.Name} and {m2.Name} moved {paces} paces towards one another.");
         }
 
-        private static void combatTurn(Mobile init, ref List<string> log, ref Mobile aggressor, ref Mobile target, bool extra = false)
+        private static void combatTurn(Mobile init, ref List<string> log, Mobile aggressor, Mobile target, bool extra = false)
         {
             if (aggressor.IsDead || target.IsDead)
                 return;

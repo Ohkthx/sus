@@ -35,14 +35,14 @@ namespace SUS.Shared.Packets
     [Serializable]
     public sealed class AccountGameStatePacket : Packet
     {
-        private GameState m_GameState;
+        private Gamestate m_GameState;
 
         #region Constructors
         public AccountGameStatePacket(BasicMobile mobile) : base(PacketTypes.GameState, mobile) { }
         #endregion
 
         #region Getters / Setters
-        public GameState GameState 
+        public Gamestate GameState 
         {
             get { return m_GameState; }
             set

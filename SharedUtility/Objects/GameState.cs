@@ -10,7 +10,7 @@ using SUS.Shared.Packets;
 namespace SUS.Shared.Objects
 {
     [Serializable]
-    public class GameState : ISQLCompatibility
+    public class Gamestate : ISQLCompatibility
     {
         private static readonly double m_Version = 1.0;
         private BasicMobile m_Account = null;
@@ -26,9 +26,9 @@ namespace SUS.Shared.Objects
         private Dictionary<ItemLayers, Equippable> m_Equipped;  // Equipped items.
 
         #region Constructors
-        public GameState(BasicMobile account) : this(account, null, Locations.Basic) { }
-        public GameState(BasicMobile account, Locations unlocked) : this(account, null, unlocked) { }
-        public GameState(BasicMobile account, BasicNode location, Locations unlocked)
+        public Gamestate(BasicMobile account) : this(account, null, Locations.Basic) { }
+        public Gamestate(BasicMobile account, Locations unlocked) : this(account, null, unlocked) { }
+        public Gamestate(BasicMobile account, BasicNode location, Locations unlocked)
         {
             this.Account = account;
             this.NodeCurrent = location;
@@ -54,14 +54,14 @@ namespace SUS.Shared.Objects
             }
         }
 
-        public static bool operator ==(GameState gs1, GameState gs2)
+        public static bool operator ==(Gamestate gs1, Gamestate gs2)
         {
             if (Object.ReferenceEquals(gs1, gs2)) return true;
             if (Object.ReferenceEquals(null, gs1)) return false;
             return (gs1.Equals(gs2));
         }
 
-        public static bool operator !=(GameState gs1, GameState gs2)
+        public static bool operator !=(Gamestate gs1, Gamestate gs2)
         {
             return !(gs1 == gs2);
         }
@@ -71,17 +71,17 @@ namespace SUS.Shared.Objects
             if (Object.ReferenceEquals(null, value)) return false;
             if (Object.ReferenceEquals(this, value)) return true;
             if (value.GetType() != this.GetType()) return false;
-            return IsEqual((GameState)value);
+            return IsEqual((Gamestate)value);
         }
 
-        public bool Equals(GameState gamestate)
+        public bool Equals(Gamestate gamestate)
         {
             if (Object.ReferenceEquals(null, gamestate)) return false;
             if (Object.ReferenceEquals(this, gamestate)) return true;
             return IsEqual(gamestate);
         }
 
-        private bool IsEqual(GameState value)
+        private bool IsEqual(Gamestate value)
         {
             return (value != null)
                 && (value.Account != null)

@@ -26,7 +26,7 @@ namespace SUS.Server
                     clientInfo = Authenticate(req as AccountAuthenticatePacket);
                     break;
                 case PacketTypes.GameState:
-                    clientInfo = GameState(req as AccountGameStatePacket);
+                    clientInfo = Gamestate(req as AccountGameStatePacket);
                     break;
                 case PacketTypes.SocketKill:
                     Logout(req as SocketKillPacket);
@@ -74,13 +74,11 @@ namespace SUS.Server
         {
             // Client initated Authenticate, look up and verify information.
             // if not information found, prompt to create a new gamestate.
-            GameState gamestate = GameObject.FindGameState(auth.Author.ID);
+            Gamestate gamestate = World.FindGamestate(auth.Author.ID);
 
             // Send our response if no player is found, else send the client their GameState.
             if (gamestate == null)
-            {
                 return Player(new Player(auth.Author.ID, auth.Author.Name, 50, 35, 20));
-            }
 
             AccountGameStatePacket gsp = new AccountGameStatePacket(auth.Author);
             gsp.GameState = gamestate;
@@ -94,31 +92,31 @@ namespace SUS.Server
         /// <returns>Packaged GameState.</returns>
         private static Packet Player(Player player)
         {
-            Locations szLoc = GameObject.StartingZone;
+            Locations szLoc = World.StartingZone;
 
             player.Location = szLoc;            // Assign the Starting Zone Location to the player.
             player.Login();                     // Log the player in.
 
             // Client has sent a player, create a proper gamestate and send it to the client.
-            GameState newState = new GameState(player.Basic());
+            Gamestate newState = new Gamestate(player.Basic());
 
-            Node loc = GameObject.FindNode(szLoc); // Assign the Starting Zone Node to the GameState.
+            Node loc = World.FindNode(szLoc); // Assign the Starting Zone Node to the GameState.
             if (loc == null)
                 return new ErrorPacket("Server: Invalid location to move to.");
 
             newState.NodeCurrent = loc.GetTag();
 
-            GameObject.UpdateGameStates(newState);          // Updates the GameObject with the new state that is being tracked.
-            GameObject.UpdateMobiles(player);               // Update our tracked Mobiles with the new Player.
+            World.AddGamestate(newState);          // Updates the GameObject with the new state that is being tracked.
+            World.AddMobile(player);               // Update our tracked Mobiles with the new Player.
 
             AccountGameStatePacket gsp = new AccountGameStatePacket(player.Basic());
             gsp.GameState = newState;
             return gsp;
         }
 
-        private static Packet GameState(AccountGameStatePacket gsp)
+        private static Packet Gamestate(AccountGameStatePacket gsp)
         {
-            GameObject.UpdateGameStates(gsp.GameState);
+            World.AddGamestate(gsp.GameState);
 
             return new OKPacket();
         }
@@ -132,31 +130,28 @@ namespace SUS.Server
             if (sk.Author == null)
                 return;             // No User ID? Just return.
 
-            GameState gs = GameObject.FindGameState(sk.Author.ID);
+            Gamestate gs = World.FindGamestate(sk.Author.ID);
             if (gs == null)
                 return;             // No mobile by that User ID? Just return.
 
-            Player account = GameObject.FindMobile(gs.Account.Guid) as Player;
+            Player account = World.FindMobile(gs.Account.Guid) as Player;
             if (account == null)
                 return;
 
             account.Logout();
-
-            GameObject.UpdateMobiles(account);
-            GameObject.UpdateGameStates(gs, remove: true);
+            World.RemoveGamestate(gs);
         }
         #endregion
 
         #region Information Requests 
         private static Packet LocalMobiles(GetMobilesPacket gmp)
         {
-            Mobile relativeMobile = GameObject.FindMobile(gmp.Author.Guid);
-            if (relativeMobile == null || relativeMobile.Coordinate == null)
+            Mobile m = World.FindMobile(gmp.Author.Guid);
+            if (m == null || m.Coordinate == null)
                 return new ErrorPacket("Server: You are not in a location to get nearby objects.");
 
-            HashSet<BasicMobile> lm = GameObject.FindNearbyMobiles(gmp.Location, relativeMobile, relativeMobile.Vision);
+            HashSet<BasicMobile> lm = World.FindNearbyMobiles(gmp.Location, m, m.Vision);
             gmp.Mobiles = lm;
-            //gmp.Mobiles = GameObject.FindMobiles(gmp.Location, MobileType.Mobile);
             return gmp;
         }
 
@@ -170,7 +165,7 @@ namespace SUS.Server
             if (gmp.Target == null)
                 return new ErrorPacket("Server: Bad mobile requested.");
 
-            Mobile m = GameObject.FindMobile(gmp.Target.Guid);
+            Mobile m = World.FindMobile(gmp.Target.Guid);
             if (m == null)
                 return new ErrorPacket("Server: There is no such mobile anymore.");
 
@@ -216,11 +211,11 @@ namespace SUS.Server
         /// <returns>Packaged Node.</returns>
         private static Packet GetNode(GetNodePacket gnp)
         {
-            Node newLocation = GameObject.FindNode(gnp.Location);  // Fetch a new or updated node.
-            if (newLocation == null)
+            Node n = World.FindNode(gnp.Location);  // Fetch a new or updated node.
+            if (n == null)
                 return new ErrorPacket("Server: Bad node requested.");
 
-            gnp.NewLocation = newLocation.GetTag();
+            gnp.NewLocation = n.GetTag();
             return gnp;
         }
         #endregion
@@ -231,11 +226,11 @@ namespace SUS.Server
         /// </summary>
         private static Packet MobileActionHandler(CombatMobilePacket mobileAction)
         {
-            Player initator = GameObject.FindPlayer(mobileAction.Author.ID) as Player;
+            Player initator = World.FindMobile(mobileAction.Author.Guid) as Player;
             if (initator == null)
                 return new ErrorPacket("Server: Bad initiator provided for action.");
 
-            Packet req = MobileActionHandlerAttack(initator, ref mobileAction);
+            Packet req = MobileActionHandlerAttack(initator, mobileAction);
             if (req != null)    // If Request is not null, that means an error occured in MobileActionHandlerAttack.
                 return req;     // Return the error to the client.
 
@@ -248,7 +243,7 @@ namespace SUS.Server
         /// <param name="initiator">Initiating Mobile.</param>
         /// <param name="cmp">Reference to the MobileAction to send back.</param>
         /// <returns>Packaged Error if occurred, otherwise should normally return null.</returns>
-        private static Packet MobileActionHandlerAttack(Player initiator, ref CombatMobilePacket cmp)
+        private static Packet MobileActionHandlerAttack(Player initiator, CombatMobilePacket cmp)
         {
             if (initiator.IsDead)
                 return new ErrorPacket("Server: You are dead and need to ressurrect.");
@@ -263,7 +258,7 @@ namespace SUS.Server
             foreach (BasicMobile t in targets)
             {
                 // Lookup the affected mobile.
-                 Mobile target = GameObject.FindMobile(t.Guid);
+                 Mobile target = World.FindMobile(t.Guid);
                 if (target == null)
                     return new ErrorPacket("Server: That target has moved or died recently.");
                 else if (initiator.Location != target.Location)
@@ -290,28 +285,20 @@ namespace SUS.Server
                 Mobile init = initiator as Mobile;
 
                 // Combat the two objects.
-                cmp.AddUpdate(CombatStage.Combat(ref init, ref target));
+                cmp.AddUpdate(CombatStage.Combat(init, target));
 
                 // Update the affectee.
                 if (target.IsDead)
                 {
                     (init as Player).AddKill();
-                    GameObject.Kill(target);
-                }
-                else
-                {
-                    GameObject.UpdateMobiles(target);
+                    World.Kill(target);
                 }
 
                 // Update our initiator.
                 if (init.IsDead)
                 {
                     cmp.IsDead = true;
-                    GameObject.Kill(init);
-                }
-                else
-                {
-                    GameObject.UpdateMobiles(init);
+                    World.Kill(init);
                 }
 
                 cmp.Result += $"{init.Name} attacked {target.Name}. ";    // TODO: Move this to MobileModifier.
@@ -329,7 +316,7 @@ namespace SUS.Server
         /// <returns>Packed "OK" server response.</returns>
         private static Packet MobileMove(MoveMobilePacket mm)
         {
-            Node loc = GameObject.MoveMobile(mm.Location, mm.Author, direction: mm.Direction);
+            Node loc = World.MoveMobile(mm.Location, mm.Author, direction: mm.Direction);
             if (loc == null)
                 return new ErrorPacket("Server: Invalid location to move to.");
 
@@ -348,8 +335,8 @@ namespace SUS.Server
                 return new ErrorPacket("Server: Ressurrection target not provided.");
 
             // Sends the mobile to the StartingZone, ressurrects, and processes it as if an admin performed the action.
-            GameObject.Ressurrect(GameObject.StartingZone, res.Author);
-            return new RessurrectMobilePacket(GameObject.StartingZone, res.Author, success: true);
+            World.Ressurrect(World.StartingZone, res.Author);
+            return new RessurrectMobilePacket(World.StartingZone, res.Author, success: true);
         }
 
         private static Packet MobileUseItem(UseItemPacket uip)
@@ -357,7 +344,7 @@ namespace SUS.Server
             if (uip.Item == null || uip.Item == Guid.Empty)
                 return new ErrorPacket("Server: That is an invalid item.");
 
-            Mobile m = GameObject.FindMobile(uip.Author.Guid);
+            Mobile m = World.FindMobile(uip.Author.Guid);
             if (m == null)
                 return new ErrorPacket("Server: Invalid object to use that item on.");
 
@@ -433,15 +420,12 @@ namespace SUS.Server
                     return new ErrorPacket("Server: We can only use health potions and bandages for now.");
             }
 
-            GameObject.UpdateMobiles(mobile);
-
             return uip;
         }
 
         private static Packet EquipEquippable(UseItemPacket uip, Mobile mobile, Equippable item)
         {
             mobile.Equip(item);
-            GameObject.UpdateMobiles(mobile);
             uip.Response = $"You have equipped [{item.Name}].";
             return uip;
         }

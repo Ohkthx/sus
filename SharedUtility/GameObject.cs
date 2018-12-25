@@ -10,11 +10,11 @@ using SUS.Shared.Utilities;
 namespace SUS
 {
     [Serializable]
-    public static class GameObject
+    public static class World
     {
         #region Dictionaries and Variables.
         // Player ID => GameState
-        private static ConcurrentDictionary<ulong, GameState> m_Gamestates = new ConcurrentDictionary<ulong, GameState>();
+        private static ConcurrentDictionary<ulong, Gamestate> m_Gamestates = new ConcurrentDictionary<ulong, Gamestate>();
 
         // Location.Type => Node
         private static ConcurrentDictionary<Locations, Node> m_Nodes = new ConcurrentDictionary<Locations, Node>();
@@ -69,10 +69,10 @@ namespace SUS
             
 
             // Add the nodes to be held by the GameObject.
-            UpdateNodes(Britain);
-            UpdateNodes(Sewer);
-            UpdateNodes(Wilderness);
-            UpdateNodes(Graveyard);
+            AddNode(Britain);
+            AddNode(Sewer);
+            AddNode(Wilderness);
+            AddNode(Graveyard);
         }
 
         /// <summary>
@@ -90,41 +90,58 @@ namespace SUS
         #endregion
 
         #region Gamestate Actions
+        public static void AddGamestate(Gamestate gs)
+        {
+            if (gs == null)
+                return;
+
+            m_Gamestates[gs.ID] = gs;
+        }
+
+        public static void RemoveGamestate(Gamestate gs)
+        {
+            if (gs == null)
+                return;
+
+            m_Gamestates.TryRemove(gs.ID, out _);
+        }
+
         /// <summary>
         ///     GameState to locate in GameObject.
         /// </summary>
         /// <param name="ID">ID of the GameState.</param>
         /// <returns>GameState provided by GameObject.</returns>
-        public static GameState FindGameState(ulong ID)
+        public static Gamestate FindGamestate(ulong ID)
         {
-            GameState gs;   // Blank Gamestate.
+            Gamestate gs;   // Blank Gamestate.
             if (!m_Gamestates.TryGetValue(ID, out gs))
                 return null;    // Could not find the GameState, return null.
             return gs;          // Return the found GameState.
         }
-
-        /// <summary>
-        ///     Updates GameObject's tracked gamestates.
-        /// </summary>
-        /// <param name="gamestate">Gamestate to add or remove.</param>
-        /// <param name="remove">Determines if the gamestate should be permanently removed.</param>
-        public static void UpdateGameStates(GameState gamestate, bool remove = false)
-        {
-
-            if (remove)
-                // Removes if the player DOES exist.
-                m_Gamestates.TryRemove(gamestate.ID, out _);
-            else
-                // This will add or update (override current).
-                m_Gamestates[gamestate.ID] = gamestate;
-        }
         #endregion
 
         #region Mobile Actions
-        public static Mobile FindMobile(BasicMobile mobile) { return FindMobile(mobile.Guid); }
-        public static Mobile FindMobile(Mobile mobile) { return FindMobile(mobile.Guid); }
+        public static void AddMobile(Mobile m)
+        {
+            if (m == null)
+                return;
+
+            m_Mobiles[m.Guid] = m;
+        }
+
+        public static void RemoveMobile(Mobile m)
+        {
+            if (m == null)
+                return;
+
+            m_Mobiles.TryRemove(m.Guid, out _);
+        }
+
         public static Mobile FindMobile(Guid guid)
         {
+            if (guid == null || guid == Guid.Empty)
+                return null;
+
             if (m_Mobiles.ContainsKey(guid))
             {
                 Mobile m = null;
@@ -143,11 +160,11 @@ namespace SUS
         /// <returns></returns>
         public static Mobile FindMobile(Mobile.Types type, Serial serial)
         {   // Iterate our hashset of mobiles.
-            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
-                if (((m.Value.Type == type) && (m.Value.ID == serial))
+            foreach (Mobile m in m_Mobiles.Values)
+                if (((m.Type == type) && (m.ID == serial))
                     || type == Mobile.Types.Mobile)
                 {
-                    return m.Value;   // If the type and serial match, return it. If it is type of 'Any', return it.
+                    return m;   // If the type and serial match, return it. If it is type of 'Any', return it.
                 }
 
             return null;    // Nothing was found, return null.
@@ -162,11 +179,11 @@ namespace SUS
         public static HashSet<BasicMobile> FindMobiles(Locations loc, Mobile.Types type)
         {
             HashSet<BasicMobile> tags = new HashSet<BasicMobile>();
-            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+            foreach (Mobile m in m_Mobiles.Values)
             {
-                if (((m.Value.Type == type) && (m.Value.Location == loc)) || (type == Mobile.Types.Mobile && m.Value.Location == loc))
+                if (((m.Type == type) && (m.Location == loc)) || (type == Mobile.Types.Mobile && m.Location == loc))
                 {
-                    tags.Add(m.Value.Basic());
+                    tags.Add(m.Basic());
                 }
             }
 
@@ -176,19 +193,23 @@ namespace SUS
             return null;    // Nothing was found, return null.
         }
 
-        public static HashSet<BasicMobile> FindNearbyMobiles(Locations loc, Mobile baseMobile, int range)
+        public static HashSet<BasicMobile> FindNearbyMobiles(Locations loc, Mobile mobile, int range)
         {
+            Mobile root = FindMobile(mobile.Guid);
+            if (root == null)
+                return null;
+
             HashSet<BasicMobile> lm = new HashSet<BasicMobile>();
-            foreach (KeyValuePair<Guid, Mobile> m in m_Mobiles)
+            foreach (Mobile m in m_Mobiles.Values)
             {
-                if (m.Value.Location != loc || (m.Value.IsPlayer && m.Value.ID == baseMobile.ID))
+                if (m.Location != loc || (m.IsPlayer && m.ID == root.ID))
                     continue;
 
                 // Calculate the distance between the two coordinates.
-                int distance = baseMobile.Coordinate.Distance(m.Value.Coordinate);
+                int distance = m.Coordinate.Distance(root.Coordinate);
 
                 if (distance <= range)
-                    lm.Add(m.Value.Basic());
+                    lm.Add(m.Basic());
             }
             return lm;
         }
@@ -225,26 +246,6 @@ namespace SUS
         }
 
         /// <summary>
-        ///     Finds a player type mobile.
-        /// </summary>
-        /// <param name="serial">Serial to find.</param>
-        /// <returns></returns>
-        public static Mobile FindPlayer(Serial serial)
-        {
-            return FindMobile(Mobile.Types.Player, serial);
-        }
-
-        /// <summary>
-        ///     Finds a NPC type mobile.
-        /// </summary>
-        /// <param name="serial">Serial to find.</param>
-        /// <returns></returns>
-        public static Mobile FindNPC(Serial serial)
-        {
-            return FindMobile(Mobile.Types.NPC, serial);
-        }
-
-        /// <summary>
         ///     Updates a Node with a mobile.
         /// </summary>
         /// <param name="toLocation">Node to move the mobile to.</param>
@@ -255,7 +256,7 @@ namespace SUS
             Mobile m = FindMobile(mobile.Guid);
             if (m == null)
             {   // Our mobile does not appear to exist.
-                Console.WriteLine($" [ ERR ] Mobile missing: '{mobile.ID}::{mobile.Name}::Player:{mobile.IsPlayer}");
+                Console.WriteLine($" [ ERR ] Mobile missing: '{m.ID}::{m.Name}::Player:{m.IsPlayer}");
                 return null;
             }
 
@@ -291,67 +292,42 @@ namespace SUS
                 }
             }
             else
-                m.Coordinate = null;
-
-            m.Location = toLocation;    // Update the local mobile to the new location.
-            if (UpdateMobiles(m))       // Update the mobile to our tracked mobile
             {
-                return FindNode(toLocation);
+                m.Coordinate = null;
             }
 
-            return null;
+            m.Location = toLocation;    // Update the local mobile to the new location.
+            return n;
         }
 
-        /// <summary>
-        ///     Update the GameObject's mobiles.
-        /// </summary>
-        /// <param name="mobile">Mobile to be modified.</param>
-        /// <param name="remove">Determines if the mobile should be removed or not.</param>
-        public static bool UpdateMobiles(Mobile mobile, bool remove = false)
-        {   // If the key does not exist and we are not removing, try and add and return.
-            if (!m_Mobiles.ContainsKey(mobile.Guid) && !remove)
-                return m_Mobiles.TryAdd(mobile.Guid, mobile);
-
-            // Attempt to remove the key, returning and ignoring the 'out' requirement.
-            if (remove)
-                return m_Mobiles.TryRemove(mobile.Guid, out _);
-
-            // Lastly, if the key existed and we are not removing... simply update it.
-            m_Mobiles[mobile.Guid] = mobile;
-            return true;
-        }
-
-        public static bool SwapMobileEquipment(BasicMobile mobile, Guid item)
+        public static void SwapMobileEquipment(BasicMobile mobile, Guid item)
         {
             if (mobile == null || item == null || item == Guid.Empty)
-                return false;
+                return;
 
-            Mobile m = FindMobile(mobile);
+            Mobile m = FindMobile(mobile.Guid);
             if (m == null)
-                return false;
+                return;
 
             Item i = m.FindItem(item);
             if (i == null || !i.IsEquippable)
-                return false;
+                return;
 
             m.Equip(i as Equippable);
-
-            return UpdateMobiles(m);
         }
 
-        public static bool Ressurrect(Locations loc, BasicMobile mobile)
+        public static void Ressurrect(Locations loc, BasicMobile mobile)
         {   // Validate we're not working with a null value.
             if (mobile == null)
-                return false;
+                return;
 
             MoveMobile(loc, mobile, forceMove: true);
 
             Mobile m = FindMobile(mobile.Guid);
             if (m == null)
-                return false;
+                return;
 
             m.Ressurrect();    // Perform the ressurrection.
-            return UpdateMobiles(m);
         }
 
         /// <summary>
@@ -360,16 +336,31 @@ namespace SUS
         /// <param name="mobile">Mobile to kill.</param>
         public static void Kill(Mobile mobile)
         {
-            mobile.Kill();  // Kill the mobile.
+            Mobile m = FindMobile(mobile.Guid);
+            m.Kill();  // Kill the mobile.
 
-            if (mobile.IsPlayer)
-                UpdateMobiles(mobile);                  // Update the players health, but do not remove.
-            else
-                UpdateMobiles(mobile, remove: true);    // Remove the mobile from the list of mobiles.
+            if (!m.IsPlayer)
+                RemoveMobile(m);    // Remove the mobile from the list of mobiles.
         }
         #endregion
 
         #region Nodes / Locations Actions
+        public static void AddNode(Node n)
+        {
+            if (n == null || !Node.isValidLocation(n.Location))
+                return;
+
+            m_Nodes[n.Location] = n;
+        }
+
+        public static void RemoveNode(Locations loc)
+        {
+            if (!Node.isValidLocation(loc))
+                return;
+
+            m_Nodes.TryRemove(loc, out _);
+        }
+
         /// <summary>
         ///     Locates a Node based on it's ID.
         /// </summary>
@@ -381,19 +372,6 @@ namespace SUS
             if (!m_Nodes.TryGetValue(loc, out n))
                 return null;    // Could not find the Node, return null.
             return n;           // Return the found Node.
-        }
-
-        /// <summary>
-        ///     Update nodes, remove if requested.
-        /// </summary>
-        /// <param name="node">Node to be added or removed.</param>
-        /// <param name="remove">Determines if we need to remove the node.</param>
-        public static void UpdateNodes(Node node, bool remove = false)
-        {
-            if (remove)
-                m_Nodes.TryRemove(node.Location, out _);    // Removes the node.
-            else
-                m_Nodes[node.Location] = node;    // Reassigns the node.
         }
 
         /// <summary>
@@ -439,13 +417,10 @@ namespace SUS
                 (mobile as BaseCreature).OwningSpawner = spawner;
 
             mobile.Location = location; // Updates the location of the local mobile.
-            if (UpdateMobiles(mobile))  // Update the mobile in the GameObject.
-            {
-                Utility.ConsoleNotify($"Spawned {mobile.Name} in {mobile.Location.ToString()} @({mobile.Coordinate.X}, {mobile.Coordinate.Y}).");
-                return true;
-            }
 
-            return false;
+            AddMobile(mobile);  // Update the mobile in the GameObject.
+            Utility.ConsoleNotify($"Spawned {mobile.Name} in {mobile.Location.ToString()} @({mobile.Coordinate.X}, {mobile.Coordinate.Y}).");
+            return true;
         }
 
         public static int SpawnersCount(Locations loc, Guid spawner)

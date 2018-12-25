@@ -138,7 +138,7 @@ namespace SUS.Shared.Objects
         #region Spawning
         public void Spawn(Object source, ElapsedEventArgs e)
         {
-            if (GameObject.SpawnersCount(Location, Guid) >= m_Limit)
+            if (World.SpawnersCount(Location, Guid) >= m_Limit)
                 return;
 
             List<Spawnables> spawns = spawnablesToList(m_Spawns);
@@ -152,7 +152,7 @@ namespace SUS.Shared.Objects
                 BaseCreature mob = spawnOffType(spawns[pos]);
                 mob.Coordinate = ValidCoordinate(Coordinate.X, Coordinate.Y, m_Range);
 
-                GameObject.Spawn(mob as Mobile, Location, Guid);
+                World.Spawn(mob as Mobile, Location, Guid);
             }
         }
 
