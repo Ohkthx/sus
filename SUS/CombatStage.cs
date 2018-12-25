@@ -89,7 +89,7 @@ namespace SUS.Server
             #region Check Ranges
             int distance = aggressor.Coordinate.Distance(target.Coordinate);
             if (aggressor is BaseCreature)
-                AI.PerformAction(ref aggressor, AI.Actions.Attack, distance);
+                AI.PerformAction(ref aggressor, AI.Actions.Attack, target.Coordinate);
 
             if (extra && aggressor.Weapon.Range < distance)
                 return;     // Return because not in range to perform the extra attack.

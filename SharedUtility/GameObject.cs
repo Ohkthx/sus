@@ -193,7 +193,7 @@ namespace SUS
             return lm;
         }
 
-        public static Mobile FindNearestMobile(ref Mobile mobile)
+        public static Mobile FindNearestMobile(Mobile mobile)
         {
             int v = mobile.Vision;
             HashSet<BasicMobile> localmobiles = new HashSet<BasicMobile>();
@@ -275,7 +275,7 @@ namespace SUS
                 {   // Move our mobile into the targeted direction.
                     if (direction == Mobile.Directions.Nearby)
                     {   // Move to nearby NPC.
-                        Mobile newM = FindNearestMobile(ref m);
+                        Mobile newM = FindNearestMobile(m);
                         if (newM != null)
                         {   // Moves the mobile to the nearest, 1 pace at a time until in vision.
                             while (m.Coordinate.Distance(newM.Coordinate) > m.Vision)

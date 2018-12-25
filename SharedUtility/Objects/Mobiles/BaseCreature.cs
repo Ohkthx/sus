@@ -15,6 +15,7 @@ namespace SUS.Shared.Objects.Mobiles
 
         private Guid m_OwningSpawner;
 
+        protected AI.Types m_AIType;
         protected DamageTypes m_DamageType = DamageTypes.None;
 
         #region Constructors
@@ -174,6 +175,18 @@ namespace SUS.Shared.Objects.Mobiles
         #endregion
 
         #region Combat
+        public AI.Types AIType
+        {
+            get { return m_AIType; }
+            set
+            {
+                if (value == AIType)
+                    return;
+
+                m_AIType = value;
+            }
+        }
+
         protected DamageTypes DamageOverride
         {
             get { return m_DamageType; }

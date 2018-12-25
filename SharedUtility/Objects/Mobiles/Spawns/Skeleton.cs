@@ -8,6 +8,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Skeleton() : base()
         {
+            AIType = AI.Types.Melee;
             Name = "a skeleton";
 
             SetStr(56, 80);

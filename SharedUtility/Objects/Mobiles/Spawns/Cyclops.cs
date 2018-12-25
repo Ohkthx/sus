@@ -8,6 +8,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Cyclops() : base()
         {
+            AIType = AI.Types.Melee;
             Name = "a cyclops";
 
             SetStr(336, 385);

@@ -8,6 +8,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Wraith() : base()
         {
+            AIType = AI.Types.Mage;
             Name = "a wraith";
 
             SetStr(76, 100);

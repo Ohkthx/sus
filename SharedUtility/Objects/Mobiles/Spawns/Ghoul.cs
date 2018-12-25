@@ -8,6 +8,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Ghoul() : base()
         {
+            AIType = AI.Types.Melee;
             Name = "a ghoul";
 
             SetStr(76, 100);

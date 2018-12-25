@@ -8,6 +8,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Titan() : base()
         {
+            AIType = AI.Types.Mage;
             Name = "a titan";
 
             SetStr(536, 585);

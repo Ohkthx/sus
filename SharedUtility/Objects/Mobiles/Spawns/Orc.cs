@@ -8,6 +8,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Orc() : base()
         {
+            AIType = AI.Types.Archer;
             Name = "an orc";
 
             SetStr(96, 120);

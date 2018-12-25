@@ -8,6 +8,7 @@ namespace SUS.Shared.Objects.Mobiles.Spawns
     {
         public Zombie() : base()
         {
+            AIType = AI.Types.Melee;
             Name = "a zombie";
 
             SetStr(46, 70);
