@@ -1,25 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
-using SUS.Shared.Objects;
+using SUS.Shared;
 using SUS.Shared.Packets;
 
 namespace SUSClient.MenuItems
 {
     public class Paperdoll : Menu
     {
-        private BasicMobile m_Mobile    = null;
+        private UInt64 m_PlayerID;
+        private BaseMobile m_Mobile;
 
-        public Paperdoll(BasicMobile mobile) : base ("What information would you like to observe?")
+        #region Constructors
+        public Paperdoll(UInt64 playerID, BaseMobile mobile) 
+            : base ("What information would you like to observe?")
         {
-            if (mobile == null)
-                return;
-
+            m_PlayerID = playerID;
             m_Mobile = mobile;
 
             foreach (GetMobilePacket.RequestReason opt in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
                 if (opt != GetMobilePacket.RequestReason.None)
                     Options.Add(Enum.GetName(typeof(GetMobilePacket.RequestReason), opt));
         }
+        #endregion
 
         public override Packet Display()
         {
@@ -31,7 +32,7 @@ namespace SUSClient.MenuItems
 
         public GetMobilePacket MakeRequest(int input)
         {
-            return new GetMobilePacket(m_Mobile, (GetMobilePacket.RequestReason)input);
+            return new GetMobilePacket((GetMobilePacket.RequestReason)input, m_PlayerID);
         }
 
         protected override void PrintOptions()

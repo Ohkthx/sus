@@ -1,19 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Sockets;
-using SUS.Shared.Utilities;
-using SUS.Shared.Objects;
-using SUS.Shared.Objects.Mobiles;
+using SUS.Shared;
 using SUS.Shared.Packets;
 using SUSClient.Client;
 
 namespace SUSClient
 {
-    public class Message
-    {
-        public byte[] Data { get; set; }
-    }
-
     class Program
     {
         private static bool DEBUG = false;
@@ -29,14 +21,14 @@ namespace SUSClient
         {
             foreach (string arg in args)
             {
-                if (arg.ToLower() == "-debug")
+                switch (arg.ToLower())
                 {
-                    Console.WriteLine("Found debug..");
-                    DEBUG = true;
+                    case "-debug":
+                        Console.WriteLine("Found debug..");
+                        DEBUG = true;
+                        break;
                 }
             }
-
-            Console.WriteLine($"Version: {Gamestate.Version}");
 
             AsynchronousClient.StartClient();   // Starts the Client.
             Console.Read();
@@ -65,12 +57,12 @@ namespace SUSClient
             // Send the authentication to the server.
             socketHandler.ToServer(new AccountAuthenticatePacket(id, username).ToByte());
 
-            ServerHandler(ref socketHandler, id, username);
+            ServerHandler(socketHandler, id, username);
         }
 
-        private static void ServerHandler(ref SocketHandler socketHandler, ulong id, string username)
+        private static void ServerHandler(SocketHandler socketHandler, ulong id, string username)
         {
-            Gamestate gamestate = null;     // Gamestate of this client.
+            ClientState clientstate = null;     // Gamestate of this client.
             InteractiveConsole ia = null;   // Interactive console tracks user actions and sends data.
             Packet creq = null;            // Client REQuest. Used by functions not called in interactive console. 
 
@@ -89,11 +81,8 @@ namespace SUSClient
                         Utility.ConsoleNotify((req as ErrorPacket).Message);
                         ia.Reset();
                         break;
-                    case PacketTypes.Authenticate:
-                        ia = new InteractiveConsole(new Gamestate((req as AccountAuthenticatePacket).Player));
-                        break;
-                    case PacketTypes.GameState:
-                        ia = new InteractiveConsole((req as AccountGameStatePacket).GameState);
+                    case PacketTypes.ClientState:
+                        ia = new InteractiveConsole((req as AccountClientPacket).ClientState);
                         break;
                     case PacketTypes.SocketKill:
                         Console.WriteLine("Socket Kill sent by server.");
@@ -102,32 +91,32 @@ namespace SUSClient
 
 
                     case PacketTypes.GetLocalMobiles:
-                        gamestate.Mobiles = (req as GetMobilesPacket).Mobiles;
+                        clientstate.Mobiles = (req as GetMobilesPacket).Mobiles;
                         break;
                     case PacketTypes.GetMobile:
-                        gamestate.ParseGetMobilePacket(req);
+                        clientstate.ParseGetMobilePacket(req as GetMobilePacket);
                         ia.Reset();
                         break;
                     case PacketTypes.GetNode:
-                        ia.LocationUpdater((req as GetNodePacket).NewLocation);
+                        ia.LocationUpdater((req as GetNodePacket).NewRegion);
                         ia.Reset();
                         break;
 
 
                     case PacketTypes.MobileCombat:
-                        gamestate.MobileActionHandler(req as CombatMobilePacket);
+                        clientstate.MobileActionHandler(req as CombatMobilePacket);
                         ia.Reset();
                         break;
                     case PacketTypes.MobileMove:
-                        ia.LocationUpdater((req as MoveMobilePacket).NewLocation);
+                        ia.LocationUpdater((req as MoveMobilePacket).NewRegion);
                         ia.Reset();
                         break;
                     case PacketTypes.MobileResurrect:
-                        creq = gamestate.Ressurrect(req as RessurrectMobilePacket);   // If we require a new current node,
+                        creq = clientstate.Ressurrect(req as RessurrectMobilePacket);   // If we require a new current node,
                         ia.Reset();                                             //  the request will be made and sent early.
                         break;
                     case PacketTypes.UseItem:
-                        gamestate.UseItemResponse(req as UseItemPacket);
+                        clientstate.UseItemResponse(req as UseItemPacket);
                         ia.Reset();
                         break;
                 }
@@ -140,10 +129,10 @@ namespace SUSClient
 
                 if (ia != null)
                 {   // Get an action to perform and send it to the server.
-                    gamestate = ia.Core();   // Activates the interactive console to grab the next action desired to be performed.
+                    clientstate = ia.Core();   // Activates the interactive console to grab the next action desired to be performed.
 
-                    if (ia.clientRequest != null)
-                        creq = ia.clientRequest;
+                    if (ia.Request != null)
+                        creq = ia.Request;
 
                     // Check creq again for material to send to the server.
                     if (creq != null)

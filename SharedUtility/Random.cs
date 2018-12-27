@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
-namespace SUS.Shared.Utilities
+namespace SUS.Shared
 {
     public static class RandomImpl
     {

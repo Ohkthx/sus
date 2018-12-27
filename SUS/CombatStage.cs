@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using SUS.Shared;
-using SUS.Shared.Objects;
-using SUS.Shared.Objects.Mobiles;
-using SUS.Shared.Utilities;
+using SUS.Objects;
+using SUS.Objects.Items;
 
-namespace SUS.Server
+namespace SUS
 {
     public static class CombatStage
     {
@@ -16,17 +14,17 @@ namespace SUS.Server
             #region Self Harm
             if (m1 == m2 && m1.IsPlayer)
             {   // Is the initiator attacking themself? Do the damage and return.
-                log.Add($"You perform {m1.TakeDamage(m1.Attack()) * -1} damage on yourself.");
-                if (m1.IsDead)
+                log.Add($"You perform {m1.Damage(m1.Attack()) * -1} damage on yourself.");
+                if (!m1.Alive)
                     log.Add("You have died.");
                 return log;
             }
             #endregion
 
-            m1.Target = m2.Basic();
-            m2.Target = m1.Basic();
+            m1.Target = m2;
+            m2.Target = m1;
 
-            int d = m1.Coordinate.Distance(m2.Coordinate);
+            int d = Point2D.Distance(m1, m2);
             if (m1.Weapon.Range < d && m2.Weapon.Range < d)
             {   // Have the targets move towards each other.
                 closeDistance(ref log, m1, m2);
@@ -38,12 +36,12 @@ namespace SUS.Server
             return log;
         }
 
-        private static void performAttack(Mobile init, ref List<string> log, Mobile aggressor, Mobile target)
+        private static void performAttack(Mobile init, ref List<string> log, Mobile attacker, Mobile target)
         {
             int attackLimit = 1;
-            if (aggressor.IsPlayer && !target.IsPlayer)
+            if (attacker.IsPlayer && !target.IsPlayer)
             {   // Only perform the extra attack if the aggressor is a player.
-                int CR = aggressor.CR;
+                int CR = attacker.CR;
                 int attackChances = CR > 4 ? CR > 10 ? CR > 19 ? 3 : 2 : 1 : 0;
                 attackLimit = Utility.Random(20) > attackChances ? 1 : 2;
             }
@@ -52,7 +50,7 @@ namespace SUS.Server
             do
             {
                 --attacksRemaining;
-                combatTurn(init, ref log, aggressor, target, extra: attackLimit > 1 && attacksRemaining == 0);
+                combatTurn(init, ref log, attacker, target, extra: attackLimit > 1 && attacksRemaining == 0);
             } while (attacksRemaining > 0);
         }
 
@@ -67,51 +65,52 @@ namespace SUS.Server
                 d = m2.Weapon.Range;    // Assign the distance to m2's weapon range.
 
             // Move to the range of the mobile with the largest attack range.
-            while (d < m1.Coordinate.Distance(m2.Coordinate))
+            while (d < Point2D.Distance(m1, m2))
             {
-                m1.Coordinate.MoveTowards(m2.Coordinate, m1.Speed);
+                m1.Location = Point2D.MoveTowards(m1, m2, m1.Speed);
                 paces += m1.Speed;
-                if (m1.Coordinate.Distance(m2.Coordinate) <= d)
+                if (Point2D.Distance(m1, m2) <= d)
                     break;
 
-                m2.Coordinate.MoveTowards(m1.Coordinate, m2.Speed);
+                m2.Location = Point2D.MoveTowards(m2, m1, m2.Speed);
                 paces += m2.Speed;
             }
 
             log.Add($"{m1.Name} and {m2.Name} moved {paces} paces towards one another.");
         }
 
-        private static void combatTurn(Mobile init, ref List<string> log, Mobile aggressor, Mobile target, bool extra = false)
+        private static void combatTurn(Mobile initiator, ref List<string> log, Mobile atttacker, Mobile target, bool extra = false)
         {
-            if (aggressor.IsDead || target.IsDead)
+            if (!atttacker.Alive || !target.Alive)
                 return;
 
             #region Check Ranges
-            int distance = aggressor.Coordinate.Distance(target.Coordinate);
-            if (aggressor is BaseCreature)
-                AI.PerformAction(ref aggressor, AI.Actions.Attack, target.Coordinate);
+            int distance = Point2D.Distance(atttacker, target);
+            if (atttacker is BaseCreature)
+                AI.PerformAction(atttacker, AI.Actions.Attack);
 
-            if (extra && aggressor.Weapon.Range < distance)
+            if (extra && atttacker.Weapon.Range < distance)
                 return;     // Return because not in range to perform the extra attack.
             else if (extra)
                 log.Add("[Attempting an Extra Attack]");
 
-            if (aggressor.Weapon.Range < distance)
+            if (atttacker.Weapon.Range < distance)
             {
-                distance = aggressor.Coordinate.MoveTowards(target.Coordinate, aggressor.Speed);
-                string text = $"{aggressor.Name} moves towards {target.Name}";
+                atttacker.Location = Point2D.MoveTowards(atttacker, target, atttacker.Speed);
+                distance = Point2D.Distance(atttacker, target);
+                string text = $"{atttacker.Name} moves towards {target.Name}";
                 if (distance >= 1)
                     text += $" and is now {distance} pace{(distance > 1 ? "s" : "")} away";
                 log.Add(text + ".");
             }
             #endregion
 
-            if (aggressor.Weapon.IsBow)
+            if (atttacker.Weapon.IsBow)
             {
-                if (aggressor.Arrows.Amount == 0)
+                if (atttacker.Arrows.Amount == 0)
                 {   // Remove the weapon from the aggressor due to not having anymore arrows.
-                    log.Add($"{aggressor.Name} ran out of arrows. [{aggressor.Weapon.Name}] was unequipped.");
-                    aggressor.Unequip(aggressor.Weapon);
+                    log.Add($"{atttacker.Name} ran out of arrows. [{atttacker.Weapon.Name}] was unequipped.");
+                    atttacker.Unequip(atttacker.Weapon);
                 }
             }
 
@@ -120,83 +119,86 @@ namespace SUS.Server
             int d20roll = d20.Roll();                                // The rolls.
 
             // If the target's distance is less than (or equal) to the distance.
-            if (aggressor.Weapon.Range >= aggressor.Coordinate.Distance(target.Coordinate))
+            if (atttacker.Weapon.Range >= Point2D.Distance(atttacker, target))
             {
-                if (aggressor.Weapon.IsBow)
+                if (atttacker.Weapon.IsBow)
                 {   // Remove the consumable.
-                    --aggressor.Arrows;
+                    --atttacker.Arrows;
                 }
 
                 bool hit = false;
 
                 if (d20roll == 1)
-                    log.Add($"{aggressor.Name} attempted but failed to land the attack.");
-                else if ((d20roll + aggressor.AbilityModifier) < target.ArmorClass)
-                    log.Add($"{aggressor.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
+                    log.Add($"{atttacker.Name} attempted but failed to land the attack.");
+                else if ((d20roll + atttacker.AbilityModifier) < target.ArmorClass)
+                    log.Add($"{atttacker.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
                 else
                     hit = true;
 
                 if (hit)
                 {   // Hit the target, need to calculate additional damage (if it was a critical)
                     bool crit = false;
-                    int atkDamage = aggressor.Attack();
+                    int atkDamage = atttacker.Attack();
 
                     if (d20roll == 20)
                     {   // A Critical hit, add another attack.
                         crit = true;
-                        atkDamage += aggressor.Weapon.Damage;
+                        atkDamage += atttacker.Weapon.Damage;
                     }
 
                     int tatk = atkDamage;
-                    atkDamage = target.ApplyResistance(aggressor.Weapon.DamageType, atkDamage);
+                    atkDamage = target.ApplyResistance(atttacker.Weapon.DamageType, atkDamage);
 
-                    int damageDealt = target.TakeDamage(atkDamage, isMagical: aggressor.Weapon.IsMagical);
+                    int damageDealt = target.Damage(atkDamage, atttacker, isMagical: atttacker.Weapon.IsMagical);
                     if (damageDealt == 0)   // Failed to do enough damage versus the armor of the target.
-                        log.Add($"{aggressor.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
+                        log.Add($"{atttacker.Name} performs an attack but fails to penetrate {target.Name}'s armor.");
                     else if (crit)          // Performed a critical hit, display the appropriate message.
-                        log.Add($"{aggressor.Name} performs a critical hit for {damageDealt} damage against {target.Name}.");
+                        log.Add($"{atttacker.Name} performs a critical hit for {damageDealt} damage against {target.Name}.");
                     else                    // Normal hit, nothing special.
-                        log.Add($"{aggressor.Name} performs {damageDealt} damage to {target.Name}.");
+                        log.Add($"{atttacker.Name} performs {damageDealt} damage to {target.Name}.");
                 }
 
                 // Check for skill increase.
-                string skillIncrease = aggressor.SkillIncrease(aggressor.Weapon.RequiredSkill);
-                if (init == aggressor && skillIncrease != string.Empty)
+                string skillIncrease = atttacker.SkillIncrease(atttacker.Weapon.RequiredSkill);
+                if (initiator == atttacker && skillIncrease != string.Empty)
                     log.Add(skillIncrease);
 
                 // Check for stat increase.
-                string statIncrease = aggressor.StatIncrease(aggressor.Weapon.Stat);
-                if (init == aggressor && statIncrease != string.Empty)
+                string statIncrease = atttacker.StatIncrease(atttacker.Weapon.Stat);
+                if (initiator == atttacker && statIncrease != string.Empty)
                     log.Add(statIncrease);
 
-                if (target.IsDead)
+                if (!target.Alive)
                 {   // Killed the target, print and loot.
-                    aggressor.Target = null;
-                    log.Add($"{aggressor.Name} has killed {target.Name}.");
-                    exchangeLoot(ref log, ref aggressor, ref target);
+                    atttacker.Target = null;
+                    log.Add($"{atttacker.Name} has killed {target.Name}.");
+                    if (atttacker.IsPlayer)
+                        (atttacker as Player).AddKill();
+                    exchangeLoot(ref log, atttacker, target);
+                    World.Kill(target);
                 }
             }
         }
 
-        private static void exchangeLoot(ref List<string> log, ref Mobile m1, ref Mobile m2)
+        private static void exchangeLoot(ref List<string> log, Mobile m1, Mobile m2)
         {
-            if (m1.IsDead)
-                loot(ref log, ref m2, m1);
+            if (m1.Alive)
+                loot(ref log, m2, m1);
             else
-                loot(ref log, ref m1, m2);
+                loot(ref log, m1, m2);
         }
 
-        private static void loot(ref List<string> log, ref Mobile to, Mobile from)
+        private static void loot(ref List<string> log, Mobile from, Mobile to)
         {   // Prevent looting from players. TODO: Subtract from players loots and re-enable.
             if (from.IsPlayer)
                 return;
 
-            foreach (KeyValuePair<Guid, Item> i in from.Items)
+            foreach (Item i in from.Items.Values)
             {   // Iterate all of the owned items from the target.
-                if (i.Value.Type != ItemTypes.Consumable)
+                if (i.Type != ItemTypes.Consumable)
                     continue;
 
-                Consumable c = i.Value as Consumable;
+                Consumable c = i as Consumable;
                 int added = to.ConsumableAdd(c);
                 if (added > 0)
                 {

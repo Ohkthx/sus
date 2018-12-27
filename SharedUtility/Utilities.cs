@@ -6,7 +6,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using SUS.Shared.Packets;
 
-namespace SUS.Shared.Utilities
+namespace SUS.Shared
 {
     /// <summary>
     ///     Holds various functions to perform actions.
@@ -454,7 +454,7 @@ namespace SUS.Shared.Utilities
 
         public void Kill()
         {
-            Send(new SocketKillPacket(null, true).ToByte());
+            Send(new SocketKillPacket(0, true).ToByte());
             sendDone.WaitOne();
             //socket.Shutdown(SocketShutdown.Both);
             //socket.Close();

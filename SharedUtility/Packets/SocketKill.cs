@@ -1,14 +1,14 @@
 ﻿using System;
-using SUS.Shared.Objects;
 
 namespace SUS.Shared.Packets
 {
     [Serializable]
-    public sealed class SocketKillPacket : Packet
+    public class SocketKillPacket : Packet
     {
         private bool m_Kill;
 
-        public SocketKillPacket(BasicMobile user, bool kill = true) : base(PacketTypes.SocketKill, user)
+        public SocketKillPacket(UInt64 playerID, bool kill = true) 
+            : base(PacketTypes.SocketKill, playerID)
         {
             Kill = kill;
         }

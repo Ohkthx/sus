@@ -1,40 +1,63 @@
 ﻿using System;
 using System.Collections.Generic;
-using SUS.Shared.Objects;
 
 namespace SUS.Shared.Packets
 {
     [Serializable]
-    public sealed class CombatMobilePacket : Packet
+    public class CombatMobilePacket : Packet
     {
-        private List<BasicMobile> Targets;      // List of Targets
-        private List<string> Updates;           // Updates on all.
-        private bool m_IsDead;                  // Determines if the Initator (Player) died.
-        public string Result = string.Empty;
+        private List<int> m_Targets;     // List of Targets
+        private List<string> m_Updates;     // Updates on all.
+        private string m_Result;            // Result of the combat.
+        public bool IsAlive { get; set; }   // Determines if the Initator (Player) died.
 
         #region Constructors
-        public CombatMobilePacket(BasicMobile mobile) : base(PacketTypes.MobileCombat, mobile) { }
+        public CombatMobilePacket(UInt64 playerID) 
+            : base(PacketTypes.MobileCombat, playerID)
+        { }
         #endregion
 
         #region Getters / Setters
-        public bool IsDead
+        public List<int> Targets
         {
-            get { return m_IsDead; }
-            set { m_IsDead = value; }
+            get
+            {
+                if (m_Targets == null)
+                    m_Targets = new List<int>();
+
+                return m_Targets;
+            }
+        }
+
+        public List<string> Updates
+        {
+            get
+            {
+                if (m_Updates == null)
+                    m_Updates = new List<string>();
+
+                return m_Updates;
+            }
+        }
+
+        public string Result
+        {
+            get { return m_Result; }
+            set
+            {
+                if (value == null || value == string.Empty)
+                    return;
+
+                m_Result = value;
+            }
         }
         #endregion
 
-        public void AddTarget(BasicMobile tag)
+        public void AddTarget(BaseMobile tag)
         {
-            if (Targets == null)
-            {   // List is unassigned, create and add.
-                Targets = new List<BasicMobile>();
-                Targets.Add(tag);
-                return;
-            }
-            else if (!Targets.Contains(tag))
+            if (!Targets.Contains(tag.Serial))
             {   // Tag is not already in the list, add.
-                Targets.Add(tag);
+                Targets.Add(tag.Serial);
             }
         }
 
@@ -43,110 +66,87 @@ namespace SUS.Shared.Packets
             if (info == null)
                 return;
 
-            if (Updates == null)
-            {   // List does not exist. Just assign it.
-                Updates = info;
-                return;
-            }
-
             Updates.AddRange(info);
-        }
-
-        public List<BasicMobile> GetTargets()
-        {
-            return Targets;
-        }
-
-        public List<string> GetUpdates()
-        {
-            return Updates;
-        }
-
-        public void CleanClientInfo()
-        {
-            this.Targets = null;
         }
     }
 
     [Serializable]
-    public sealed class MoveMobilePacket : Packet
+    public class MoveMobilePacket : Packet
     {
-        private Mobile.Directions m_Direction = Mobile.Directions.None;
-        private Locations m_Location;
-        private BasicNode m_NewLocation = null;
+        private MobileDirections m_Direction = MobileDirections.None;
+        private Regions m_Region;
+        private BaseRegion m_NewRegion;
 
         #region Constructors
-        public MoveMobilePacket(Locations location, BasicMobile mobile) : this(location, mobile, Mobile.Directions.None) { }
-        public MoveMobilePacket(Locations location, BasicMobile mobile, Mobile.Directions direction) : base(PacketTypes.MobileMove, mobile)
+        public MoveMobilePacket(Regions region, UInt64 playerID) : this(region, playerID, MobileDirections.None) { }
+        public MoveMobilePacket(Regions region, UInt64 playerID, MobileDirections direction) 
+            : base(PacketTypes.MobileMove, playerID)
         {
-            Location = location;
+            Region = region;
             Direction = direction;
         }
         #endregion
 
         #region Getters / Setters
-        public Mobile.Directions Direction
+        public MobileDirections Direction
         {
             get { return m_Direction; }
             set
             {
-                if (value == Mobile.Directions.None || value == Direction) 
+                if (value == MobileDirections.None || value == Direction) 
                     return; // Prevent assigning a bad value or reassigning.
 
                 m_Direction = value;
             }
         }
 
-        public Locations Location
+        public Regions Region
         {
-            get { return m_Location; }
+            get { return m_Region; }
             set
             {
-                if (Location != value)
-                    m_Location = value;
+                if (Region != value)
+                    m_Region = value;
             }
         }
 
-        public BasicNode NewLocation
+        public BaseRegion NewRegion
         {
-            get { return m_NewLocation; }
+            get { return m_NewRegion; }
             set
             {
                 if (value == null)
                     return;
-                else if (NewLocation == null)
-                    m_NewLocation = value;
+                else if (NewRegion == null)
+                    m_NewRegion = value;
 
-                if (NewLocation != value)
-                    m_NewLocation = value;
+                if (NewRegion != value)
+                    m_NewRegion = value;
             }
         }
         #endregion
     }
 
     [Serializable]
-    public sealed class RessurrectMobilePacket : Packet
+    public class RessurrectMobilePacket : Packet
     {
-        private Locations m_Location;       // Location to be sent to.
+        private Regions m_Region;        // Region to be sent to.
         private bool m_Success = false;
 
         #region Constructors
-        public RessurrectMobilePacket(Locations loc, Mobile mobile) : this(loc, new BasicMobile(mobile)) { }
-        public RessurrectMobilePacket(Locations loc, BasicMobile mobile, bool success = false) : base(PacketTypes.MobileResurrect, mobile)
-        {
-            Location = loc;
-            isSuccessful = success;
-        }
+        public RessurrectMobilePacket(UInt64 playerID) 
+            : base(PacketTypes.MobileResurrect, playerID)
+        { }
         #endregion
 
         #region Getters / Setters
-        public Locations Location
+        public Regions Region
         {
-            get { return m_Location; }
+            get { return m_Region; }
             set
             {
-                if (Location != value)
-                    m_Location = value;
+                if (Region != value)
+                    m_Region = value;
             }
         }
 
@@ -163,44 +163,20 @@ namespace SUS.Shared.Packets
     }
 
     [Serializable]
-    public sealed class UseItemPacket : Packet
+    public class UseItemPacket : Packet
     {
-        private Guid m_Item;
-        private ItemTypes m_Type;
+        public int Item { get; private set; }
         private string m_Response = string.Empty;
 
         #region Constructor
-        public UseItemPacket(BasicMobile mobile, ItemTypes type, Guid guid) : base(PacketTypes.UseItem, mobile)
+        public UseItemPacket(int serial, UInt64 playerID) 
+            : base(PacketTypes.UseItem, playerID)
         {
-            Item = guid;
-            ItemType = type;
+            Item = serial;
         }
         #endregion
 
         #region Getters / Setters
-        public Guid Item
-        {
-            get { return m_Item; }
-            private set
-            {
-                if (value == null || value == Guid.Empty)
-                    return;
-
-                m_Item = value;
-            }
-        }
-
-        public ItemTypes ItemType
-        {
-            get { return m_Type; }
-            private set
-            {
-                if (value == ItemTypes.None || value == ItemType)
-                    return;
-                m_Type = value;
-            }
-        }
-
         public string Response
         {
             get { return m_Response; }

@@ -1,46 +1,56 @@
 ﻿using System;
 using System.Collections.Generic;
-using SUS.Shared.Objects;
 
 namespace SUS.Shared.Packets
 {
     [Serializable]
-    public sealed class GetMobilesPacket : Packet
+    public class GetMobilesPacket : Packet
     {
-        private Locations m_Location;
-        private HashSet<BasicMobile> m_Mobiles = null;
+        private Regions m_Region;
+        private HashSet<BaseMobile> m_Mobiles;
 
-        public GetMobilesPacket(Locations location, BasicMobile relative) : base(PacketTypes.GetLocalMobiles, relative) { Location = location; }
+        #region Constructors
+        public GetMobilesPacket(Regions region, UInt64 playerID) 
+            : base(PacketTypes.GetLocalMobiles, playerID)
+        {
+            Region = region;
+        }
+        #endregion
 
         #region Getters / Setters
-        public Locations Location
+        public Regions Region
         {
-            get { return m_Location; }
+            get { return m_Region; }
             set
             {
-                if (Location != value)
-                    m_Location = value;
+                if (Region != value)
+                    m_Region = value;
             }
         }
 
-        public HashSet<BasicMobile> Mobiles
+        public HashSet<BaseMobile> Mobiles
         {
-            get { return m_Mobiles; }
+            get
+            {
+                if (m_Mobiles == null)
+                    m_Mobiles = new HashSet<BaseMobile>();
+
+                return m_Mobiles;
+            }
+
             set
             {
                 if (value == null)
                     return;
-                else if (Mobiles == null)
-                    m_Mobiles = value;
-                else
-                    m_Mobiles = value;
+
+                m_Mobiles = value;
             }
         }
         #endregion
     }
 
     [Serializable]
-    public sealed class GetMobilePacket : Packet
+    public class GetMobilePacket : Packet
     {
         [Flags]
         public enum RequestReason
@@ -53,39 +63,24 @@ namespace SUS.Shared.Packets
             Equipment   = 16,
         }
 
-        private BasicMobile m_Target;
         private RequestReason m_Reason = RequestReason.None;
 
         // Requested information to return.
         private string m_Paperdoll                              = null;
-        private Locations m_Location                            = Locations.None;
-        private bool m_IsDead                                   = false;
-        private Dictionary<Guid, Item> m_Items                  = null;
-        private Dictionary<ItemLayers, Equippable> m_Equipment  = null;
+        private Regions m_Region                                = Regions.None;
+        private bool m_IsAlive                                  = true;
+        private Dictionary<int, string> m_Items              = null;
+        private Dictionary<int, string> m_Equipment          = null;
 
-
-        public GetMobilePacket(BasicMobile target, RequestReason reason) : base(PacketTypes.GetMobile, null)
+        #region Constructors
+        public GetMobilePacket(RequestReason reason, UInt64 playerID) 
+            : base(PacketTypes.GetMobile, playerID)
         {
-            Target = target;
             Reason = reason;
         }
+        #endregion
 
         #region Getters / Setters
-        public BasicMobile Target
-        {
-            get { return m_Target; }
-            private set
-            {
-                if (value == null)
-                    return;
-                else if (Target == null)
-                    m_Target = value;
-
-                if (Target != value)
-                    m_Target = value;
-            }
-        }
-
         public RequestReason Reason
         {
             get { return m_Reason; }
@@ -116,37 +111,38 @@ namespace SUS.Shared.Packets
             }
         }
  
-        public Locations Location
+        public Regions Region
         {
-            get { return m_Location; }
+            get { return m_Region; }
             set
             {
-                if (value == Locations.None || value == Location)
+                if (value == Regions.None || value == Region)
                     return;
 
-                m_Location = value;
+                m_Region = value;
             }
         }
 
-        public bool IsDead
+        public bool IsAlive
         {
-            get { return m_IsDead; }
+            get { return m_IsAlive; }
             set
             {
-                if (value != IsDead)
-                    m_IsDead = value;
+                if (value != IsAlive)
+                    m_IsAlive = value;
             }
         }
 
-        public Dictionary<Guid, Item> Items
+        public Dictionary<int, string> Items
         {
             get
             {
                 if (m_Items == null)
-                    m_Items = new Dictionary<Guid, Item>();
+                    m_Items = new Dictionary<int, string>();
 
                 return m_Items;
             }
+
             set
             {
                 if (value == null)
@@ -157,12 +153,12 @@ namespace SUS.Shared.Packets
 
         }
 
-        public Dictionary<ItemLayers, Equippable> Equipment
+        public Dictionary<int, string> Equipment
         {
             get
             {
                 if (m_Equipment == null)
-                    m_Equipment = new Dictionary<ItemLayers, Equippable>();
+                    m_Equipment = new Dictionary<int, string>();
 
                 return m_Equipment;
             }
@@ -173,42 +169,52 @@ namespace SUS.Shared.Packets
 
                 m_Equipment = value;
             }
-
         }
         #endregion
+
+        public void AddItem(int serial, string name)
+        {
+            Items.Add(serial, name);
+        }
+
+        public void AddEquipment(int serial, string name)
+        {
+            Equipment.Add(serial, name);
+        }
     }
 
     [Serializable]
-    public sealed class GetNodePacket : Packet
+    public class GetNodePacket : Packet
     {
-        private Locations m_Location;
-        private BasicNode m_NewLocation = null;
+        private Regions m_Region;
+        private BaseRegion m_NewRegion;
 
-        public GetNodePacket(Locations location) : base(PacketTypes.GetNode, null) { Location = location; }
+        #region Constructors
+        public GetNodePacket(Regions region, UInt64 playerID) 
+            : base(PacketTypes.GetNode, playerID)
+        {
+            Region = region;
+        }
+        #endregion
 
         #region Getters / Setters
-        public Locations Location
+        public Regions Region
         {
-            get { return m_Location; }
+            get { return m_Region; }
             set
             {
-                if (Location != value)
-                    m_Location = value;
+                if (Region != value)
+                    m_Region = value;
             }
         }
 
-        public BasicNode NewLocation
+        public BaseRegion NewRegion
         {
-            get { return m_NewLocation; }
+            get { return m_NewRegion; }
             set
             {
-                if (value == null)
-                    return;
-                else if (NewLocation == null)
-                    m_NewLocation = value;
-
-                if (NewLocation != value)
-                    m_NewLocation = value;
+                if (NewRegion != value)
+                    m_NewRegion = value;
             }
         }
         #endregion

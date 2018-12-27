@@ -58,53 +58,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GameObject.cs" />
-    <Compile Include="Objects\GameState.cs" />
-    <Compile Include="Objects\Item.cs" />
-    <Compile Include="Objects\Items\Consumables\Arrow.cs" />
-    <Compile Include="Objects\Items\Consumables\Gold.cs" />
-    <Compile Include="Objects\Items\Consumables\Bandage.cs" />
-    <Compile Include="Objects\Items\Consumables\Potion.cs" />
-    <Compile Include="Objects\Items\Equipment\ArmorSuit.cs" />
-    <Compile Include="Objects\Items\Equipment\Bow.cs" />
-    <Compile Include="Objects\Items\Equipment\Fencing.cs" />
-    <Compile Include="Objects\Items\Equipment\Shield.cs" />
-    <Compile Include="Objects\Items\Equipment\Mace.cs" />
-    <Compile Include="Objects\Items\Equipment\Sword.cs" />
-    <Compile Include="Objects\Items\Equipment\Unarmed.cs" />
-    <Compile Include="Objects\Items\Consumable.cs" />
-    <Compile Include="Objects\Items\Equippable.cs" />
-    <Compile Include="Objects\Items\Weapon.cs" />
-    <Compile Include="Objects\Items\Armor.cs" />
-    <Compile Include="Objects\Spawner.cs" />
+    <Compile Include="BaseMobile.cs" />
+    <Compile Include="ClientState.cs" />
+    <Compile Include="Interfaces.cs" />
     <Compile Include="Packets\GetInformation.cs" />
     <Compile Include="Packets\MobileActions.cs" />
-    <Compile Include="Objects\Mobiles\BaseCreature.cs" />
-    <Compile Include="Objects\Mobiles\NPC.cs" />
-    <Compile Include="Objects\Mobile.cs" />
-    <Compile Include="Objects\Mobiles\Player.cs" />
-    <Compile Include="Objects\Mobiles\Spawns\Cyclops.cs" />
-    <Compile Include="Objects\Mobiles\Spawns\Wraith.cs" />
-    <Compile Include="Objects\Mobiles\Spawns\Orc.cs" />
-    <Compile Include="Objects\Mobiles\Spawns\Ghoul.cs" />
-    <Compile Include="Objects\Mobiles\Spawns\Titan.cs" />
-    <Compile Include="Objects\Mobiles\Spawns\Zombie.cs" />
-    <Compile Include="Objects\Mobiles\Spawns\Skeleton.cs" />
-    <Compile Include="Objects\Node.cs" />
-    <Compile Include="Objects\Nodes\Britain.cs" />
-    <Compile Include="Objects\Nodes\Graveyard.cs" />
-    <Compile Include="Objects\Nodes\Wilderness.cs" />
-    <Compile Include="Objects\Nodes\Sewer.cs" />
-    <Compile Include="Objects\Nodes\Spawnable.cs" />
+    <Compile Include="BaseRegion.cs" />
     <Compile Include="Packets\AccountActions.cs" />
     <Compile Include="Packets\Packet.cs" />
     <Compile Include="Packets\SocketKill.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Random.cs" />
-    <Compile Include="Serial.cs" />
-    <Compile Include="Skill.cs" />
-    <Compile Include="SQLite.cs" />
-    <Compile Include="Timer.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
