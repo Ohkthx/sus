@@ -37,8 +37,9 @@ namespace SUS.Objects
         private Point2D m_Location;
         private Serial m_Serial;            // ID of the mobile.
         private string m_Name;              // Name of the mobile.
-        private MobileTypes m_Type;               // Type of Mobile: NPC or Player.
-        private Regions m_Region;            // Location of the mobile.
+        private MobileTypes m_Type;         // Type of Mobile: NPC or Player.
+        private Regions m_Region;           // Location of the mobile.
+        private bool m_IsDeleted;
 
         private Mobile m_Target;            // Current target.
 
@@ -64,6 +65,7 @@ namespace SUS.Objects
         {
             m_Serial = Serial.NewMobile;
             Type = type;
+            m_IsDeleted = false;
 
             InitConsumables();
             m_Equipped = new Dictionary<ItemLayers, Equippable>();
@@ -86,7 +88,8 @@ namespace SUS.Objects
                 $"  | Character Name: {Name}\n" +
                 $"  | Title: {"The Player"}\n" +
                 $"  | Location: {Region}{(Location.IsValid ? ": " + Location : string.Empty)}\n" +
-                $"  | Level: {CR}\n" +
+                $"  | {(this is IPlayer ? "Player ID: " + (this as IPlayer).PlayerID +"\t": "")}Serial: {Serial}\n" +
+                $"{((this is IDamageable) ? $"  | CR: {(this as IDamageable).CR}\n" : string.Empty)}" +
                 $"  |\n" +
                 $"  +-[ Attributes ]\n" +
                 $"  | +-- Health: {Hits} / {HitsMax}\n" +
@@ -183,7 +186,11 @@ namespace SUS.Objects
         #endregion
 
         #region Getters / Setters - Basic
-        public virtual int CR { get { return 0; } }
+        public bool IsDeleted
+        {
+            get { return m_IsDeleted; }
+            private set { m_IsDeleted = value; }
+        }
 
         public Mobile Target
         {
@@ -894,6 +901,10 @@ namespace SUS.Objects
         #endregion
 
         #region Combat
+        public abstract int Attack();
+        public abstract void Kill();
+        public abstract void Ressurrect();
+
         /// <summary>
         ///     Current mobile takes damage from outside source.
         /// </summary>
@@ -923,8 +934,6 @@ namespace SUS.Objects
             Hits -= damage;
             return damage;          // Damage taken was damage received.
         }
-
-        public abstract int Attack();
 
         public int ApplyResistance(DamageTypes damageType, int damage)
         {
@@ -981,10 +990,6 @@ namespace SUS.Objects
             return val > 0 ? val > 6 ? 6 : val : 0;
         }
         #endregion
-
-        public abstract void Kill();
-
-        public abstract void Ressurrect();
 
         public int MoveInDirection(MobileDirections direction, int xMax, int yMax)
         {

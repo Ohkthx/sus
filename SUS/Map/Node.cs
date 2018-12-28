@@ -163,24 +163,6 @@ namespace SUS
             // Location never found through string parsing.
             return Regions.None;
         }
-
-        public List<Regions> ConnectionsToList()
-        {
-            List<Regions> conn = new List<Regions>();
-
-            foreach (Regions region in Enum.GetValues(typeof(Regions)))
-            {
-                if (region == Regions.None || (region & (region - 1)) != 0)
-                    continue;                   // Prevention of processing combination locations.
-
-                if (HasConnection(region))         // Checks if location is in our current connections.
-                {
-                    conn.Add(region);
-                }
-            }
-
-            return conn;
-        }
         #endregion
 
         /// <summary>

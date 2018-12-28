@@ -8,24 +8,25 @@ namespace SUS
     public class Gamestate : ISQLCompatible
     {
         private UInt64 m_PlayerID;
-        private Mobile m_Account;
+        private Player m_Account;
         private Regions m_Unlocked = Regions.None;
 
         #region Constructors
-        public Gamestate(UInt64 playerID, Mobile account, Regions unlocked)
+        public Gamestate(UInt64 playerID, Player account, Regions unlocked)
         {
             PlayerID = playerID;
             Account = account;
+            Account.PlayerID = PlayerID;
             m_Unlocked |= unlocked;
             World.AddGamestate(this);
         }
         #endregion
 
         #region Overrides
-        public void ToInsert(ref SQLiteCommand cmd)
+        public void ToInsert(SQLiteCommand cmd)
         {
-            cmd.Parameters.Add(new SQLiteParameter("@p1", this.Account.Serial));
-            cmd.Parameters.Add(new SQLiteParameter("@p2", this.ToByte()));
+            cmd.Parameters.Add(new SQLiteParameter("@p1", PlayerID));
+            cmd.Parameters.Add(new SQLiteParameter("@p2", ToByte()));
         }
 
         public override int GetHashCode()
@@ -33,6 +34,7 @@ namespace SUS
             unchecked
             {
                 int hash = 13;
+                hash = (hash * 7) + (!Object.ReferenceEquals(null, PlayerID) ? PlayerID.GetHashCode() : 0);
                 hash = (hash * 7) + (!Object.ReferenceEquals(null, Account.Serial) ? Account.Serial.GetHashCode() : 0);
                 hash = (hash * 7) + (!Object.ReferenceEquals(null, Account.Type) ? Account.Type.GetHashCode() : 0);
                 return hash;
@@ -70,6 +72,7 @@ namespace SUS
         {
             return (value != null)
                 && (value.Account != null)
+                && (PlayerID == value.PlayerID)
                 && (Account.Type == value.Account.Type)
                 && (Account.Serial == value.Account.Serial);
         }
@@ -88,7 +91,7 @@ namespace SUS
             }
         }
 
-        public Mobile Account
+        public Player Account
         {
             get { return m_Account; }
             set

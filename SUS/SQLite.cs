@@ -165,7 +165,7 @@ namespace SUS.Utilities
                     return;
 
                 // Get our information to store and assign it back to the SQLiteCommand.
-                obj.ToInsert(ref fmd);
+                obj.ToInsert(fmd);
 
                 fmd.ExecuteNonQuery();
             }

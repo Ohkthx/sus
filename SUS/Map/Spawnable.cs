@@ -42,8 +42,8 @@ namespace SUS
                 return;
 
             Spawner spawner = new Spawner(Region, NPCs, x, y, range, limit, m_MaxX, m_MaxY);
-            m_Spawners.TryAdd(spawner.Guid, spawner);
-            Utility.ConsoleNotify($"Spawner created @{spawner.Location.ToString()} in {Region.ToString()}");
+            m_Spawners.TryAdd(spawner.ID, spawner);
+            Utility.ConsoleNotify($"Spawner created @{spawner.HomeLocation.ToString()} in {Region.ToString()}");
         }
 
         public override Point2D StartingLocation()

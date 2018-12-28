@@ -3,6 +3,7 @@ using System.Timers;
 using System.Collections.Generic;
 using SUS.Shared;
 using SUS.Objects.Spawns;
+using System.Linq;
 
 namespace SUS.Objects
 {
@@ -49,15 +50,16 @@ namespace SUS.Objects
         Graveyard = Skeleton | Zombie | Ghoul | Wraith,
     };
 
-    public class Spawner
+    public class Spawner : ISpawner
     {
-        private Guid m_Guid;
+        private Guid m_ID;
         private Point2D m_Location;             // Location of the Spawner on the map.
         private System.Timers.Timer m_Timer;    // Responsible for Keeping track.
-        private Regions m_Region;                // Location the Spawner exists.
+        private Regions m_Region;               // Location the Spawner exists.
         private Spawnables m_Spawns;            // Types of spawns that are acceptable.
+        private HashSet<Mobile> m_Spawned;
 
-        private int m_Range;            // Range the Spawner can spawn in.
+        private int m_Range;                    // Range the Spawner can spawn in.
         private int m_Limit;
         private int m_CanvasMaxX;
         private int m_CanvasMaxY;
@@ -75,7 +77,7 @@ namespace SUS.Objects
             m_CanvasMaxX = mapX;
             m_CanvasMaxY = mapY;
 
-            Location = ValidCoordinate(baseX, baseY, 0);
+            HomeLocation = ValidCoordinate(baseX, baseY, 0);
 
 
             // Start the timer.
@@ -87,28 +89,28 @@ namespace SUS.Objects
         #endregion
 
         #region Getters / Setters
-        public Guid Guid
+        public Guid ID
         {
             get
             {
-                if (m_Guid == null || m_Guid == Guid.Empty)
-                    m_Guid = Guid.NewGuid();
+                if (m_ID == null || m_ID == Guid.Empty)
+                    m_ID = Guid.NewGuid();
 
-                return m_Guid;
+                return m_ID;
             }
         }
 
-        public Point2D Location
+        public Point2D HomeLocation
         {
             get { return m_Location; }
             private set
             {
                 if (value == null)
                     return;
-                else if (Location == null)
+                else if (HomeLocation == null)
                     m_Location = value;
 
-                if (value != Location)
+                if (value != HomeLocation)
                     m_Location = value;
             }
         }
@@ -132,50 +134,43 @@ namespace SUS.Objects
                     m_Spawns = value;
             }
         }
+
+        public HashSet<Mobile> Spawned
+        {
+            get
+            {
+                if (m_Spawned == null)
+                    m_Spawned = new HashSet<Mobile>();
+
+                return m_Spawned;
+            }
+        }
+
+        public int HomeRange { get { return m_Range; } }
         #endregion
 
         #region Spawning
         public void Spawn(Object source, ElapsedEventArgs e)
-        {
-            if (World.SpawnersCount(Region, Guid) >= m_Limit)
+        {   // Clean the spawner.
+            Spawned.RemoveWhere(x => x.IsDeleted);
+            
+            if (Spawned.Count >= m_Limit)
                 return;
 
-            List<Spawnables> spawns = spawnablesToList(m_Spawns);
-            if (spawns == null)
+            IEnumerable<Spawnables> spawns = Utility.EnumToIEnumerable<Spawnables>(m_Spawns, PowerOf2: true);
+            if (spawns.Count() == 0)
                 return;
 
             int amount = Utility.RandomMinMax(0, 2);
             for (int i = 0; i < amount; i++)
             {
-                int pos = Utility.RandomMinMax(0, spawns.Count - 1);
-                BaseCreature mob = spawnOffType(spawns[pos]);
-                mob.Location = ValidCoordinate(Location.X, Location.Y, m_Range);
-
-                World.Spawn(mob as Mobile, Region, Guid);
+                int pos = Utility.RandomMinMax(0, spawns.Count() - 1);
+                BaseCreature mob = spawnOffType(spawns.ElementAt(pos));
+                if (mob == null)
+                    continue;
+                mob.Spawned(this, Region, ValidCoordinate(HomeLocation.X, HomeLocation.Y, HomeRange));
+                Spawned.Add(mob);       // Add it to the tracked spawned.
             }
-        }
-
-        private List<Spawnables> spawnablesToList(Spawnables spawns)
-        {
-            List<Spawnables> creatures = new List<Spawnables>();
-
-            // While our spawnables passed are not "None", continue to try and build a list of potential creatures.
-            while (spawns != Spawnables.None)
-            {
-                foreach (Spawnables s in Enum.GetValues(typeof(Spawnables)))
-                {
-                    if ((spawns & s) == s && s != Spawnables.None)
-                    {   // Found a match.
-                        creatures.Add(s);    // Spawn based on its type.
-                        spawns &= ~s;                   // Remove our value from spawns.
-                    }
-                }
-            }
-
-            if (creatures.Count == 0)
-                return null;
-
-            return creatures;
         }
 
         private BaseCreature spawnOffType(Spawnables spawn)

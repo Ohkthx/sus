@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -14,6 +16,21 @@ namespace SUS.Shared
     public static class Utility
     {
         private static object notifyLock = new object();
+
+        public static IEnumerable<T> EnumToIEnumerable<T>(Enum mask, bool PowerOf2 = false)
+        {   // Thanks to [stackoverflow.com/users/1612975].
+            if (!typeof(T).IsEnum)
+                return new List<T>();
+
+            // Anonymous function that determines if it needs to validate if it is a power of two, if so- it does.
+            Predicate<int> PowerCheck = delegate (int v) { return PowerOf2 ? (v & (v - 1)) == 0 : true; };
+
+            return Enum.GetValues(typeof(T))
+                       .Cast<Enum>()
+                       .Where(x => mask.HasFlag(x) && PowerCheck(Convert.ToInt32(x)))
+                       .Cast<T>()
+                       .Skip(1);
+        }
 
         public static void ConsoleNotify(string msg)
         {

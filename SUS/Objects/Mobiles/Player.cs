@@ -2,11 +2,13 @@
 using SUS.Shared;
 using SUS.Objects.Items;
 using SUS.Objects.Items.Equipment;
+using System;
 
 namespace SUS.Objects
 {
-    public class Player : Mobile, IDamageable
+    public class Player : Mobile, IDamageable, IPlayer
     {
+        private UInt64 m_PlayerID;
         private int m_Deaths = 0;
         private int m_Kills = 0;
         public bool isLoggedIn { get; private set; } = false;
@@ -67,7 +69,17 @@ namespace SUS.Objects
         #endregion
 
         #region Getters / Setters
-        public override int CR { get { return (int)SkillTotal / 36; } }
+        public int CR { get { return (int)SkillTotal / 36; } }
+
+        public UInt64 PlayerID
+        {
+            get { return m_PlayerID; }
+            set
+            {
+                if (value != PlayerID)
+                    m_PlayerID = value;
+            }
+        }
 
         public override DamageTypes Resistances
         {

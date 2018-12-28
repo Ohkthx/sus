@@ -22,6 +22,7 @@ namespace SUS
 
     public interface ISpawner
     {
+        Guid ID { get; }
         Point2D HomeLocation { get; }
         int HomeRange { get; }
     }
@@ -37,18 +38,12 @@ namespace SUS
         string Name { get; }
         MobileTypes Type { get; }
         Point2D Location { get; }
-    }
-
-    public interface IPlayer : IDamageable
-    {
-        string ToString();
-        int GetHashCode();
-        bool Equals(Object obj);
-        void ToInsert(ref SQLiteCommand cmd);
+        bool IsDeleted { get; }
     }
 
     public interface IDamageable : IEntity
     {
+        int CR { get; }
         int Hits { get; set; }
         int HitsMax { get; }
         bool Alive { get; }
@@ -61,6 +56,13 @@ namespace SUS
         string ToString();
         int GetHashCode();
         bool Equals(Object obj);
-        void ToInsert(ref SQLiteCommand cmd);
+        void ToInsert(SQLiteCommand cmd);
+    }
+
+    public interface IPlayer : IDamageable
+    {
+        UInt64 PlayerID { get; }
+
+        void AddKill();
     }
 }

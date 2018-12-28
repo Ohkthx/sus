@@ -41,7 +41,7 @@ namespace SUS
             int attackLimit = 1;
             if (attacker.IsPlayer && !target.IsPlayer)
             {   // Only perform the extra attack if the aggressor is a player.
-                int CR = attacker.CR;
+                int CR = (attacker as IDamageable).CR;
                 int attackChances = CR > 4 ? CR > 10 ? CR > 19 ? 3 : 2 : 1 : 0;
                 attackLimit = Utility.Random(20) > attackChances ? 1 : 2;
             }

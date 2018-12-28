@@ -68,7 +68,7 @@ namespace SUS.Shared
         private RegionType m_Type;
         private Regions m_Region;
         private Regions m_Connections;
-        private bool m_Traversable;
+        public bool CanTraverse { get; private set; }
 
         #region Constructors
         public BaseRegion(RegionType type, Regions region, Regions connections, bool isTraversable)
@@ -76,7 +76,7 @@ namespace SUS.Shared
             m_Type = type;
             m_Region = region;
             m_Connections = connections;
-            m_Traversable = isTraversable;
+            CanTraverse = isTraversable;
         }
         #endregion
 
@@ -113,25 +113,8 @@ namespace SUS.Shared
             }
         }
 
-        public bool CanTraverse { get { return m_Traversable; } }
-
         public bool IsValid { get { return Location != Regions.None && (Location & (Location - 1)) == 0; } }
         #endregion
-
-        public List<Regions> ConnectionsToList()
-        {
-            List<Regions> conn = new List<Regions>();
-
-            foreach (Regions loc in Enum.GetValues(typeof(Regions)))
-            {
-                if (loc == Regions.None || (loc & (loc - 1)) != 0)
-                    continue;
-                else if ((Connections & loc) == loc)
-                    conn.Add(loc);
-            }
-
-            return conn;
-        }
 
         #region Overrides
         public override string ToString()

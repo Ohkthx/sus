@@ -282,7 +282,7 @@ namespace SUSClient
 
             int pos = 0;
             Console.WriteLine(" Nearby Locations:");
-            foreach (Regions n in Client.Region.ConnectionsToList())
+            foreach (Regions n in Utility.EnumToIEnumerable<Regions>(Client.Region.Connections, PowerOf2: true))
             {
                 ++pos;
                 Console.WriteLine($"  [Pos: {pos}] {Enum.GetName(typeof(Regions), n)}");

@@ -5,7 +5,7 @@ using SUS.Objects.Items.Equipment;
 
 namespace SUS.Objects
 {
-    public abstract class BaseCreature : Mobile, IDamageable
+    public abstract class BaseCreature : Mobile, ISpawnable
     {
         private int m_HitsMax = -1;
         private int m_StamMax = -1;
@@ -13,7 +13,7 @@ namespace SUS.Objects
         private int m_DamageMin = -1;
         private int m_DamageMax = -1;
 
-        private Guid m_OwningSpawner;
+        private ISpawner m_OwningSpawner;
 
         protected AI.Types m_AIType;
         protected DamageTypes m_DamageType = DamageTypes.None;
@@ -26,23 +26,18 @@ namespace SUS.Objects
         }
         #endregion
 
-        #region Getters / Setters
-        public Guid OwningSpawner
+        #region Getters / Setters - Basic
+        public ISpawner Spawner
         {
             get { return m_OwningSpawner; }
             set
             {
-                if (value == null)
-                    return;
-                else if (OwningSpawner == Guid.Empty)
-                    m_OwningSpawner = value;
-
-                if (value != OwningSpawner)
+                if (value != Spawner)
                     m_OwningSpawner = value;
             }
         }
 
-        public override int CR { get { return HitsMax / 50; } }
+        public int CR { get { return HitsMax / 50; } }
 
         public void SetDamage(int val)
         {
@@ -55,8 +50,9 @@ namespace SUS.Objects
             m_DamageMin = min;
             m_DamageMax = max;
         }
+        #endregion
 
-        #region Stats
+        #region Getters / Setters - Stats
         public void SetStr(int val)
         {
             RawStr = val;
@@ -178,7 +174,7 @@ namespace SUS.Objects
         }
         #endregion
 
-        #region Combat
+        #region Getters / Setters - Combat
         public AI.Types AIType
         {
             get { return m_AIType; }
@@ -230,28 +226,14 @@ namespace SUS.Objects
         public override int ArmorClass => base.ArmorClass;
 
         public override int ProficiencyModifier { get { return (CR / 4) + 2 > 9 ? 9 : (CR / 4) + 2; } }
-
-        public override int Attack()
-        {
-            if (Weapon is Unarmed)
-            {
-                return Utility.RandomMinMax(m_DamageMin, m_DamageMax);
-            }
-
-            return Weapon.Damage + ProficiencyModifier;
-        }
-
-        public override void Kill() { Hits = 0; }
-
-        public override void Ressurrect()
-        {
-            Hits = HitsMax / 2;
-            Mana = ManaMax / 2;
-            Stam = StamMax / 2;
-        }
         #endregion
 
-        #endregion
+        public void Spawned(ISpawner spawner, Regions region, Point2D location)
+        {
+            Spawner = spawner;
+            Region = region;
+            Location = location;
+        }
 
         protected void SetSkill(SkillName skill, double min, double max)
         {
@@ -264,5 +246,30 @@ namespace SUS.Objects
 
             Skills[skill].Value = Utility.RandomMinMax(min, max);
         }
+
+        #region Combat
+        public override int Attack()
+        {
+            if (Weapon is Unarmed)
+            {
+                return Utility.RandomMinMax(m_DamageMin, m_DamageMax);
+            }
+
+            return Weapon.Damage + ProficiencyModifier;
+        }
+
+        public override void Kill()
+        {
+            Hits = 0;
+            IsDeleted = true;
+        }
+
+        public override void Ressurrect()
+        {
+            Hits = HitsMax / 2;
+            Mana = ManaMax / 2;
+            Stam = StamMax / 2;
+        }
+        #endregion
     }
 }

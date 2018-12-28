@@ -206,7 +206,7 @@ namespace SUS.Shared
                 return Region.Location;
 
             int count = 0;
-            foreach (Regions loc in Region.ConnectionsToList())
+            foreach (Regions loc in Utility.EnumToIEnumerable<Regions>(Region.Connections, PowerOf2: true))
             {
                 if (loc == Regions.None)          // A connection cannot be 'None'
                     continue;

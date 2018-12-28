@@ -363,7 +363,9 @@ namespace SUS
             mobile.Kill();  // Kill the mobile.
 
             if (!mobile.IsPlayer)
+            {
                 RemoveMobile(mobile);    // Remove the mobile from the list of mobiles.
+            }
         }
         #endregion
 
@@ -414,72 +416,6 @@ namespace SUS
                 return false;   // Not a valid originating location.
 
             return fromN.HasConnection(to);
-        }
-        #endregion
-
-        #region Spawns / Spawnning
-        public static bool Spawn(Mobile mobile, Regions region)
-        {
-            return Spawn(mobile, region, Guid.Empty);
-        }
-
-        /// <summary>
-        ///     Spawns a new Mobile in the world.
-        /// </summary>
-        /// <param name="mobile">Mobile to add to a location.</param>
-        /// <param name="region">Location to be modified.</param>
-        /// <returns></returns>
-        public static bool Spawn(Mobile mobile, Regions region, Guid spawner)
-        {
-            if (mobile == null)
-                return false;
-            else if (!Node.isValidRegion(region))
-            {
-                RemoveMobile(mobile);
-                return false;   // If an invalid location is passed, return false.
-            }
-
-            if (mobile.Type == MobileTypes.Creature && spawner != Guid.Empty)
-                (mobile as BaseCreature).OwningSpawner = spawner;
-
-            mobile.Region = region; // Updates the location of the local mobile.
-
-            Utility.ConsoleNotify($"Spawned {mobile.Name} in {mobile.Region} @{mobile.Location}.");
-            return true;
-        }
-
-        public static int SpawnersCount(Regions region, Guid spawner)
-        {
-            if (spawner == Guid.Empty)
-                return -1;
-
-            HashSet<BaseCreature> bc = FindSpawned(region, spawner);
-            if (bc == null)
-                return -1;
-
-            return bc.Count;
-        }
-
-        private static HashSet<BaseCreature> FindSpawned(Regions region, Guid spawner)
-        {
-            HashSet<BaseCreature> mobiles = new HashSet<BaseCreature>();
-            foreach (Mobile m in m_Mobiles.Values)
-            {
-                if (m.Region == region && m.Type == MobileTypes.Creature)
-                {
-                    BaseCreature bc = m as BaseCreature;
-                    if (bc == null)
-                        continue;
-
-                    if (bc.OwningSpawner == spawner)
-                        mobiles.Add(bc);
-                }
-            }
-
-            if (mobiles.Count > 0)
-                return mobiles;
-
-            return null;    // Nothing was found, return null.
         }
         #endregion
     }
