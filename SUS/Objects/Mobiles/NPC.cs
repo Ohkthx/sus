@@ -1,18 +1,19 @@
 ﻿using SUS.Shared;
 
-namespace SUS.Objects
+namespace SUS.Objects.Mobiles
 {
-    public abstract class NPC : Mobile
+    public abstract class Npc : Mobile
     {
         #region Constructors
-        public NPC()
-            : base(MobileTypes.NPC)
+
+        protected Npc()
+            : base(MobileTypes.Npc)
         { }
         #endregion
 
         #region Combat
         public override void Kill() { Hits = 0; IsDeleted = true; }
-        public override void Ressurrect() { Hits = HitsMax / 2; }
+        public override void Resurrect() { Hits = HitsMax / 2; }
         #endregion
     }
 }

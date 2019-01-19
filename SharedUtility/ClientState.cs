@@ -1,29 +1,29 @@
-﻿using System;
+﻿using SUS.Shared.Packets;
+using System;
 using System.Collections.Generic;
-using SUS.Shared.Packets;
 
 namespace SUS.Shared
 {
     [Serializable]
     public class ClientState
     {
-        private UInt64 m_PlayerID;
+        private ulong m_PlayerId;
         private BaseMobile m_Account;
         private BaseRegion m_Region;
         private BaseRegion m_LastRegion;
         private BaseMobile m_LastTarget;
         private bool m_IsAlive;
-        private Regions m_Unlocked = Regions.None;
+        private readonly Regions m_Unlocked = Regions.None;
 
         // Objects that need to be requested from the server.
-        private HashSet<BaseMobile> m_Mobiles;          // Local / Nearby creatures.
+        private HashSet<BaseMobile> m_Mobiles;       // Local / Nearby creatures.
         private Dictionary<int, string> m_Items;     // Items in the inventory.
         private Dictionary<int, string> m_Equipped;  // Equipped items.
 
         #region Constructors
-        public ClientState(UInt64 playerID, BaseMobile account, BaseRegion region, Regions unlocked)
+        public ClientState(ulong playerID, BaseMobile account, BaseRegion region, Regions unlocked)
         {
-            PlayerID = playerID;
+            PlayerId = playerID;
             Account = account;
             Region = region;
             m_Unlocked |= unlocked;
@@ -31,25 +31,21 @@ namespace SUS.Shared
         #endregion
 
         #region Getters / Setters
-        public UInt64 PlayerID
+        public ulong PlayerId
         {
-            get { return m_PlayerID; }
-            set
-            {
-                if (value == PlayerID)
-                    return;
-
-                m_PlayerID = value;
-            }
+            get => m_PlayerId;
+            private set => m_PlayerId = value;
         }
 
         public BaseMobile Account
         {
-            get { return m_Account; }
-            set
+            get => m_Account;
+            private set
             {
-                if (value == null || !value.IsPlayer)
+                if (!value.IsPlayer)
+                {
                     return;
+                }
 
                 m_Account = value;
             }
@@ -57,11 +53,13 @@ namespace SUS.Shared
 
         public BaseRegion Region
         {
-            get { return m_Region; }
+            get => m_Region;
             set
             {
                 if (!value.IsValid || value.Location == Region.Location)
+                {
                     return;
+                }
 
                 LastRegion = Region; // Swap the Node.
                 m_Region = value;     // Assign the new
@@ -70,11 +68,13 @@ namespace SUS.Shared
 
         public BaseRegion LastRegion
         {
-            get { return m_LastRegion; }
-            set
+            get => m_LastRegion;
+            private set
             {
                 if (!value.IsValid || value.Location == LastRegion.Location)
+                {
                     return;
+                }
 
                 m_LastRegion = value;     // Updates our Last Node accessed.
             }
@@ -82,23 +82,19 @@ namespace SUS.Shared
 
         public BaseMobile LastTarget
         {
-            get { return m_LastTarget; }
-            set { m_LastTarget = value; }
+            get => m_LastTarget;
+            set => m_LastTarget = value;
         }
 
         public HashSet<BaseMobile> Mobiles
         {
-            get
-            {
-                if (m_Mobiles == null)
-                    m_Mobiles = new HashSet<BaseMobile>();
-
-                return m_Mobiles;
-            }
+            get => m_Mobiles ?? (m_Mobiles = new HashSet<BaseMobile>());
             set
             {
                 if (value == null)
+                {
                     return;
+                }
 
                 m_Mobiles = value;
             }
@@ -106,8 +102,8 @@ namespace SUS.Shared
 
         public bool IsAlive
         {
-            get { return m_IsAlive; }
-            set { m_IsAlive = value; }
+            get => m_IsAlive;
+            private set => m_IsAlive = value;
         }
         #endregion
 
@@ -115,7 +111,9 @@ namespace SUS.Shared
         public void MobileActionHandler(CombatMobilePacket cmp)
         {
             if (!cmp.IsAlive)
+            {
                 IsAlive = false;
+            }
 
             List<string> u = cmp.Updates;
             Console.WriteLine("\nServer response:");
@@ -131,28 +129,26 @@ namespace SUS.Shared
                 file.WriteLine();
                 file.WriteLine($"[{DateTime.Now}]");
                 foreach (string str in u)
+                {
                     file.WriteLine(str);
-            }
-
-            foreach (string str in u)
-                Console.WriteLine(str);
-        }
-
-        public Packet Ressurrect(RessurrectMobilePacket rez)
-        {
-            if (rez.PlayerID == PlayerID)
-            {   // If we are talking about our account...
-                IsAlive = true;
-                if (rez.isSuccessful)
-                {   // And the server reported it was successful...
-                    return new GetNodePacket(rez.Region, PlayerID);   // Update our current Region.
                 }
             }
 
-            return null;
+            foreach (string str in u)
+            {
+                Console.WriteLine(str);
+            }
         }
 
-        public void UseItemResponse(UseItemPacket uip)
+        public Packet Resurrect(ResurrectMobilePacket rez)
+        {
+            if (rez.PlayerId != PlayerId) return null; // If we are talking about our account...
+
+            IsAlive = true;
+            return rez.IsSuccessful ? new GetNodePacket(rez.Region, PlayerId) : null;
+        }
+
+        public static void UseItemResponse(UseItemPacket uip)
         {
             Console.WriteLine(uip.Response);
         }
@@ -160,10 +156,12 @@ namespace SUS.Shared
         public Packet UseItems()
         {
             if (m_Items == null)
-                return new GetMobilePacket(GetMobilePacket.RequestReason.Items, PlayerID);
+            {
+                return new GetMobilePacket(GetMobilePacket.RequestReason.Items, PlayerId);
+            }
 
-            int pos = 0;
-            foreach (string i in m_Items.Values)
+            var pos = 0;
+            foreach (var i in m_Items.Values)
             {
                 ++pos;
                 Console.WriteLine($" [{pos}] {i}");
@@ -180,11 +178,13 @@ namespace SUS.Shared
             } while (int.TryParse(input, out opt) && (opt < 1 || opt > m_Items.Count));
 
             pos = 0;
-            foreach (int i in m_Items.Keys)
+            foreach (var i in m_Items.Keys)
             {
                 ++pos;
                 if (pos == opt)
-                    return new UseItemPacket(i, PlayerID);
+                {
+                    return new UseItemPacket(i, PlayerId);
+                }
             }
 
             return null;
@@ -199,19 +199,28 @@ namespace SUS.Shared
         /// <returns></returns>
         public Regions StringToLocation(string location)
         {
-            int pos = -1;
-            if (int.TryParse(location, out pos) && pos < 0)
+            if (int.TryParse(location, out var pos) && pos < 0)
+            {
                 return Regions.None;                      // User attempted a negative number.
-            else if (pos == 0)
-                return Region.Location;
+            }
 
-            int count = 0;
-            foreach (Regions loc in Utility.EnumToIEnumerable<Regions>(Region.Connections, PowerOf2: true))
+            if (pos == 0)
+            {
+                return Region.Location;
+            }
+
+            var count = 0;
+            foreach (Regions loc in Utility.EnumToIEnumerable<Regions>(Region.Connections, true))
             {
                 if (loc == Regions.None)          // A connection cannot be 'None'
+                {
                     continue;
-                else if ((loc & (loc - 1)) != 0)    // Check if this is not a power of two (indicating it is a combination location)
+                }
+
+                if ((loc & (loc - 1)) != 0)    // Check if this is not a power of two (indicating it is a combination location)
+                {
                     continue;                       //  It was a combination.
+                }
 
                 ++count;
                 if (count == pos)   // Attempts to check the integer conversion
@@ -225,15 +234,22 @@ namespace SUS.Shared
 
         public MobileDirections StringToDirection(string location)
         {
-            if (!Region.CanTraverse)
+            if (!Region.Navigable)
+            {
                 return MobileDirections.None;
+            }
 
             foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
             {
-                if (dir == MobileDirections.None) 
+                if (dir == MobileDirections.None)
+                {
                     continue;
-                else if (Enum.GetName(typeof(MobileDirections), dir).ToLower() == location.ToLower())
+                }
+
+                if (Enum.GetName(typeof(MobileDirections), dir)?.ToLower() == location.ToLower())
+                {
                     return dir;
+                }
             }
 
             return MobileDirections.None;
@@ -251,7 +267,9 @@ namespace SUS.Shared
                 foreach (GetMobilePacket.RequestReason r in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
                 {
                     if (r == GetMobilePacket.RequestReason.None || (r & (r - 1)) != 0)
+                    {
                         continue;
+                    }
 
                     switch (reason & r)
                     {
@@ -281,10 +299,5 @@ namespace SUS.Shared
             }
         }
         #endregion
-
-        public byte[] ToByte()
-        {
-            return Network.Serialize(this);
-        }
     }
 }

@@ -1,9 +1,10 @@
-﻿using System;
-using System.Timers;
-using System.Collections.Generic;
+﻿using SUS.Objects.Mobiles;
+using SUS.Objects.Mobiles.Spawns;
 using SUS.Shared;
-using SUS.Objects.Spawns;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Timers;
 
 namespace SUS.Objects
 {
@@ -52,27 +53,24 @@ namespace SUS.Objects
 
     public class Spawner : ISpawner
     {
-        private Guid m_ID;
+        private Guid m_Id;
         private Point2D m_Location;             // Location of the Spawner on the map.
-        private System.Timers.Timer m_Timer;    // Responsible for Keeping track.
-        private Regions m_Region;               // Location the Spawner exists.
         private Spawnables m_Spawns;            // Types of spawns that are acceptable.
         private HashSet<Mobile> m_Spawned;
 
-        private int m_Range;                    // Range the Spawner can spawn in.
-        private int m_Limit;
-        private int m_CanvasMaxX;
-        private int m_CanvasMaxY;
+        private readonly int m_Limit;
+        private readonly int m_CanvasMaxX;
+        private readonly int m_CanvasMaxY;
 
-        private const int SPAWNTIME = 15000;
+        private const int SpawnTimer = 15000;
 
         #region Constructors
         public Spawner(Regions loc, Spawnables spawns, int baseX, int baseY, int range, int limit, int mapX, int mapY)
         {
-            m_Region = loc;
+            Region = loc;
             Spawns = spawns;
 
-            m_Range = range;
+            HomeRange = range;
             m_Limit = limit;
             m_CanvasMaxX = mapX;
             m_CanvasMaxY = mapY;
@@ -81,10 +79,10 @@ namespace SUS.Objects
 
 
             // Start the timer.
-            m_Timer = new System.Timers.Timer(SPAWNTIME);     // Create the timer with a 15sec counter.
-            m_Timer.Elapsed += Spawn;           // Calls "CheckSpawns" when it hits the interval.
-            m_Timer.AutoReset = true;           // Timer to reset or not once it hits it's limit.
-            m_Timer.Enabled = true;             // Enable it.
+            var timer = new System.Timers.Timer(SpawnTimer);
+            timer.Elapsed += Spawn;           // Calls "CheckSpawns" when it hits the interval.
+            timer.AutoReset = true;           // Timer to reset or not once it hits it's limit.
+            timer.Enabled = true;             // Enable it.
         }
         #endregion
 
@@ -93,81 +91,72 @@ namespace SUS.Objects
         {
             get
             {
-                if (m_ID == null || m_ID == Guid.Empty)
-                    m_ID = Guid.NewGuid();
+                if (m_Id == Guid.Empty)
+                {
+                    m_Id = Guid.NewGuid();
+                }
 
-                return m_ID;
+                return m_Id;
             }
         }
 
         public Point2D HomeLocation
         {
-            get { return m_Location; }
+            get => m_Location;
             private set
             {
-                if (value == null)
-                    return;
-                else if (HomeLocation == null)
-                    m_Location = value;
-
                 if (value != HomeLocation)
+                {
                     m_Location = value;
+                }
             }
         }
 
-        public Regions Region
-        {
-            get { return m_Region; }
-            private set
-            {
-                if (value != m_Region)
-                    m_Region = value;
-            }
-        }
+        private Regions Region { get; }
 
-        public Spawnables Spawns
+        private Spawnables Spawns
         {
-            get { return m_Spawns; }
-            private set
+            get => m_Spawns;
+            set
             {
                 if (value != Spawns)
+                {
                     m_Spawns = value;
+                }
             }
         }
 
-        public HashSet<Mobile> Spawned
-        {
-            get
-            {
-                if (m_Spawned == null)
-                    m_Spawned = new HashSet<Mobile>();
+        private HashSet<Mobile> Spawned => m_Spawned ?? (m_Spawned = new HashSet<Mobile>());
 
-                return m_Spawned;
-            }
-        }
+        public int HomeRange { get; }
 
-        public int HomeRange { get { return m_Range; } }
         #endregion
 
         #region Spawning
-        public void Spawn(Object source, ElapsedEventArgs e)
+
+        private void Spawn(object source, ElapsedEventArgs e)
         {   // Clean the spawner.
             Spawned.RemoveWhere(x => x.IsDeleted);
-            
+
             if (Spawned.Count >= m_Limit)
-                return;
-
-            IEnumerable<Spawnables> spawns = Utility.EnumToIEnumerable<Spawnables>(m_Spawns, PowerOf2: true);
-            if (spawns.Count() == 0)
-                return;
-
-            int amount = Utility.RandomMinMax(0, 2);
-            for (int i = 0; i < amount; i++)
             {
-                int pos = Utility.RandomMinMax(0, spawns.Count() - 1);
-                BaseCreature mob = spawnOffType(spawns.ElementAt(pos));
+                return;
+            }
+
+            var spawns = Utility.EnumToIEnumerable<Spawnables>(m_Spawns, true);
+            if (spawns == null || !spawns.Any())
+                return;
+
+            var amount = Utility.RandomMinMax(0, 2);
+            for (var i = 0; i < amount; i++)
+            {
+                var pos = Utility.RandomMinMax(0, spawns.Count() - 1);
+                var mob = spawnOffType(spawns.ElementAt(pos));
                 if (mob == null)
+                {
                     continue;
+                }
+
                 mob.Spawned(this, Region, ValidCoordinate(HomeLocation.X, HomeLocation.Y, HomeRange));
                 Spawned.Add(mob);       // Add it to the tracked spawned.
             }
@@ -209,12 +198,16 @@ namespace SUS.Objects
         private int validAxis(int baseN, int maxN, int range)
         {
             if (baseN < 0)
+            {
                 baseN = 0;
+            }
 
             if (baseN > maxN)
+            {
                 baseN = maxN;
+            }
 
-            int baseModified = 0;
+            int baseModified;
             do
             {
                 baseModified = baseN + Utility.RandomMinMax((-range), range);

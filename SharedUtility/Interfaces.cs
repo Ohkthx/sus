@@ -1,10 +1,8 @@
-﻿using System;
-
-namespace SUS.Shared
+﻿namespace SUS.Shared
 {
     public interface IPacket
     {
-        UInt64 PlayerID { get; }
+        ulong PlayerId { get; }
         Packets.PacketTypes Type { get; }
         byte[] ToByte();
     }

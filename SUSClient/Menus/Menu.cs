@@ -2,40 +2,57 @@
 using System.Collections.Generic;
 using SUS.Shared.Packets;
 
-namespace SUSClient
+namespace SUSClient.Menus
 {
     public abstract class Menu
     {
-        protected string Header = string.Empty;   // Presented at the top of the Body.
-        protected string Body = string.Empty;     // Information to be read.
-        protected string Footer = string.Empty;   // Footer is reserved for Items / Options.
-        protected List<string> Options = new List<string>();
+        private readonly string m_Header;   // Presented at the top of the Body.
+        private readonly string m_Body;     // Information to be read.
+        private string m_Footer;   // Footer is reserved for Items / Options.
+        protected readonly List<string> Options = new List<string>();
 
-        private string Name = string.Empty;
-        private Menu ParentMenu;
-        private Dictionary<string, Menu> SubMenus = new Dictionary<string, Menu>(); // Key: Text; Value: SubMenu to call.
+        private string m_Name;
+        private Menu m_ParentMenu;
+        private readonly Dictionary<string, Menu> m_SubMenus = new Dictionary<string, Menu>(); // Key: Text; Value: SubMenu to call.
 
-        private const int MAXItemPerLine = 5;
+        private const int MaxItemPerLine = 5;
+
+        private string Name
+        {
+            get => m_Name ?? "Unknown";
+            set
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    return;
+                }
+
+                m_Name = value;
+            }
+        }
 
         #region Constructors
-        public Menu(string header, string body) { this.Header = header; this.Body = body; }
-        public Menu(string body) : this(string.Empty, body) { }
-        public Menu() { }
+
+        private Menu(string header, string body) { m_Header = header; m_Body = body; }
+        protected Menu(string body) : this(string.Empty, body) { }
+
         #endregion
 
         #region Overrides
         public override bool Equals(object obj)
         {
-            Menu m = obj as Menu;
+            var m = obj as Menu;
             if (m == null)
+            {
                 return false;
+            }
 
-            return this.Name == m.Name;
+            return Name == m.Name;
         }
 
         public static bool operator ==(Menu obj1, Menu obj2)
         {
-            return obj1.Equals(obj2);
+            return obj1 != null && obj1.Equals(obj2);
         }
 
         public static bool operator !=(Menu obj1, Menu obj2)
@@ -45,10 +62,10 @@ namespace SUSClient
 
         public override int GetHashCode()
         {
-            int hash = 37;
-            hash += this.Body.GetHashCode();
+            var hash = 37;
+            hash += m_Body.GetHashCode();
             hash *= 37;
-            hash += this.Name.GetHashCode();
+            if (Name != null) hash += Name.GetHashCode();
             hash *= 397;
             return hash;
         }
@@ -62,9 +79,9 @@ namespace SUSClient
         /// <param name="menu">SubMenu object.</param>
         public void AddItem(string str, Menu menu)
         {
-            menu.SetName(str);     // Assign the name here so that it is exact to the key.
+            menu.Name = str;     // Assign the name here so that it is exact to the key.
             menu.SetParent(this);  // Assign the Parent to this current instance.
-            SubMenus[str] = menu;  // Add it to our list of menus.
+            m_SubMenus[str] = menu;  // Add it to our list of menus.
         }
 
         /// <summary>
@@ -72,39 +89,44 @@ namespace SUSClient
         /// </summary>
         private void CreateFooter()
         {
-            int n = 0;  // Counter for current place.
+            var n = 0;  // Counter for current place.
 
-            foreach(KeyValuePair<string, Menu> kp in this.SubMenus)
+            foreach (var kp in m_SubMenus)
             {
-                if ((n - 1 % MAXItemPerLine) == 0 && n+1 < this.SubMenus.Count)
-                    Footer += "\n";     // Add a new line.
-                Footer += string.Format("[ {0} ] ", kp.Key);    // Print out our "key"
+                if ((n - 1 % MaxItemPerLine) == 0 && n + 1 < m_SubMenus.Count)
+                {
+                    m_Footer += "\n";     // Add a new line.
+                }
+
+                m_Footer += $"[ {kp.Key} ] ";    // Print out our "key"
                 n++;
             }
         }
-        
-        private void SetName(string str) { this.Name = str; }
 
-        private void SetParent(Menu parent) { this.ParentMenu = parent; }
+        private void SetParent(Menu parent) { m_ParentMenu = parent; }
         #endregion
 
         public abstract Packet Display();
 
         protected void ShowMenu()
         {   // Print our header if we have one.
-            if (this.Header != string.Empty)
-                Console.WriteLine(this.Header + "\n");
+            if (m_Header != string.Empty)
+            {
+                Console.WriteLine(m_Header + "\n");
+            }
 
             // Print the body text.
-            Console.WriteLine(this.Body);
+            Console.WriteLine(m_Body);
 
             // Attempt to generate our footer, if one is created with items, print it.
             CreateFooter();
-            if (this.Footer != string.Empty)
-                Console.WriteLine("\n"+Footer);
+            if (m_Footer != string.Empty)
+            {
+                Console.WriteLine("\n" + m_Footer);
+            }
         }
 
-        protected string GetInput()
+        protected static string GetInput()
         {
             Console.Write("Please choose an option: ");
             return Console.ReadLine();

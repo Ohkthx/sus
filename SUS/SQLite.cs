@@ -4,29 +4,35 @@ using System.Data;
 using System.Data.SQLite;
 using System.IO;
 
-namespace SUS.Utilities
+namespace SUS
 {
-    public class SQLWrapper
+    public class SqlWrapper
     {
-        private const string _database = "GameStates.db3";
-        private static string _dbSource;
-        private static List<string> _queries;
+        private const string Database = "GameStates.db3";
+        private static string m_Source;
+        private static List<string> m_Queries;
 
-        public SQLWrapper()
+        public SqlWrapper()
         {
-            if (string.IsNullOrEmpty(_dbSource))
-                _dbSource = $"Data Source={_database};Vesion=3;";
-
-            if (_queries == null)
+            if (string.IsNullOrEmpty(m_Source))
             {
-                _queries = new List<string>();
-                if (_queries.Count == 0)
-                    queryInit();
+                m_Source = $"Data Source={Database};Version=3;";
+            }
+
+            if (m_Queries == null)
+            {
+                m_Queries = new List<string>();
+                if (m_Queries.Count == 0)
+                {
+                    QueryInit();
+                }
             }
 
             // Setup the database if it doesn't exist.
-            if (!File.Exists(_database))
+            if (!File.Exists(Database))
+            {
                 setupDatabase();
+            }
         }
 
         private void setupDatabase()
@@ -37,18 +43,18 @@ namespace SUS.Utilities
             };
 
             Console.WriteLine("[ Creating Database... ]");
-            SQLiteConnection.CreateFile(_database);
+            SQLiteConnection.CreateFile(Database);
 
             Console.WriteLine(" => Creating Tables...");
             // Establish connection to create tables
-            using (SQLiteConnection db = new SQLiteConnection(_dbSource))
+            using (var db = new SQLiteConnection(m_Source))
             {
                 db.Open();
                 using (var cmd = new SQLiteCommand(db))
                 using (var transaction = db.BeginTransaction())
                 {
                     // Create the tables.
-                    foreach (string table in tables)
+                    foreach (var table in tables)
                     {
                         Console.WriteLine($"   => {table,-30}");
                         cmd.CommandText = table;
@@ -67,30 +73,32 @@ namespace SUS.Utilities
         public HashSet<T> GetAll<T>(int index)
         {
             // Validate we have a database, if not create and return.
-            if (!File.Exists(_database))
+            if (!File.Exists(Database))
             {
                 setupDatabase();
                 return null;
             }
 
             // Get our query string, return if it is a bad string.
-            string queryString = queryGet(index);
+            var queryString = QueryGet(index);
             if (string.IsNullOrEmpty(queryString))
+            {
                 return null;
+            }
 
             // Passed the initial checks, create the HashSet.
-            HashSet<T> items = new HashSet<T>();
+            var items = new HashSet<T>();
 
             // Begin out query.
-            using (SQLiteConnection _dbConnection = new SQLiteConnection(_dbSource))
+            using (var dbConnection = new SQLiteConnection(m_Source))
             {
-                _dbConnection.Open();
-                using (SQLiteCommand fmd = _dbConnection.CreateCommand())
+                dbConnection.Open();
+                using (var fmd = dbConnection.CreateCommand())
                 {
                     fmd.CommandText = queryString;
                     fmd.CommandType = CommandType.Text;
 
-                    SQLiteDataReader r = fmd.ExecuteReader();
+                    var r = fmd.ExecuteReader();
                     while (r.Read())
                     {
                         // Process data here.
@@ -107,27 +115,29 @@ namespace SUS.Utilities
         public T Get<T>(int index)
         {
             // Validate we have a database, if not create and return.
-            if (!File.Exists(_database))
+            if (!File.Exists(Database))
             {
                 setupDatabase();
                 return default(T);
             }
 
             // Get our query string, return if it is a bad string.
-            string queryString = queryGet(index);
+            var queryString = QueryGet(index);
             if (string.IsNullOrEmpty(queryString))
+            {
                 return default(T);
+            }
 
             // Begin out query.
-            using (SQLiteConnection _dbConnection = new SQLiteConnection(_dbSource))
+            using (var dbConnection = new SQLiteConnection(m_Source))
             {
-                _dbConnection.Open();
-                using (SQLiteCommand fmd = _dbConnection.CreateCommand())
+                dbConnection.Open();
+                using (var fmd = dbConnection.CreateCommand())
                 {
                     fmd.CommandText = queryString;
                     fmd.CommandType = CommandType.Text;
 
-                    SQLiteDataReader r = fmd.ExecuteReader();
+                    var r = fmd.ExecuteReader();
                     while (r.Read())
                     {
                         // Process data here.
@@ -140,29 +150,34 @@ namespace SUS.Utilities
             return default(T);
         }
 
-        public void Insert<T>(int index, object toInsert)
+        public void Insert(int index, object toInsert)
         {
             // Validate we have a database, if not create it and prepare for processing.
-            if (!File.Exists(_database))
+            if (!File.Exists(Database))
+            {
                 setupDatabase();
+            }
 
             // Get our query string, return if it is a bad string.
-            string queryString = queryGet(index);
+            var queryString = QueryGet(index);
             if (string.IsNullOrEmpty(queryString))
+            {
                 return;
+            }
 
             // Begin out query.
-            using (SQLiteConnection _dbConnection = new SQLiteConnection(_dbSource))
+            using (var dbConnection = new SQLiteConnection(m_Source))
             {
-                _dbConnection.Open();
-                SQLiteCommand fmd = _dbConnection.CreateCommand();
+                dbConnection.Open();
+                var fmd = dbConnection.CreateCommand();
                 fmd.CommandText = queryString;
                 fmd.CommandType = CommandType.Text;
 
                 // Verify the object is compatible and meets the minimum requirements to be inserted and selected.
-                ISQLCompatible obj = toInsert as ISQLCompatible;
-                if (obj == null)
+                if (!(toInsert is ISQLCompatible obj))
+                {
                     return;
+                }
 
                 // Get our information to store and assign it back to the SQLiteCommand.
                 obj.ToInsert(fmd);
@@ -173,22 +188,24 @@ namespace SUS.Utilities
         #endregion
 
         #region Miscellaneous
-        private string queryGet(int index)
+        private static string QueryGet(int index)
         {
             // If it is an invalid number (OOB on the List) then return early.
-            if (index + 1 > _queries.Count || index < 0)
+            if (index + 1 > m_Queries.Count || index < 0)
+            {
                 return "";
+            }
 
-            return _queries[index];
+            return m_Queries[index];
         }
 
-        private void queryInit()
+        private static void QueryInit()
         {
-            _queries.Add("SELECT * FROM gamestates");
-            _queries.Add("INSERT INTO gamestates (ID, GameState) VALUES (@p1, @p2)");
+            m_Queries.Add("SELECT * FROM gamestates");
+            m_Queries.Add("INSERT INTO gamestates (ID, GameState) VALUES (@p1, @p2)");
         }
 
-        private void tableInit(ref SQLiteConnection _db)
+        private void TableInit(ref SQLiteConnection db)
         {
 
         }

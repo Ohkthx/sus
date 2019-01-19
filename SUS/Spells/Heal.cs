@@ -1,7 +1,7 @@
 ﻿using SUS.Objects;
-using SUS.Spells;
+using SUS.Shared;
 
-namespace SUS.Shared.Spells
+namespace SUS.Spells
 {
     public class Heal : Spell
     {
@@ -11,13 +11,11 @@ namespace SUS.Shared.Spells
 
         public override int Effect(Mobile caster, Mobile target)
         {
-            if (caster.Mana >= ManaRequired)
-            {
-                caster.Mana -= ManaRequired;
-                return SpellHelper.Heal(target, Utility.RandomMinMax(10, 17));
-            }
+            if (caster.Mana < ManaRequired) return 0;
 
-            return 0;
+            caster.Mana -= ManaRequired;
+            return SpellHelper.Heal(target, Utility.RandomMinMax(10, 17));
+
         }
 
     }

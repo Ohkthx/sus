@@ -1,12 +1,12 @@
 ﻿using SUS.Shared;
 
-namespace SUS.Objects.Spawns
+namespace SUS.Objects.Mobiles.Spawns
 {
     public class Cyclops : BaseCreature
     {
-        public Cyclops() : base()
+        public Cyclops()
         {
-            AIType = AI.Types.Melee;
+            AiType = Ai.Types.Melee;
             Name = "a cyclops";
 
             SetStr(336, 385);

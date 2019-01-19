@@ -3,15 +3,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace SUSClient.Client
+namespace SUSClient
 {
-   public class AsynchronousClient
+    public static class AsynchronousClient
     {
         // The port number for the remote device.  
-        private const int port = 8411;
+        private const int Port = 8411;
 
         // ManualResetEvent instances signal completion.  
-        private static ManualResetEvent connectDone =
+        private static readonly ManualResetEvent ConnectDone =
             new ManualResetEvent(false);
 
         /// <summary>
@@ -23,20 +23,20 @@ namespace SUSClient.Client
             try
             {
                 // Establish the remote endpoint for the socket.  
-                IPHostEntry ipHostInfo = Dns.GetHostEntry("localhost");
-                IPAddress ipAddress = ipHostInfo.AddressList[0];
-                IPEndPoint remoteEP = new IPEndPoint(ipAddress, port);
+                var ipHostInfo = Dns.GetHostEntry("localhost");
+                var ipAddress = ipHostInfo.AddressList[0];
+                var remoteEp = new IPEndPoint(ipAddress, Port);
 
                 // Create a TCP/IP socket.  
-                Socket client = new Socket(ipAddress.AddressFamily,
+                var client = new Socket(ipAddress.AddressFamily,
                     SocketType.Stream, ProtocolType.Tcp);
 
                 Console.WriteLine("[ Client Started ]");
 
                 // Connect to the remote endpoint.  
-                client.BeginConnect(remoteEP,
-                    new AsyncCallback(ConnectCallback), client);
-                connectDone.WaitOne();
+                client.BeginConnect(remoteEp,
+                    ConnectCallback, client);
+                ConnectDone.WaitOne();
 
                 // CORE of the server. Handles actions made by client and information from the Server.
                 Program.ServerConnect(ref client);
@@ -57,16 +57,16 @@ namespace SUSClient.Client
             try
             {
                 // Retrieve the socket from the state object.  
-                Socket client = (Socket)ar.AsyncState;
+                var client = (Socket)ar.AsyncState;
 
                 // Complete the connection.  
                 client.EndConnect(ar);
 
                 Console.WriteLine("Socket connected to {0}",
-                    client.RemoteEndPoint.ToString());
+                    client.RemoteEndPoint);
 
                 // Signal that the connection has been made.  
-                connectDone.Set();
+                ConnectDone.Set();
             }
             catch (Exception e)
             {

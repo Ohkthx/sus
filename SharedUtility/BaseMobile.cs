@@ -6,12 +6,11 @@ namespace SUS.Shared
     [Flags]
     public enum MobileTypes
     {
-        None = 0,
         Player = 1,
-        NPC = 2,
+        Npc = 2,
         Creature = 4,
 
-        Mobile = Player | NPC | Creature,
+        Mobile = Player | Npc | Creature,
     }
 
     [Flags]
@@ -36,51 +35,28 @@ namespace SUS.Shared
     [Serializable]
     public struct BaseMobile
     {
-        private int m_Serial;
-        private string m_Name;
-        private MobileTypes m_Type;
+        private readonly string m_Name;
 
         #region Constructors
-        public BaseMobile(MobileTypes type, int serial, string name)
+        public BaseMobile(MobileTypes type, int serial, string name) : this()
         {
-            m_Serial = serial;
-            m_Type = type;
+            Type = type;
+            Serial = serial;
             m_Name = name;
         }
+
+        public int Serial { get; }
+
         #endregion
 
         #region Getters/Setters
-        public int Serial { get { return m_Serial; } }
 
-        public MobileTypes Type
-        {
-            get { return m_Type; }
-            set
-            {
-                if (value == MobileTypes.None)
-                    return;
+        public MobileTypes Type { get; }
 
-                if (Type != value)
-                    m_Type = value;
-            }
-        }
+        public string Name => m_Name ?? "Unknown";
 
-        public string Name
-        {
-            get { return m_Name; }
-            set
-            {
-                if (value == null)
-                    return;
-                else if (Name == null)
-                    m_Name = value;
+        public bool IsPlayer => Type == MobileTypes.Player;
 
-                if (Name != value)
-                    m_Name = value;
-            }
-        }
-
-        public bool IsPlayer { get { return Type == MobileTypes.Player; } }
         #endregion
 
         #region Overrides
@@ -89,18 +65,16 @@ namespace SUS.Shared
             unchecked
             {
                 int hash = 13;
-                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Serial) ? m_Serial.GetHashCode() : 0);
-                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Name) ? m_Name.GetHashCode() : 0);
-                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Type) ? m_Type.GetHashCode() : 0);
+                hash = (hash * 7) + Serial.GetHashCode();
+                hash = (hash * 7) + m_Name?.GetHashCode() ?? 0;
+                hash = (hash * 7) + Type.GetHashCode();
                 return hash;
             }
         }
 
         public static bool operator ==(BaseMobile m1, BaseMobile m2)
         {
-            if (Object.ReferenceEquals(m1, m2)) return true;
-            if (Object.ReferenceEquals(null, m1)) return false;
-            return (m1.Equals(m2));
+            return m1.Equals(m2);
         }
 
         public static bool operator !=(BaseMobile m1, BaseMobile m2)
@@ -110,24 +84,22 @@ namespace SUS.Shared
 
         public override bool Equals(object value)
         {
-            if (Object.ReferenceEquals(null, value)) return false;
-            if (Object.ReferenceEquals(this, value)) return true;
-            if (value.GetType() != this.GetType()) return false;
-            return IsEqual((BaseMobile)value);
+            if (ReferenceEquals(null, value))
+            {
+                return false;
+            }
+
+            return value.GetType() == GetType() && IsEqual((BaseMobile)value);
         }
 
-        public bool Equals(BaseMobile mobile)
+        private bool Equals(BaseMobile mobile)
         {
-            if (Object.ReferenceEquals(null, mobile)) return false;
-            if (Object.ReferenceEquals(this, mobile)) return true;
             return IsEqual(mobile);
         }
 
         private bool IsEqual(BaseMobile value)
         {
-            return (value != null)
-                && (m_Type == value.m_Type)
-                && (m_Serial == value.m_Serial);
+            return Type == value.Type && Serial == value.Serial;
         }
         #endregion
     }

@@ -13,8 +13,8 @@ namespace SUS
 
         private DateTime StartTime { get; set; }
         private DateTime EndTime { get; set; }
-        private bool Running { get; set; } = false;
-        private bool Started { get; set; } = false;
+        private bool Running { get; set; }
+        private bool Started { get; set; }
         public int Limit { get; private set; } = 1000;
 
         public Timer() { Limit = 0; }
@@ -29,21 +29,26 @@ namespace SUS
             get
             {
                 if (!Started)
+                {
                     return 0;
+                }
+
                 if (Started && !Running)
+                {
                     return (int)(EndTime - StartTime).TotalMilliseconds;
-                else
-                    return (int)(DateTime.Now - StartTime).TotalMilliseconds;
+                }
+
+                return (int)(DateTime.Now - StartTime).TotalMilliseconds;
             }
         }
 
-        public int Ticks { get { return Limit >= 1000 ? ElapsedTime / Limit: 0; } }
+        public int Ticks => Limit >= 1000 ? ElapsedTime / Limit : 0;
 
-        public bool Completed { get { return Limit >= 1000 ? ElapsedTime >= Limit : false; } }
+        public bool Completed => Limit >= 1000 && ElapsedTime >= Limit;
 
-        private int Parser(int timeout, Formats format)
+        private static int Parser(int timeout, Formats format)
         {
-            int limit = 0;
+            var limit = 0;
             switch (format)
             {
                 case Formats.Milliseconds:
@@ -80,7 +85,9 @@ namespace SUS
         public void Start()
         {
             if (Running)
+            {
                 return;
+            }
 
             if (!Started)
             {
@@ -94,7 +101,9 @@ namespace SUS
         public void Stop()
         {   // It is not running and it has not ever started.
             if (!Running || !Started)
+            {
                 return;
+            }
 
             EndTime = DateTime.Now;
             Running = false;

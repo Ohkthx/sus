@@ -1,4 +1,4 @@
-﻿namespace SUS.Objects.Items
+﻿namespace SUS.Objects.Items.Consumables
 {
     public class Bandage : Consumable
     {
@@ -13,7 +13,7 @@
 
         public static int GetEffect(int maxHits, double skillLvl = 1.0)
         {
-            return (int)((maxHits * 0.20) + (skillLvl / 5));
+            return (int)(maxHits * 0.20 + (skillLvl / 5));
         }
     }
 }

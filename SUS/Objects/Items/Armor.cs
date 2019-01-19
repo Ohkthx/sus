@@ -18,8 +18,9 @@ namespace SUS.Objects.Items
         private DamageTypes m_Resistances;
 
         #region Constructors
-        public Armor(ItemLayers layer, Materials material, string name) 
-            : base(ItemTypes.Armor, layer)
+
+        protected Armor(ItemLayers layer, Materials material, string name)
+            : base(ItemTypes.Armor, layer, 0)
         {
             Name = name;
             Material = material;
@@ -27,41 +28,50 @@ namespace SUS.Objects.Items
             Weight = Weights.Light;
             Resistances = DamageTypes.None;
         }
+
         #endregion
 
         #region Getters / Setters
-        public override string Name { get { return $"{Enum.GetName(typeof(Materials), Material)} {base.Name}"; } }
+        public override string Name => $"{Enum.GetName(typeof(Materials), Material)} {base.Name}";
 
-        public Materials Material
+        private Materials Material
         {
-            get { return m_Material; }
+            get => m_Material;
             set
             {
                 if (value == Material)
+                {
                     return;
+                }
 
                 m_Material = value;
             }
         }
-        public override int RawRating { get { return ArmorRating; } }
 
-        public int ArmorRating
+        protected override int RawRating => ArmorRating;
+
+        private int ArmorRating
         {
-            get { return m_ArmorRating; }
-            private set
+            get => m_ArmorRating;
+            set
             {
                 if (value != ArmorRating)
+                {
                     m_ArmorRating = value;
+                }
             }
         }
 
         public virtual DamageTypes Resistances
         {
-            get { return m_Resistances; }
+            get => m_Resistances;
             protected set
             {
                 if (value == Resistances)
+                {
                     return;
+                }
+
                 m_Resistances = value;
             }
 

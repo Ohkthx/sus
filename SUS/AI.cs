@@ -5,7 +5,7 @@ using SUS.Objects.Items.Equipment;
 
 namespace SUS
 {
-    public static class AI
+    public static class Ai
     {
         public enum Types
         {
@@ -17,7 +17,6 @@ namespace SUS
         public enum Actions
         {
             Attack,
-            Move,
         }
 
         public static void PerformAction(Mobile creature, Actions action)
@@ -28,20 +27,20 @@ namespace SUS
                     int distance = 0;
                     if (creature.Target != null && creature.Target.Location.IsValid)
                         distance = Point2D.Distance(creature, creature.Target);
-                    attack(creature, distance);
+                    Attack(creature, distance);
                     break;
             }
         }
 
-        private static void attack(Mobile creature, int distance)
+        private static void Attack(Mobile creature, int distance)
         {
-            List<Weapon> weapons = new List<Weapon>();
-            foreach (Item i in creature.Items.Values)
-                if (i.IsEquippable && (i as Equippable).IsWeapon)
+            var weapons = new List<Weapon>();
+            foreach (var i in creature.Items)
+                if (i.IsEquippable && ((Equippable) i).IsWeapon)
                     weapons.Add(i as Weapon);
 
-            Weapon weapon = creature.Weapon;
-            foreach (Weapon w in weapons)
+            var weapon = creature.Weapon;
+            foreach (var w in weapons)
             {
                 if (w.IsBow && creature.Arrows.Amount == 0)
                     continue;

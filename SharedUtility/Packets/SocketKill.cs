@@ -7,8 +7,8 @@ namespace SUS.Shared.Packets
     {
         private bool m_Kill;
 
-        public SocketKillPacket(UInt64 playerID, bool kill = true) 
-            : base(PacketTypes.SocketKill, playerID)
+        public SocketKillPacket(ulong playerId, bool kill = true)
+            : base(PacketTypes.SocketKill, playerId)
         {
             Kill = kill;
         }
@@ -16,11 +16,13 @@ namespace SUS.Shared.Packets
         #region Getters / Setters
         public bool Kill
         {
-            get { return m_Kill; }
+            get => m_Kill;
             private set
             {
                 if (value != Kill)
+                {
                     m_Kill = value;
+                }
             }
         }
         #endregion

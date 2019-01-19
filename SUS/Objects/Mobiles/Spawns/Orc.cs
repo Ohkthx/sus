@@ -1,14 +1,14 @@
-﻿using SUS.Shared;
-using SUS.Objects.Items;
+﻿using SUS.Objects.Items;
 using SUS.Objects.Items.Equipment;
+using SUS.Shared;
 
-namespace SUS.Objects.Spawns
+namespace SUS.Objects.Mobiles.Spawns
 {
     public class Orc : BaseCreature
     {
-        public Orc() : base()
+        public Orc()
         {
-            AIType = AI.Types.Archer;
+            AiType = Ai.Types.Archer;
             Name = "an orc";
 
             SetStr(96, 120);

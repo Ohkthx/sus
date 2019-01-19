@@ -39,6 +39,7 @@ namespace SUS
         MobileTypes Type { get; }
         Point2D Location { get; }
         bool IsDeleted { get; }
+        void Delete();
     }
 
     public interface IDamageable : IEntity

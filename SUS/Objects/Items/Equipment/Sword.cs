@@ -2,7 +2,7 @@
 {
     public class ShortSword : OneHanded
     {
-        public ShortSword(Materials material) 
+        public ShortSword(Materials material)
             : base(material, "1d6")
         {
             Name = "Short Sword";
@@ -14,7 +14,7 @@
 
     public class TwoHandedSword : TwoHanded
     {
-        public TwoHandedSword(Materials material) 
+        public TwoHandedSword(Materials material)
             : base(material, "2d6")
         {
             Name = "Two-Handed Sword";

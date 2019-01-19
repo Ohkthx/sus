@@ -18,24 +18,24 @@ namespace SUS
     {
         private enum TimerLevels
         {   // LTE(Skill Level) = Time in seconds.
-            LTE30  = 1,     // Chance to gain: 50%
-            LTE45  = 15,
-            LTE60  = 30,    // Chance to gain: 40%
-            LTE70  = 45,
-            LTE80  = 60,    // Chance to gain: 30%
-            LTE90  = 80,
-            LTE100 = 100,   // Chance to gain: 20%
-            LTE105 = 120,   // Chance to gain: 10%
-            LTE110 = 180,  
-            LTE115 = 240,
-            LTE120 = 300,
+            Lte30 = 1,     // Chance to gain: 50%
+            Lte45 = 15,
+            Lte60 = 30,    // Chance to gain: 40%
+            Lte70 = 45,
+            Lte80 = 60,    // Chance to gain: 30%
+            Lte90 = 80,
+            Lte100 = 100,   // Chance to gain: 20%
+            Lte105 = 120,   // Chance to gain: 10%
+            Lte110 = 180,
+            Lte115 = 240,
+            Lte120 = 300,
         }
 
         private string m_Name;
         private SkillName m_Type;
         private double m_Value;
         private double m_Cap;
-        private Timer m_Timer;
+        private readonly Timer m_Timer;
 
         #region Constructors
         public Skill(SkillName type, double value = 0.0, double cap = 100.0)
@@ -53,61 +53,64 @@ namespace SUS
         #region Getters / Setters
         public string Name
         {
-            get
+            get => m_Name ?? "Unknown";
+            private set
             {
-                if (m_Name != null)
-                    return m_Name;
-                else
-                    return "Unknown";
-            }
-            set
-            {
-                if (value != m_Name)
+                if (!string.IsNullOrEmpty(value))
+                {
                     m_Name = value;
+                }
             }
         }
 
-        public SkillName Type
+        private SkillName Type
         {
-            get { return m_Type; }
-            private set
+            get => m_Type;
+            set
             {
                 if (value != Type)
+                {
                     m_Type = value;
+                }
             }
         }
 
         public double Value
         {
-            get { return m_Value; }
+            get => m_Value;
             set
-            {
-                if (value == Value)
-                    return;
-
+            { 
                 if (value < 0.0)
+                {
                     value = 0.0;
+                }
                 else if (value > Cap)
+                {
                     value = Cap;
+                }
 
                 m_Value = value;
             }
         }
 
-        public double Cap 
+        public double Cap
         {
-            get { return m_Cap; }
-            set
+            get => m_Cap;
+            private set
             {
-                if (value == Cap)
+                if (value < Value)
+                {
                     return;
-                else if (value < Value)
-                    return;
+                }
 
                 if (value < 0.0)
+                {
                     value = 0.0;
+                }
                 else if (value > 200.0)
+                {
                     value = 200.0;
+                }
 
                 m_Cap = value;
             }
@@ -119,14 +122,23 @@ namespace SUS
         public static Skill operator +(Skill s, double amt)
         {
             if (amt <= 0.0)
+            {
                 return s;
-            else if (s.Value == s.Cap)
+            }
+
+            if (s.Value >= s.Cap)
+            {
                 return s;
+            }
 
             if (s.Value + amt > s.Cap)
+            {
                 s.Value = s.Cap;
+            }
             else
+            {
                 s.Value = s.Value + amt;
+            }
 
             return s;
         }
@@ -135,14 +147,24 @@ namespace SUS
         public static Skill operator -(Skill s, double amt)
         {
             if (amt <= 0.0)
+            {
                 return s;
-            else if (s.Value == 0.0)
+            }
+
+            if (s.Value <= 0.0)
+            {
+                s.Value = 0.0;
                 return s;
+            }
 
             if (s.Value - amt < 0.0)
+            {
                 s.Value = 0.0;
+            }
             else
+            {
                 s.Value = s.Value - amt;
+            }
 
             return s;
         }
@@ -156,7 +178,7 @@ namespace SUS
                 return 0.0;
             }
 
-            int time;       // Time in miliseconds that is required to pass to increase in skill.
+            int time;       // Time in milliseconds that is required to pass to increase in skill.
             int chance;     // Chance that the skill will be increased.
             double amount;  // Amount to increase the skill by.
 
@@ -165,57 +187,57 @@ namespace SUS
                 case double n when (n <= 30.0):
                     chance = 5;
                     amount = 1.0;
-                    time = (int)TimerLevels.LTE30 * 1000;
+                    time = (int)TimerLevels.Lte30 * 1000;
                     break;
                 case double n when (n <= 45.0):
                     chance = 5;
                     amount = 0.5;
-                    time = (int)TimerLevels.LTE45 * 1000;
+                    time = (int)TimerLevels.Lte45 * 1000;
                     break;
                 case double n when (n <= 60.0):
                     chance = 4;
                     amount = 0.2;
-                    time = (int)TimerLevels.LTE60 * 1000;
+                    time = (int)TimerLevels.Lte60 * 1000;
                     break;
                 case double n when (n <= 70.0):
                     chance = 4;
                     amount = 0.2;
-                    time = (int)TimerLevels.LTE70 * 1000;
+                    time = (int)TimerLevels.Lte70 * 1000;
                     break;
                 case double n when (n <= 80.0):
                     chance = 3;
                     amount = 0.1;
-                    time = (int)TimerLevels.LTE80 * 1000;
+                    time = (int)TimerLevels.Lte80 * 1000;
                     break;
                 case double n when (n <= 90.0):
                     chance = 3;
                     amount = 0.1;
-                    time = (int)TimerLevels.LTE90 * 1000;
+                    time = (int)TimerLevels.Lte90 * 1000;
                     break;
                 case double n when (n <= 100.0):
                     chance = 2;
                     amount = 0.1;
-                    time = (int)TimerLevels.LTE100 * 1000;
+                    time = (int)TimerLevels.Lte100 * 1000;
                     break;
                 case double n when (n <= 105.0):
                     chance = 1;
                     amount = 0.1;
-                    time = (int)TimerLevels.LTE105 * 1000;
+                    time = (int)TimerLevels.Lte105 * 1000;
                     break;
                 case double n when (n <= 110.0):
                     chance = 1;
                     amount = 0.1;
-                    time = (int)TimerLevels.LTE110 * 1000;
+                    time = (int)TimerLevels.Lte110 * 1000;
                     break;
                 case double n when (n <= 115.0):
                     chance = 1;
                     amount = 0.1;
-                    time = (int)TimerLevels.LTE115 * 1000;
+                    time = (int)TimerLevels.Lte115 * 1000;
                     break;
                 default:
                     chance = 1;
                     amount = 0.1;
-                    time = (int)TimerLevels.LTE120 * 1000;
+                    time = (int)TimerLevels.Lte120 * 1000;
                     break;
 
             }

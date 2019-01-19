@@ -1,12 +1,12 @@
 ﻿using SUS.Shared;
 
-namespace SUS.Objects.Spawns
+namespace SUS.Objects.Mobiles.Spawns
 {
     public class Titan : BaseCreature
     {
-        public Titan() : base()
+        public Titan()
         {
-            AIType = AI.Types.Mage;
+            AiType = Ai.Types.Mage;
             Name = "a titan";
 
             SetStr(536, 585);

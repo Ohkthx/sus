@@ -2,7 +2,7 @@
 {
     public class Unarmed : Weapon
     {
-        public Unarmed() 
+        public Unarmed()
             : base(ItemLayers.MainHand, Materials.None, "1d4")
         {
             Name = "unarmed";

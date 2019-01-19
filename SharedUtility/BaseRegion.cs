@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace SUS.Shared
 {
@@ -65,55 +64,29 @@ namespace SUS.Shared
     [Serializable]
     public struct BaseRegion
     {
-        private RegionType m_Type;
-        private Regions m_Region;
-        private Regions m_Connections;
-        public bool CanTraverse { get; private set; }
+        public bool Navigable { get; }
 
         #region Constructors
-        public BaseRegion(RegionType type, Regions region, Regions connections, bool isTraversable)
+        public BaseRegion(RegionType type, Regions region, Regions connections, bool navigable)
         {
-            m_Type = type;
-            m_Region = region;
-            m_Connections = connections;
-            CanTraverse = isTraversable;
+            Type = type;
+            Location = region;
+            Connections = connections;
+            Navigable = navigable;
         }
         #endregion
 
         #region Getters / Settersa
-        public string Name { get { return Enum.GetName(typeof(Regions), Location); } }
 
-        public RegionType Type
-        {
-            get { return m_Type; }
-            private set
-            {
-                if (value != m_Type)
-                    m_Type = value;
-            }
-        }
+        private string Name => Enum.GetName(typeof(Regions), Location);
 
-        public Regions Location
-        {
-            get { return m_Region; }
-            private set
-            {
-                if (value != m_Region)
-                    m_Region = value;
-            }
-        }
+        private RegionType Type { get; }
 
-        public Regions Connections
-        {
-            get { return m_Connections; }
-            private set
-            {
-                if (value != Connections)
-                    m_Connections = value;
-            }
-        }
+        public Regions Location { get; }
 
-        public bool IsValid { get { return Location != Regions.None && (Location & (Location - 1)) == 0; } }
+        public Regions Connections { get; }
+
+        public bool IsValid => Location != Regions.None && (Location & (Location - 1)) == 0;
         #endregion
 
         #region Overrides
@@ -126,18 +99,16 @@ namespace SUS.Shared
         {
             unchecked
             {
-                int hash = 13;
-                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Region) ? m_Region.GetHashCode() : 0);
-                hash = (hash * 7) + (!Object.ReferenceEquals(null, m_Type) ? m_Type.GetHashCode() : 0);
+                var hash = 13;
+                hash = (hash * 7) + Location.GetHashCode();
+                hash = (hash * 7) + Type.GetHashCode();
                 return hash;
             }
         }
 
         public static bool operator ==(BaseRegion v1, BaseRegion v2)
         {
-            if (Object.ReferenceEquals(v1, v2)) return true;
-            if (Object.ReferenceEquals(null, v1)) return false;
-            return (v1.Equals(v2));
+            return v1.Equals(v2);
         }
 
         public static bool operator !=(BaseRegion v1, BaseRegion v2)
@@ -147,24 +118,23 @@ namespace SUS.Shared
 
         public override bool Equals(object value)
         {
-            if (Object.ReferenceEquals(null, value)) return false;
-            if (Object.ReferenceEquals(this, value)) return true;
-            if (value.GetType() != this.GetType()) return false;
-            return IsEqual((BaseRegion)value);
+            if (ReferenceEquals(null, value))
+            {
+                return false;
+            }
+
+            return value.GetType() == GetType() && IsEqual((BaseRegion)value);
         }
 
-        public bool Equals(BaseRegion value)
+        private bool Equals(BaseRegion value)
         {
-            if (Object.ReferenceEquals(null, value)) return false;
-            if (Object.ReferenceEquals(this, value)) return true;
             return IsEqual(value);
         }
 
         private bool IsEqual(BaseRegion value)
         {
-            return (value != null)
-                && (m_Type == value.m_Type)
-                && (m_Region == value.m_Region);
+            return (Type == value.Type)
+                && (Location == value.Location);
 
         }
         #endregion

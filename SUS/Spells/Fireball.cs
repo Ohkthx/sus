@@ -11,13 +11,11 @@ namespace SUS.Spells
 
         public override int Effect(Mobile caster, Mobile target)
         {
-            if (caster.Mana >= ManaRequired)
-            {
-                caster.Mana -= ManaRequired;
-                return SpellHelper.Damage(caster, target, Utility.RandomMinMax(10, 17), DamageTypes.Fire);
-            }
+            if (caster.Mana < ManaRequired) return 0;
 
-            return 0;
+            caster.Mana -= ManaRequired;
+            return SpellHelper.Damage(caster, target, Utility.RandomMinMax(10, 17), DamageTypes.Fire);
+
         }
 
     }

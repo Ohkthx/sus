@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using SUS.Shared.Packets;
@@ -15,15 +16,17 @@ namespace SUS.Shared
     /// </summary>
     public static class Utility
     {
-        private static object notifyLock = new object();
+        private static readonly object NotifyLock = new object();
 
-        public static IEnumerable<T> EnumToIEnumerable<T>(Enum mask, bool PowerOf2 = false)
+        public static IEnumerable<T> EnumToIEnumerable<T>(Enum mask, bool powerOf2 = false)
         {   // Thanks to [stackoverflow.com/users/1612975].
             if (!typeof(T).IsEnum)
+            {
                 return new List<T>();
+            }
 
             // Anonymous function that determines if it needs to validate if it is a power of two, if so- it does.
-            Predicate<int> PowerCheck = delegate (int v) { return PowerOf2 ? (v & (v - 1)) == 0 : true; };
+            bool PowerCheck(int v) => !powerOf2 || (v & (v - 1)) == 0;
 
             return Enum.GetValues(typeof(T))
                        .Cast<Enum>()
@@ -34,7 +37,7 @@ namespace SUS.Shared
 
         public static void ConsoleNotify(string msg)
         {
-            lock (notifyLock)
+            lock (NotifyLock)
             {
                 ConsoleColor cc = Console.ForegroundColor;          // Save the console's color.
                 Console.ForegroundColor = ConsoleColor.DarkRed;     // Set the color to Dark Red.
@@ -47,12 +50,14 @@ namespace SUS.Shared
         {
             if (min > max)
             {
-                double copy = min;
+                var copy = min;
                 min = max;
                 max = copy;
             }
             else if (min == max)
+            {
                 return min;
+            }
 
             return min + (RandomImpl.NextDouble() * (max - min));
         }
@@ -66,7 +71,9 @@ namespace SUS.Shared
                 max = copy;
             }
             else if (min == max)
+            {
                 return min;
+            }
 
             return min + RandomImpl.Next((max - min) + 1);
         }
@@ -74,11 +81,16 @@ namespace SUS.Shared
         public static int Random(int from, int count)
         {
             if (count == 0)
+            {
                 return from;
-            else if (count > 0)
+            }
+
+            if (count > 0)
+            {
                 return from + RandomImpl.Next(count);
-            else
-                return from - RandomImpl.Next(-count);
+            }
+
+            return from - RandomImpl.Next(-count);
         }
 
         public static int Random(int count)
@@ -101,7 +113,7 @@ namespace SUS.Shared
     ///     Prepares and deciphers data transferred over the network.
     /// </summary>
     public static class Network
-    { 
+    {
         private const int HeaderSize = sizeof(long);    // A constant that stores length that prefixes the byte array.
 
         /// <summary>
@@ -111,7 +123,7 @@ namespace SUS.Shared
         /// <returns>Byte array containing the object.</returns>
         public static byte[] Serialize(object obj)
         {
-            using (var memoryStream = new MemoryStream())
+            using (MemoryStream memoryStream = new MemoryStream())
             {
                 (new BinaryFormatter()).Serialize(memoryStream, obj);
 
@@ -130,60 +142,67 @@ namespace SUS.Shared
         /// </summary>
         /// <param name="message">Byte array to process.</param>
         /// <returns>An object to cast.</returns>
-        public static Object Deserialize(byte[] message)
+        public static object Deserialize(byte[] message)
         {
-            Object obj = new Object();
-            BinaryFormatter bf = new BinaryFormatter();
-            MemoryStream memoryStream = new MemoryStream(message);
+            var bf = new BinaryFormatter();
+            var memoryStream = new MemoryStream(message);
 
             bf.Binder = new AllowAllAssemblyVersionsDeserializationBinder();
 
-            obj = bf.Deserialize(memoryStream);
+            var obj = bf.Deserialize(memoryStream);
             memoryStream.Close();
 
             return obj;
         }
     }
- 
+
     // State object for reading client data asynchronously  
     public class StateObject
     {
         // Check if we have got the read size.
-        public bool haveSize = false;
+        private bool m_HaveSize;
         // Stores the extracted object size.
         public long ObjectSize = -1;
         // Client  socket.  
-        public Socket workSocket = null;
-        public const int HeaderSize = sizeof(long);
+        public Socket workSocket;
+        private const int HeaderSize = sizeof(long);
         public const int BufferSize = 1024;
 
         // Receive buffer.  
-        public byte[] buffer = new byte[BufferSize];
+        public readonly byte[] buffer = new byte[BufferSize];
         // Received data total.
-        public byte[] Value = null;
+        public byte[] Value;
 
         // Extracts the size of the object.
         public bool ExtractSize(byte[] array, int size)
         {
             // Return early if it's already been performed. This should be called before attempting this.
-            if (haveSize)
+            if (m_HaveSize)
+            {
                 return true;
-            else if (ObjectSize >= 0)
+            }
+
+            if (ObjectSize >= 0)
+            {
                 return true;
-            else if (size < HeaderSize)
+            }
+
+            if (size < HeaderSize)
+            {
                 return true;
+            }
 
             // Attempt to get first sizeof(long) bytes from buffer.
             ObjectSize = BitConverter.ToInt64(array, 0);
 
             // Reassign new buffer with trimmed header.
-            var tBuffer = new byte[size - HeaderSize];
-            Array.Copy(this.buffer, HeaderSize, tBuffer, 0, size - HeaderSize);
+            byte[] tBuffer = new byte[size - HeaderSize];
+            Array.Copy(buffer, HeaderSize, tBuffer, 0, size - HeaderSize);
 
             // Add to our current value.
-            this.Add(tBuffer, tBuffer.Length);
+            Add(tBuffer, tBuffer.Length);
 
-            haveSize = true;
+            m_HaveSize = true;
             return false;
         }
 
@@ -191,118 +210,45 @@ namespace SUS.Shared
         public void Add(byte[] array, int size)
         {
             int iLength = 0;
-            if (this.Value != null && this.Value.Length > 0)
-                iLength = this.Value.Length;
+            if (Value != null && Value.Length > 0)
+            {
+                iLength = Value.Length;
+            }
 
             byte[] newValue = new byte[size + iLength];
 
             int offset = 0;
-            if (this.Value != null && this.Value.Length > 0)
+            if (Value != null && Value.Length > 0)
             {
-                Array.Copy(this.Value, 0, newValue, 0, this.Value.Length);
-                offset = this.Value.Length;
+                Array.Copy(Value, 0, newValue, 0, Value.Length);
+                offset = Value.Length;
             }
 
             Array.Copy(array, 0, newValue, offset, size);
 
-            this.Value = newValue;
+            Value = newValue;
         }
     }
 
     public class SocketHandler
     {
-        private bool DEBUG;
-        private ManualResetEvent sendDone = new ManualResetEvent(false);
-        private ManualResetEvent readDone = new ManualResetEvent(false);
-        private Object response = null;
-        private Socket socket = null;
-        private Types type = Types.None;
+        private readonly bool m_Debug;
+        private readonly ManualResetEvent m_SendDone = new ManualResetEvent(false);
+        private readonly ManualResetEvent m_ReadDone = new ManualResetEvent(false);
+        private object m_Response;
+        private readonly Socket m_Socket;
+        private readonly Types m_Type;
 
-        public enum Types { None = 0, Server = 1, Client = 2 }
+        public enum Types { Server = 1, Client = 2 }
 
         /// <summary>
         ///     Creates an instance of a SocketHandler with the information provided.
         /// </summary>
         public SocketHandler(Socket socket, Types type, bool debug = false)
         {
-            this.type = type;
-            this.socket = socket;
-            this.DEBUG = debug;
-        }
-
-        private void Receive()
-        {
-            try
-            {
-                // Create the state object.  
-                StateObject state = new StateObject();
-                state.workSocket = socket;
-
-                // Begin receiving the data from the remote device.  
-                socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                    new AsyncCallback(ReceiveCallback), state);
-                readDone.WaitOne();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-        }
-
-        private void ReceiveCallback(IAsyncResult ar)
-        {
-            try
-            {
-                // Retrieve the state object and the client socket   
-                // from the asynchronous state object.  
-                StateObject state = (StateObject)ar.AsyncState;
-                Socket client = state.workSocket;
-
-                // Read data from the remote device.  
-                int bytesRead = client.EndReceive(ar);
-
-                if (bytesRead > 0)
-                {
-                    // Extract our ObjectSize if we haven't already.
-                    if (state.ExtractSize(state.buffer, bytesRead))
-                        // There  might be more data, so store the data received so far.
-                        state.Add(state.buffer, bytesRead);
-
-                    if (state.Value.Length != state.ObjectSize)
-                    {
-                        // Get the rest of the data.  
-                        client.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                            new AsyncCallback(ReceiveCallback), state);
-                    } 
-                    else
-                    {
-                        if (this.DEBUG)
-                            Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), this.type)}.");
-
-                        this.response = Network.Deserialize(state.Value);
-
-                        readDone.Set();
-                    }
-                }
-                else
-                {
-                    // All the data has arrived; put it in response.  
-                    if (state.Value.Length == state.ObjectSize)
-                    {
-                        if (DEBUG)
-                            Console.WriteLine($" => {state.Value.Length + sizeof(long)} read from {Enum.GetName(typeof(Types), this.type)}.");
-
-                        this.response = Network.Deserialize(state.Value);
-                    }
-
-                    // Signal that all bytes have been received.  
-                    readDone.Set();
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
+            m_Type = type;
+            m_Socket = socket;
+            m_Debug = debug;
         }
 
         private void ServerReadCallback(IAsyncResult ar)
@@ -313,7 +259,7 @@ namespace SUS.Shared
             Socket handler = state.workSocket;
 
             // Read data from the client socket.
-            int bytesRead = 0;
+            int bytesRead;
             try
             {
                 bytesRead = handler.EndReceive(ar);
@@ -328,24 +274,26 @@ namespace SUS.Shared
             {
                 // Extract our ObjectSize if we haven't already.
                 if (state.ExtractSize(state.buffer, bytesRead))
+                {
                     // There  might be more data, so store the data received so far.
                     state.Add(state.buffer, bytesRead);
+                }
 
                 if (state.Value.Length == state.ObjectSize)
                 {
-                    if (this.DEBUG)
-                        Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), this.type)}.");
+                    if (m_Debug)
+                    {
+                        Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), m_Type)}.");
+                    }
 
-                    this.response = Network.Deserialize(state.Value);
-                    readDone.Set();
+                    m_Response = Network.Deserialize(state.Value);
+                    m_ReadDone.Set();
                 }
                 else
                 {
                     // Not all data received. Get more.  
-                    handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ServerReadCallback), state);
+                    handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ServerReadCallback, state);
                 }
-
-;
             }
         }
 
@@ -359,10 +307,12 @@ namespace SUS.Shared
                 // Complete sending the data to the remote device.  
                 int bytesSent = handler.EndSend(ar);
 
-                if (this.DEBUG)
-                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), this.type)}.");
+                if (m_Debug)
+                {
+                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), m_Type)}.");
+                }
 
-                sendDone.Set();
+                m_SendDone.Set();
             }
             catch (Exception e)
             {
@@ -375,13 +325,12 @@ namespace SUS.Shared
             // Begin sending the data to the remote device.
             try
             {
-                socket.BeginSend(data, 0, data.Length, 0,
-                        new AsyncCallback(SendCallback), socket);
+                m_Socket.BeginSend(data, 0, data.Length, 0,
+                        SendCallback, m_Socket);
             }
             catch (SocketException)
             {
                 Kill();
-                return;
             }
         }
 
@@ -395,10 +344,12 @@ namespace SUS.Shared
                 // Complete sending the data to the remote device.  
                 int bytesSent = handler.EndSend(ar);
 
-                if (this.DEBUG)
-                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), this.type)}.");
+                if (m_Debug)
+                {
+                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), m_Type)}.");
+                }
 
-                sendDone.Set();
+                m_SendDone.Set();
             }
             catch (Exception e)
             {
@@ -406,55 +357,28 @@ namespace SUS.Shared
             }
         }
 
-        public Object Communicate(byte[] data)
-        {
-            this.Send(data);
-            sendDone.WaitOne();
-
-            this.Receive();
-            readDone.WaitOne();
-
-            sendDone.Reset();
-            readDone.Reset();
-
-            var obj = this.response;
-            this.response = null;
-
-            return obj;
-        }
-
-        public Object FromServer()
-        {
-            this.Receive();
-            readDone.WaitOne();
-            readDone.Reset();
-
-            var obj = this.response;
-            this.response = null;
-
-            return obj;
-        }
-
         public void ToServer(byte[] data)
         {
-            this.Send(data);
-            sendDone.WaitOne();
-            sendDone.Reset();
+            Send(data);
+            m_SendDone.WaitOne();
+            m_SendDone.Reset();
         }
 
-        public Object FromClient()
+        public object FromClient()
         {
-            StateObject state = new StateObject();
-            state.workSocket = socket;
-            socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                new AsyncCallback(ServerReadCallback), state);
+            StateObject state = new StateObject
+            {
+                workSocket = m_Socket
+            };
+            m_Socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                ServerReadCallback, state);
             //this.Receive();
-            readDone.WaitOne();
+            m_ReadDone.WaitOne();
 
-            var obj = this.response;
-            this.response = null;
+            object obj = m_Response;
+            m_Response = null;
 
-            readDone.Reset();
+            m_ReadDone.Reset();
 
             return obj;
         }
@@ -462,36 +386,36 @@ namespace SUS.Shared
         public void ToClient(byte[] data)
         {
             // Begin sending the data to the remote device.  
-            socket.BeginSend(data, 0, data.Length, 0,
-                new AsyncCallback(ServerSendCallback), socket);
-            sendDone.WaitOne();
+            m_Socket.BeginSend(data, 0, data.Length, 0,
+                ServerSendCallback, m_Socket);
+            m_SendDone.WaitOne();
 
-            sendDone.Reset();
+            m_SendDone.Reset();
         }
 
         public void Kill()
         {
-            Send(new SocketKillPacket(0, true).ToByte());
-            sendDone.WaitOne();
+            Send(new SocketKillPacket(0).ToByte());
+            m_SendDone.WaitOne();
             //socket.Shutdown(SocketShutdown.Both);
             //socket.Close();
-            sendDone.Reset();
+            m_SendDone.Reset();
         }
     }
 
-    sealed class AllowAllAssemblyVersionsDeserializationBinder : System.Runtime.Serialization.SerializationBinder
+    internal sealed class AllowAllAssemblyVersionsDeserializationBinder : SerializationBinder
     {
         public override Type BindToType(string assemblyName, string typeName)
         {
-            Type typeToDeserialize = null;
+            if (assemblyName == null) throw new ArgumentNullException(nameof(assemblyName));
 
-            String currentAssembly = Assembly.GetExecutingAssembly().FullName;
+            var currentAssembly = Assembly.GetExecutingAssembly().FullName;
 
             // In this case we are always using the current assembly
             assemblyName = currentAssembly;
 
             // Get the type using the typeName and assemblyName
-            typeToDeserialize = Type.GetType(String.Format("{0}, {1}", typeName, assemblyName));
+            var typeToDeserialize = Type.GetType($"{typeName}, {assemblyName}");
 
             return typeToDeserialize;
         }

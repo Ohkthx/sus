@@ -2,13 +2,13 @@
 {
     public abstract class Consumable : Item
     {
-        private ConsumableTypes m_ConsumableType;
         private int m_Amount;
         private int m_AmountMaximum;
 
         #region Constructors
-        public Consumable(ConsumableTypes type, string name, int maximum) 
-            : base (ItemTypes.Consumable)
+
+        protected Consumable(ConsumableTypes type, string name, int maximum)
+            : base(ItemTypes.Consumable)
         {
             ConsumableType = type;
             Name = name;
@@ -23,31 +23,30 @@
             get
             {
                 if (ConsumableType == ConsumableTypes.Gold || Amount <= 1)
+                {
                     return base.Name;
+                }
 
                 // Make the name plural.
                 return base.Name + "s";
             }
         }
 
-        public ConsumableTypes ConsumableType
-        {
-            get { return m_ConsumableType; }
-            private set
-            {
-                m_ConsumableType = value;
-            }
-        }
+        public ConsumableTypes ConsumableType { get; }
 
         public int Amount
         {
-            get { return m_Amount; }
+            get => m_Amount;
             protected set
             {
                 if (value < 0)
+                {
                     value = 0;
+                }
                 else if (value > Maximum)
+                {
                     value = Maximum;
+                }
 
                 m_Amount = value;
             }
@@ -55,11 +54,13 @@
 
         public int Maximum
         {
-            get { return m_AmountMaximum; }
+            get => m_AmountMaximum;
             private set
             {
                 if (value < 1)
+                {
                     value = 1;
+                }
 
                 m_AmountMaximum = value;
             }
@@ -77,14 +78,22 @@
         public static Consumable operator +(Consumable c, int amt)
         {
             if (amt <= 0)
+            {
                 return c;
+            }
             else if (c.Amount == c.Maximum)
+            {
                 return c;
+            }
 
             if (c.Amount + amt > c.Maximum)
+            {
                 c.Amount = c.Maximum;
+            }
             else
+            {
                 c.Amount = c.Amount + amt;
+            }
 
             return c;
         }
@@ -94,14 +103,22 @@
         public static Consumable operator -(Consumable c, int amt)
         {
             if (amt <= 0)
+            {
                 return c;
+            }
             else if (c.Amount == 0)
+            {
                 return c;
+            }
 
             if (c.Amount - amt < 0)
+            {
                 c.Amount = 0;
+            }
             else
+            {
                 c.Amount = c.Amount - amt;
+            }
 
             return c;
         }

@@ -1,4 +1,4 @@
-﻿namespace SUS.Objects.Items
+﻿namespace SUS.Objects.Items.Consumables
 {
     public class Potion : Consumable
     {

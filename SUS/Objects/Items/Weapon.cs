@@ -1,11 +1,11 @@
-﻿using System;
-using SUS.Shared;
+﻿using SUS.Shared;
+using System;
 
 namespace SUS.Objects.Items
 {
     public abstract class TwoHanded : Weapon
     {
-        public TwoHanded(Materials material, string damage) 
+        protected TwoHanded(Materials material, string damage)
             : base(ItemLayers.TwoHanded, material, damage)
         {
             Weight = Weights.Heavy;
@@ -14,7 +14,7 @@ namespace SUS.Objects.Items
 
     public abstract class OneHanded : Weapon
     {
-        public OneHanded(Materials material, string damage) 
+        protected OneHanded(Materials material, string damage)
             : base(ItemLayers.MainHand, material, damage)
         {
             Weight = Weights.Light;
@@ -25,10 +25,10 @@ namespace SUS.Objects.Items
     {
         public enum Materials
         {
-            None    = 0,
-            Wooden  = 1,
-            Iron    = 2,
-            Steel   = 3,
+            None = 0,
+            Wooden = 1,
+            Iron = 2,
+            Steel = 3,
         }
 
         private DiceRoll m_Damage;
@@ -39,11 +39,14 @@ namespace SUS.Objects.Items
         private SkillName m_Skill;
 
         #region Constructors
-        public Weapon(ItemLayers layer, Materials material, string damage, int range = 1) 
-            : base(ItemTypes.Weapon, layer)
+
+        protected Weapon(ItemLayers layer, Materials material, string damage, int range = 1)
+            : base(ItemTypes.Weapon, layer, 0)
         {
             if (material == Materials.None)
+            {
                 material = Materials.Wooden;
+            }
 
             Material = material;
             Range = range;
@@ -54,36 +57,37 @@ namespace SUS.Objects.Items
         #endregion
 
         #region Getters / Setters
-        public override string Name
-        { get { return Material == Materials.None ? base.Name : $"{Enum.GetName(typeof(Materials), Material)} {base.Name}"; } }
+        public override string Name => Material == Materials.None ? base.Name : $"{Enum.GetName(typeof(Materials), Material)} {base.Name}";
 
-        public override int RawRating { get { return AttackRating; } }
-        private int AttackRating { get { return DiceDamage.Maximum + (int)Material; } }
-        public int Damage { get { return DiceDamage.Roll() + (int)Material; } }
+        protected override int RawRating => AttackRating;
+        private int AttackRating => DiceDamage.Maximum + (int)Material;
+        public int Damage => DiceDamage.Roll() + (int)Material;
 
-        public bool IsBow
-        {
-            get { return IsWeapon && (Layer & ItemLayers.Bow) == ItemLayers.Bow; }
-        }
+        public bool IsBow => IsWeapon && (Layer & ItemLayers.Bow) == ItemLayers.Bow;
 
         private DiceRoll DiceDamage
         {
-            get { return m_Damage; }
+            get => m_Damage;
             set
             {
                 if (value == null)
+                {
                     return;
+                }
+
                 m_Damage = value;
             }
         }
 
-        public Materials Material
+        protected Materials Material
         {
-            get { return m_Material; }
-            protected set
+            private get => m_Material;
+            set
             {
                 if (value == Material)
+                {
                     return;
+                }
 
                 m_Material = value;
             }
@@ -91,11 +95,13 @@ namespace SUS.Objects.Items
 
         public DamageTypes DamageType
         {
-            get { return m_DamageType == DamageTypes.None ? DamageTypes.Bludgeoning : m_DamageType; }
+            get => m_DamageType == DamageTypes.None ? DamageTypes.Bludgeoning : m_DamageType;
             set
             {
                 if (value == DamageTypes.None || value == DamageType)
+                {
                     return;
+                }
 
                 m_DamageType = value;
             }
@@ -103,11 +109,13 @@ namespace SUS.Objects.Items
 
         public StatCode Stat
         {
-            get { return m_Stat; }
+            get => m_Stat;
             protected set
             {
                 if (value == Stat)
+                {
                     return;
+                }
 
                 m_Stat = value;
             }
@@ -115,11 +123,13 @@ namespace SUS.Objects.Items
 
         public SkillName RequiredSkill
         {
-            get { return m_Skill; }
+            get => m_Skill;
             protected set
             {
                 if (value == RequiredSkill)
+                {
                     return;
+                }
 
                 m_Skill = value;
             }
@@ -127,13 +137,17 @@ namespace SUS.Objects.Items
 
         public int Range
         {
-            get { return m_AttackRange; }
+            get => m_AttackRange;
             private set
             {
                 if (value == Range)
+                {
                     return;
+                }
                 else if (value < 1)
+                {
                     value = 1;
+                }
 
                 m_AttackRange = value;
             }

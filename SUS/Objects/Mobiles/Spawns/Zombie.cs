@@ -1,12 +1,12 @@
 ﻿using SUS.Shared;
 
-namespace SUS.Objects.Spawns
+namespace SUS.Objects.Mobiles.Spawns
 {
     public class Zombie : BaseCreature
     {
-        public Zombie() : base()
+        public Zombie()
         {
-            AIType = AI.Types.Melee;
+            AiType = Ai.Types.Melee;
             Name = "a zombie";
 
             SetStr(46, 70);

@@ -2,23 +2,27 @@
 using SUS.Shared;
 using SUS.Shared.Packets;
 
-namespace SUSClient.MenuItems
+namespace SUSClient.Menus
 {
     public class Paperdoll : Menu
     {
-        private UInt64 m_PlayerID;
-        private BaseMobile m_Mobile;
+        private readonly ulong m_PlayerId;
+        private readonly BaseMobile m_Mobile;
 
         #region Constructors
-        public Paperdoll(UInt64 playerID, BaseMobile mobile) 
-            : base ("What information would you like to observe?")
+        public Paperdoll(ulong playerId, BaseMobile mobile)
+            : base("What information would you like to observe?")
         {
-            m_PlayerID = playerID;
+            m_PlayerId = playerId;
             m_Mobile = mobile;
 
             foreach (GetMobilePacket.RequestReason opt in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
+            {
                 if (opt != GetMobilePacket.RequestReason.None)
+                {
                     Options.Add(Enum.GetName(typeof(GetMobilePacket.RequestReason), opt));
+                }
+            }
         }
         #endregion
 
@@ -30,15 +34,18 @@ namespace SUSClient.MenuItems
             return MakeRequest(ParseOptions(GetInput()));
         }
 
-        public GetMobilePacket MakeRequest(int input)
+        private GetMobilePacket MakeRequest(int input)
         {
-            return new GetMobilePacket((GetMobilePacket.RequestReason)input, m_PlayerID);
+            return new GetMobilePacket((GetMobilePacket.RequestReason) input, m_PlayerId);
         }
 
         protected override void PrintOptions()
         {
-            foreach (string str in Options)
+            foreach (var str in Options)
+            {
                 Console.Write($"{str}  ");
+            }
+
             Console.WriteLine();
         }
 
@@ -48,9 +55,14 @@ namespace SUSClient.MenuItems
             foreach (GetMobilePacket.RequestReason opt in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
             {
                 if (opt == GetMobilePacket.RequestReason.None)
+                {
                     continue;
-                else if (Enum.GetName(typeof(GetMobilePacket.RequestReason), opt).ToLower() == input)
+                }
+
+                if (Enum.GetName(typeof(GetMobilePacket.RequestReason), opt)?.ToLower() == input)
+                {
                     return (int)opt;
+                }
             }
             return (int)GetMobilePacket.RequestReason.None;
         }

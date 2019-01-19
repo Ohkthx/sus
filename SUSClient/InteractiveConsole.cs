@@ -3,39 +3,48 @@ using System.Collections.Generic;
 using System.Linq;
 using SUS.Shared;
 using SUS.Shared.Packets;
-using SUSClient.MenuItems;
+using SUSClient.Menus;
 
 namespace SUSClient
 {
-    class InteractiveConsole
+    public class InteractiveConsole
     {
-        private enum ConsoleActions { none, move, look, lastloc, players, npcs, mobiles, attack, actions, use, update, paperdoll, exit }
-
-        private static ClientState m_Client;
-        public Packet m_Request;            // Temporary storage for a request sent by the client.
-        private static ulong m_Rounds = 0;  // Amount of turns the client has performed.
-        private ConsoleActions LastAction;
-
-        #region Constructors
-        public InteractiveConsole(ClientState clientstate)
+        private enum ConsoleActions
         {
-            m_Client = clientstate;
+            None,
+            Move,
+            Look,
+            LastLoc,
+            Players,
+            Npcs,
+            Mobiles,
+            Attack,
+            Actions,
+            Use,
+            Update,
+            Paperdoll,
+            Exit
         }
-        #endregion
 
         #region Getters / Setters
-        public ClientState Client { get { return m_Client; } }
 
-        public Packet Request
+        private static ClientState Client { get; set; }
+
+        public Packet Request { get; private set; }
+
+        private static ulong Rounds { get; set; }
+
+        #endregion
+
+        private ConsoleActions m_LastAction;
+
+        #region Constructors
+
+        public InteractiveConsole(ClientState state)
         {
-            get { return m_Request; }
-            set
-            {
-                m_Request = value;
-            }
+            Client = state;
         }
 
-        public ulong Rounds { get { return m_Rounds; } }
         #endregion
 
         /// <summary>
@@ -43,37 +52,40 @@ namespace SUSClient
         /// </summary>
         /// <returns>Updated GameState object.</returns>
         public ClientState Core()
-        {   // If our last console action required a response, process it.
-            if (LastAction != ConsoleActions.none)
+        {
+            // If our last console action required a response, process it.
+            if (m_LastAction != ConsoleActions.None)
             {
-                responseHandler();      // Processes requested information from the server.
-                if (Request != null)    // Requesting information from the server,
-                    return Client;      //  Returning early to fulfill the initiated action by the user.
+                responseHandler(); // Processes requested information from the server.
+                if (Request != null) // Requesting information from the server,
+                    return Client; //  Returning early to fulfill the initiated action by the user.
             }
 
-            Reset();       // Reset our bools and make everything default.
-            m_Rounds++;           // Increment our counter for amount of turns we've taken as a client.
+            Reset(); // Reset our bool and make everything default.
+            Rounds++; // Increment our counter for amount of turns we've taken as a client.
 
-            Dictionary<string, ConsoleActions> ValidActions = new Dictionary<string, ConsoleActions>();     // Generate our Valid Actions.
+            var validActions = new Dictionary<string, ConsoleActions>(); // Generate our Valid Actions.
 
-            // If Player is dead, we should send a ressurrection requestion.
+            // If Player is dead, we should send a resurrection request.
             if (Client.IsAlive)
             {
-                Utility.ConsoleNotify("Sending ressurrection request.");
+                Utility.ConsoleNotify("Sending resurrection request.");
 
                 // Request to be sent to the server.
-                Request = new RessurrectMobilePacket(Client.PlayerID);
+                Request = new ResurrectMobilePacket(Client.PlayerId);
                 return Client;
             }
 
             Console.WriteLine("\nValid Actions: ");
-            int c = 0;
+            var c = 0;
             foreach (ConsoleActions action in Enum.GetValues(typeof(ConsoleActions)))
-            {   // Lists all currently accessible actions.
-                string name = Enum.GetName(typeof(ConsoleActions), action);
-                ValidActions.Add(name, action);             // **IMPORTANT**, adds the action to a list of Valid Actions.
-                if (c != 0 && (c % 6) == 0)
-                    Console.Write("\n");
+            {
+                // Lists all currently accessible actions.
+                var name = Enum.GetName(typeof(ConsoleActions), action)?.ToLower();
+                validActions.Add(name ?? throw new InvalidOperationException(), action); // **IMPORTANT**, adds the action to a list of Valid Actions.
+
+                if (c != 0 && c % 6 == 0) Console.Write("\n");
+
                 Console.Write($"[{name.ToLower()}]  ");
                 c++;
             }
@@ -81,73 +93,80 @@ namespace SUSClient
             Console.WriteLine();
 
             while (Request == null)
-            {   // Get our action from the user.
-                ConsoleActions consoleAction = ConsoleActions.none;
-                string[] actions = null;
+            {
+                // Get our action from the user.
+                string[] actions;
 
+                ConsoleActions consoleAction;
                 while (true)
                 {
                     Console.Write($"\n > [Round: {Rounds}] Choose an action: ");
-                    actions = Console.ReadLine().ToLower().Split(' ');
+                    actions = Console.ReadLine()?.ToLower().Split(' ');
 
-                    if (actions.Count() == 0)
-                        continue;
+                    if (!(actions ?? throw new InvalidOperationException()).Any()) continue;
 
                     // Validate the requested action is acceptable to be processed on.
-                    if (ValidActions.TryGetValue(actions[0], out consoleAction))
-                    {   // If it was a good action, break the while loop early.
-                        LastAction = consoleAction;
-                        break;
-                    }
+                    if (!validActions.TryGetValue(actions[0], out consoleAction))
+                        continue; // If it was a good action, break the while loop early.
+
+                    m_LastAction = consoleAction;
+                    break;
                 }
 
-                Console.WriteLine();    // Blank line to seperate output from input.
+                Console.WriteLine(); // Blank line to separate output from input.
 
                 switch (consoleAction)
-                {   // Process the action by calling the appropriate functions.
-                    case ConsoleActions.move:
-                        if (actions.Count() > 1)
-                            move(actions[1]);
-                        else
-                            move();
+                {
+                    case ConsoleActions.Move when actions.Length > 1:
+                        Move(actions[1]);
                         break;
-                    case ConsoleActions.look:
-                        look();
+                    case ConsoleActions.Move:
+                        Move();
                         break;
-                    case ConsoleActions.lastloc:
-                        lastloc();
+                    case ConsoleActions.Look:
+                        Look();
                         break;
-                    case ConsoleActions.players:
-                        listMobiles(MobileTypes.Player);
+                    case ConsoleActions.LastLoc:
+                        LastLocation();
                         break;
-                    case ConsoleActions.npcs:
-                        listMobiles(MobileTypes.NPC | MobileTypes.Creature);
+                    case ConsoleActions.Players:
+                        ListMobiles(MobileTypes.Player);
                         break;
-                    case ConsoleActions.mobiles:
-                        listMobiles(MobileTypes.Mobile);
+                    case ConsoleActions.Npcs:
+                        ListMobiles(MobileTypes.Npc | MobileTypes.Creature);
                         break;
-                    case ConsoleActions.actions:
+                    case ConsoleActions.Mobiles:
+                        ListMobiles(MobileTypes.Mobile);
+                        break;
+                    case ConsoleActions.Actions:
                         printActions();
                         break;
-                    case ConsoleActions.attack:
-                        if (actions.Count() > 1)
-                            attack(actions[1]);
-                        else
-                            attack();
+                    case ConsoleActions.Attack when actions.Length > 1:
+                        Console.WriteLine("attacking");
+                        Attack(actions[1]);
                         break;
-                    case ConsoleActions.paperdoll:
-                        Paperdoll pd = new Paperdoll(Client.PlayerID, Client.Account);
-                        Request = pd.Display();
+                    case ConsoleActions.Attack:
+                        Attack();
                         break;
-                    case ConsoleActions.use:
+                    case ConsoleActions.Paperdoll:
+                        {
+                            var pd = new Paperdoll(Client.PlayerId, Client.Account);
+                            Request = pd.Display();
+                            break;
+                        }
+                    case ConsoleActions.Use:
                         Request = Client.UseItems();
                         break;
-                    case ConsoleActions.update:
+                    case ConsoleActions.Update:
                         Console.WriteLine("Getting updated Equipment and Items.");
-                        Request = new GetMobilePacket(GetMobilePacket.RequestReason.Equipment | GetMobilePacket.RequestReason.Items, Client.PlayerID);
+                        Request = new GetMobilePacket(
+                            GetMobilePacket.RequestReason.Equipment | GetMobilePacket.RequestReason.Items,
+                            Client.PlayerId);
                         break;
-                    case ConsoleActions.exit:
-                        exit();
+                    case ConsoleActions.Exit:
+                        Exit();
+                        break;
+                    case ConsoleActions.None:
                         break;
                     default:
                         Console.WriteLine("Something occured with processing this action.");
@@ -165,21 +184,19 @@ namespace SUSClient
         /// </summary>
         private void responseHandler()
         {
-            switch (LastAction)
+            switch (m_LastAction)
             {
-                case ConsoleActions.players:
-                    listMobiles(MobileTypes.Player);
+                case ConsoleActions.Players:
+                    ListMobiles(MobileTypes.Player);
                     break;
-                case ConsoleActions.npcs:
-                    listMobiles(MobileTypes.NPC | MobileTypes.Creature);
+                case ConsoleActions.Npcs:
+                    ListMobiles(MobileTypes.Npc | MobileTypes.Creature);
                     break;
-                case ConsoleActions.mobiles:
-                    listMobiles(MobileTypes.Mobile);
+                case ConsoleActions.Mobiles:
+                    ListMobiles(MobileTypes.Mobile);
                     break;
-                case ConsoleActions.attack:
-                    attack();
-                    break;
-                default:
+                case ConsoleActions.Attack:
+                    Attack();
                     break;
             }
         }
@@ -189,117 +206,101 @@ namespace SUSClient
         /// </summary>
         public void Reset()
         {
-            LastAction = ConsoleActions.none;
+            m_LastAction = ConsoleActions.None;
             Request = null;
-        }
-
-        /// <summary>
-        ///     Changes the location of the current gamestate to that which is provided.
-        /// </summary>
-        /// <param name="location">New location.</param>
-        public void LocationUpdater(BaseRegion location)
-        {
-            if (location == null)
-                return;
-            Client.Region = location;
         }
 
         /// <summary>
         ///     Moves a player to a new location, setting flag to send updated gamestate to server.
         /// </summary>
-        private void move()
+        private void Move()
         {
-            look();
+            Look();
 
-            MobileDirections newDir = MobileDirections.None;
-            Regions newLoc = Regions.None;
-            while(true)
+            while (true)
             {
                 Console.Write("Select location: ");
-                string input = Console.ReadLine();
+                var input = Console.ReadLine();
 
-                if (Client.Region.CanTraverse)
+                if (Client.Region.Navigable)
                 {
+                    MobileDirections newDir;
                     if ((newDir = Client.StringToDirection(input)) != MobileDirections.None)
                     {
                         Console.WriteLine($"Selected: {newDir.ToString()}");
-                        Request = new MoveMobilePacket(Client.Region.Location, Client.PlayerID, newDir);
+                        Request = new MoveMobilePacket(Client.Region.Location, Client.PlayerId, newDir);
                         return;
                     }
                 }
 
-                if ((newLoc = Client.StringToLocation(input)) != Regions.None)
-                {
-                    Console.WriteLine($"Selected: {newLoc.ToString()}");
-                    Request = new MoveMobilePacket(newLoc, Client.PlayerID);
-                    return;
-                }
+                Regions newLoc;
+                if ((newLoc = Client.StringToLocation(input)) == Regions.None) continue;
+
+                Console.WriteLine($"Selected: {newLoc.ToString()}");
+                Request = new MoveMobilePacket(newLoc, Client.PlayerId);
+                return;
             }
         }
 
-        private void move(string position)
+        private void Move(string position)
         {
-            MobileDirections newDir = MobileDirections.None;
-            Regions newLoc = Regions.None;
+            MobileDirections newDir;
+            Regions newLoc;
 
-            if (Client.Region.CanTraverse)
-            {
+            if (Client.Region.Navigable)
                 if ((newDir = Client.StringToDirection(position)) != MobileDirections.None)
                 {
                     Console.WriteLine($"Selected: {newDir.ToString()}");
-                    Request = new MoveMobilePacket(Client.Region.Location, Client.PlayerID, newDir);
+                    Request = new MoveMobilePacket(Client.Region.Location, Client.PlayerId, newDir);
                     return;
                 }
-            }
 
             if ((newLoc = Client.StringToLocation(position)) != Regions.None)
             {
                 Console.WriteLine($"Selected: {newLoc.ToString()}");
-                Request = new MoveMobilePacket(newLoc, Client.PlayerID);
+                Request = new MoveMobilePacket(newLoc, Client.PlayerId);
                 return;
             }
 
-            move();
+            Move();
         }
 
         /// <summary>
         ///     Checks nearby locations.
         /// </summary>
-        private void look()
+        private static void Look()
         {
-            if (Client.Region.CanTraverse)
-            {   // Print our directions since we can move within this map.
+            if (Client.Region.Navigable)
+            {
+                // Print our directions since we can move within this map.
                 Console.WriteLine(" Directions to travel locally:");
                 foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
                 {
-                    if (dir == MobileDirections.None)
-                        continue;
+                    if (dir == MobileDirections.None) continue;
 
                     Console.WriteLine($"  {Enum.GetName(typeof(MobileDirections), dir)}");
                 }
+
                 Console.WriteLine();
             }
 
-            int pos = 0;
+            var pos = 0;
             Console.WriteLine(" Nearby Locations:");
-            foreach (Regions n in Utility.EnumToIEnumerable<Regions>(Client.Region.Connections, PowerOf2: true))
+            foreach (var n in Utility.EnumToIEnumerable<Regions>(Client.Region.Connections, true))
             {
                 ++pos;
                 Console.WriteLine($"  [Pos: {pos}] {Enum.GetName(typeof(Regions), n)}");
             }
+
             Console.WriteLine();
         }
 
         /// <summary>
         ///     Displays the last location the user visited.
         /// </summary>
-        private void lastloc()
+        private static void LastLocation()
         {
-            string last = string.Empty;
-            if (Client.LastRegion == null)
-                last = "None";
-            else
-                last = Client.LastRegion.ToString();
+            var last = Client.LastRegion.ToString();
 
             Console.WriteLine($" {last}");
         }
@@ -309,66 +310,56 @@ namespace SUSClient
         ///     This function is called again on the list is returned by the server.
         /// </summary>
         /// <returns>List of Players from the server.</returns>
-        private List<BaseMobile> getMobiles()
+        private List<BaseMobile> GetMobiles()
         {
-            if (Request == null)
-            {   // Create a request for the server to respond to.
-                Request = new GetMobilesPacket(Client.Region.Location, Client.PlayerID);
-                return null;
-            }
+            if (Request != null) return Client.Mobiles.ToList();
 
-            // Return a list of players the server has provided.
-            return Client.Mobiles.ToList();
+            // Create a request for the server to respond to.
+            Request = new GetMobilesPacket(Client.Region.Location, Client.PlayerId);
+            return null;
         }
 
         /// <summary>
         ///     Parent caller for retrieving either local Players or NPCs.
         /// </summary>
         /// <param name="type"></param>
-        private void listMobiles(MobileTypes type)
+        private void ListMobiles(MobileTypes type)
         {
-            List<BaseMobile> mobiles = getMobiles();    // Get a fresh list of mobiles from the server.
-            if (mobiles == null && Request != null)
-            {
-                return; // Return early to process a client request.
-            }
+            var mobiles = GetMobiles(); // Get a fresh list of mobiles from the server.
+            if (mobiles == null && Request != null) return; // Return early to process a client request.
 
             Console.WriteLine($" Local {type.ToString()}s:");
 
-            int pos = 0;
-            if (mobiles.Count > 0)
-            {   // Iterate our list of Players.
-                foreach (BaseMobile m in mobiles)
+            var pos = 0;
+            if (mobiles != null && mobiles.Count > 0)
+            {
+                foreach (var m in mobiles)
                 {
-                    if ((type & m.Type) == m.Type)
-                    {
-                        pos++;
-                        Console.WriteLine($"  [Pos: {pos}] {m.Name},  ID: {m.Serial}");
-                    }
+                    if ((type & m.Type) != m.Type) continue;
+
+                    pos++;
+                    Console.WriteLine($"  [Pos: {pos}] {m.Name},  ID: {m.Serial}");
                 }
             }
 
             // If not Players found, print 'None'.
-            if (pos == 0)
-                Console.WriteLine("    => None.");
+            if (pos == 0) Console.WriteLine("    => None.");
 
-            this.Reset();
+            Reset();
         }
 
-        public BaseMobile SelectMobile(List<BaseMobile> mobiles)
+        private BaseMobile SelectMobile(IReadOnlyList<BaseMobile> mobiles)
         {
-            listMobiles(MobileTypes.Mobile);    // Retreives our mobiles.
+            ListMobiles(MobileTypes.Mobile); // Retrieves our mobiles.
 
-            int input = 0;
+            int input;
             do
             {
                 Console.Write(" Select a target you wish to attack: ");
                 if (int.TryParse(Console.ReadLine(), out input))
                 {
-                    if (input - 1 >= 0 && input - 1 < mobiles.Count)
-                    {
-                        return mobiles[input - 1];
-                    }
+                    if (input - 1 >= 0 && input - 1 < mobiles.Count) return mobiles[input - 1];
+
                     Utility.ConsoleNotify("Bad option, please try again.");
                 }
             } while (input - 1 < 0 || input - 1 >= mobiles.Count);
@@ -377,29 +368,27 @@ namespace SUSClient
             return Client.Account;
         }
 
-        private void attack(string target)
+        private void Attack(string target)
         {
-            if ((target.ToLower() == "last" || target.ToLower() == "l") && Client.LastTarget != null)
-            {   // Target the last mobile.
-                CombatMobilePacket attackAction = new CombatMobilePacket(Client.PlayerID);
+            if (target.ToLower() == "last" || target.ToLower() == "l")
+            {
+                // Target the last mobile.
+                var attackAction = new CombatMobilePacket(Client.PlayerId);
                 attackAction.AddTarget(Client.LastTarget);
                 Request = attackAction;
                 return;
             }
 
-            attack();
+            Attack();
         }
 
         /// <summary>
         ///     Initiates an attack on a mobile.
         /// </summary>
-        private void attack()
+        private void Attack()
         {
-            List<BaseMobile> mobiles = getMobiles();
-            if (mobiles == null)
-            {   // Get a fresh batch of local NPCs.
-                return;                                 // Haven't made the request, making it now by returning early.
-            }
+            var mobiles = GetMobiles();
+            if (mobiles == null) return; // Haven't made the request, making it now by returning early.
 
             if (mobiles.Count == 0)
             {
@@ -411,7 +400,7 @@ namespace SUSClient
             Client.LastTarget = SelectMobile(mobiles);
 
             // Our newly created action to perform.
-            CombatMobilePacket attackAction = new CombatMobilePacket(Client.PlayerID);
+            var attackAction = new CombatMobilePacket(Client.PlayerId);
             attackAction.AddTarget(Client.LastTarget);
 
             // Request to be sent to the server.
@@ -424,23 +413,24 @@ namespace SUSClient
         private void printActions()
         {
             Console.WriteLine("\nValid Actions:");
-            int c = 0;
-            foreach (string action in Enum.GetNames(typeof(ConsoleActions)))
+            var c = 0;
+            foreach (var action in Enum.GetNames(typeof(ConsoleActions)))
             {
-                if (c != 0 && (c % 6) == 0)
-                    Console.Write("\n");
+                if (c != 0 && c % 6 == 0) Console.Write("\n");
+
                 Console.Write($"[{action.ToLower()}]  ");
                 c++;
             }
+
             Console.WriteLine();
         }
 
         /// <summary>
         ///     Exits the client, sends the server a request to kill the socket.
         /// </summary>
-        private void exit()
+        private void Exit()
         {
-            Request = new SocketKillPacket(Client.PlayerID, kill: true);
+            Request = new SocketKillPacket(Client.PlayerId);
         }
     }
 }

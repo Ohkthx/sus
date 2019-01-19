@@ -6,41 +6,30 @@ namespace SUS.Shared.Packets
     public class AccountAuthenticatePacket : Packet
     {
         private string m_Name;
-        private BaseMobile m_Player;
 
         #region Constructors
-        public AccountAuthenticatePacket(UInt64 playerID, string name)
-            : base(PacketTypes.Authenticate, playerID)
+
+        public AccountAuthenticatePacket(ulong playerId, string name)
+            : base(PacketTypes.Authenticate, playerId)
         {
             Name = name;
         }
+
         #endregion
 
         #region Getters / Setters
+
         public string Name
         {
-            get { return m_Name; }
-            set
+            get => m_Name;
+            private set
             {
-                if (value == string.Empty || value == Name)
-                    return;
+                if (value == string.Empty || value == Name) return;
 
                 m_Name = value;
             }
         }
 
-        public BaseMobile Player
-        {
-            get { return m_Player; }
-            set
-            {
-                if (value == null)
-                    return;
-
-                if (Player != value)
-                    m_Player = value;
-            }
-        }
         #endregion
     }
 
@@ -50,24 +39,27 @@ namespace SUS.Shared.Packets
         private ClientState m_ClientState;
 
         #region Constructors
-        public AccountClientPacket(UInt64 playerID) 
-            : base(PacketTypes.ClientState, playerID)
-        { }
+
+        public AccountClientPacket(ulong playerId)
+            : base(PacketTypes.ClientState, playerId)
+        {
+        }
+
         #endregion
 
         #region Getters / Setters
-        public ClientState ClientState 
+
+        public ClientState ClientState
         {
-            get { return m_ClientState; }
+            get => m_ClientState;
             set
             {
-                if (value == null)
-                    return;
+                if (value == null) return;
 
-                if (ClientState != value)
-                    m_ClientState = value;
+                if (ClientState != value) m_ClientState = value;
             }
         }
+
         #endregion
     }
 }

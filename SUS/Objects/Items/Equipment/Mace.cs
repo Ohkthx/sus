@@ -2,7 +2,7 @@
 {
     public class Mace : OneHanded
     {
-        public Mace(Materials material) 
+        public Mace(Materials material)
             : base(material, "1d6")
         {
             Name = "Mace";
@@ -14,7 +14,7 @@
 
     public class Maul : TwoHanded
     {
-        public Maul(Materials material) 
+        public Maul(Materials material)
             : base(material, "2d6")
         {
             Name = "Maul";

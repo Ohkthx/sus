@@ -1,10 +1,10 @@
-﻿namespace SUS.Objects.Items
+﻿namespace SUS.Objects.Items.Consumables
 {
     public class Gold : Consumable
     {
         #region Constructors
         public Gold() : this(0) { }
-        public Gold(int amount) 
+        public Gold(int amount)
             : base(ConsumableTypes.Gold, "Gold", int.MaxValue)
         {
             Amount = amount;

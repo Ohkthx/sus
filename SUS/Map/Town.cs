@@ -1,11 +1,11 @@
 ﻿using SUS.Shared;
 
-namespace SUS
+namespace SUS.Map
 {
     public abstract class Town : Node
     {
         #region Constructors
-        public Town(RegionType type, Regions region, string desc) 
+        protected Town(RegionType type, Regions region, string desc)
             : base(type, region, desc)
         {
             isSpawnable = false;

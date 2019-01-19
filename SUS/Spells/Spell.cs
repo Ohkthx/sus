@@ -26,39 +26,25 @@ namespace SUS.Spells
 
     public abstract class Spell
     {
-        private static readonly int[] m_ManaTable = new int[] { 4, 6, 9, 11, 14, 20, 40, 50 };
+        private static readonly int[] ManaTable = new int[] { 4, 6, 9, 11, 14, 20, 40, 50 };
 
-        private string m_Name;
         private SpellCircle m_Circle;
 
-        public Spell(SpellName name, SpellCircle circle)
+        protected Spell(SpellName name, SpellCircle circle)
         {
             Name = Enum.GetName(typeof(SpellName), name);
             Circle = circle;
         }
 
         #region Getters / Setters
-        public string Name
-        {
-            get
-            {
-                if (m_Name != null)
-                    return m_Name;
-                else
-                    return "Unknown";
-            }
-            set
-            {
-                if (value != m_Name)
-                    m_Name = value;
-            }
-        }
 
-        public int ManaRequired { get { return m_ManaTable[(int)Circle]; } }
+        private static string Name { get; set; }
 
-        public SpellCircle Circle
+        protected int ManaRequired => ManaTable[(int)Circle];
+
+        private SpellCircle Circle
         {
-            get { return m_Circle; }
+            get => m_Circle;
             set
             {
                 if (value == Circle)

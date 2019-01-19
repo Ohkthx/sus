@@ -1,12 +1,12 @@
 ﻿using SUS.Shared;
 
-namespace SUS.Objects.Spawns
+namespace SUS.Objects.Mobiles.Spawns
 {
     public class Wraith : BaseCreature
     {
-        public Wraith() : base()
+        public Wraith()
         {
-            AIType = AI.Types.Mage;
+            AiType = Ai.Types.Mage;
             Name = "a wraith";
 
             SetStr(76, 100);

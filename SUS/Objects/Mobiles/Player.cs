@@ -1,20 +1,16 @@
-﻿using System.Collections.Generic;
-using SUS.Shared;
-using SUS.Objects.Items;
+﻿using SUS.Objects.Items;
 using SUS.Objects.Items.Equipment;
-using System;
+using SUS.Shared;
 
-namespace SUS.Objects
+namespace SUS.Objects.Mobiles
 {
-    public class Player : Mobile, IDamageable, IPlayer
+    public class Player : Mobile, IPlayer
     {
-        private UInt64 m_PlayerID;
-        private int m_Deaths = 0;
-        private int m_Kills = 0;
-        public bool isLoggedIn { get; private set; } = false;
+        private ulong m_PlayerId;
+        public bool IsLoggedIn { get; private set; }
 
         #region Constructors
-        public Player(string name, int rawStr, int rawDex, int rawInt) 
+        public Player(string name, int rawStr, int rawDex, int rawInt, Regions region, Point2D location)
             : base(MobileTypes.Player)
         {
             Name = name;
@@ -22,6 +18,9 @@ namespace SUS.Objects
 
             InitStats(rawStr, rawDex, rawInt);
             StatCap = 255;
+
+            Region = region;
+            Location = location;
 
             // Create our consumables.
             Gold += 1000;
@@ -48,19 +47,23 @@ namespace SUS.Objects
         public override string ToString()
         {
             string paperdoll = base.ToString();
-            paperdoll += $"\n  +-[ Statistics ]\n" +
+            paperdoll += "\n  +-[ Statistics ]\n" +
                 $"  | +-- Deaths: {Deaths}\n" +
                 $"  | +-- Kill Count: {Kills}\n" +
-                $"  |\n" +
-                $"  +-[ Skills ]\n" +
-                $"  | +-- Skills Total: {SkillTotal.ToString("F1")}\n";
+                "  |\n" +
+                "  +-[ Skills ]\n" +
+                $"  | +-- Skills Total: {SkillTotal:F1}\n";
 
-            foreach (KeyValuePair<SkillName, Skill> skill in Skills)
-                paperdoll += $"  | +-- [{skill.Value.Value.ToString("F1"),-5} / {skill.Value.Cap.ToString("F1"),-5}] {skill.Value.Name}\n";
+            foreach (System.Collections.Generic.KeyValuePair<SkillName, Skill> skill in Skills)
+            {
+                paperdoll += $"  | +-- [{skill.Value.Value,-5:F1} / {skill.Value.Cap,-5:F1}] {skill.Value.Name}\n";
+            }
 
-            paperdoll += $"  |\n  +-[ Equipment ]\n";
-            foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
+            paperdoll += "  |\n  +-[ Equipment ]\n";
+            foreach (System.Collections.Generic.KeyValuePair<ItemLayers, Equippable> item in Equipment)
+            {
                 paperdoll += $"  | +-- {("[" + item.Value.Rating + "]"),-4} {item.Value.Name}\n";
+            }
 
             paperdoll += "  +---------------------------------------------------+";
 
@@ -69,82 +72,67 @@ namespace SUS.Objects
         #endregion
 
         #region Getters / Setters
-        public int CR { get { return (int)SkillTotal / 36; } }
+        public int CR => (int)SkillTotal / 36;
 
-        public UInt64 PlayerID
+        public ulong PlayerID
         {
-            get { return m_PlayerID; }
+            get => m_PlayerId;
             set
             {
                 if (value != PlayerID)
-                    m_PlayerID = value;
+                {
+                    m_PlayerId = value;
+                }
             }
         }
 
-        public override DamageTypes Resistances
+        protected override DamageTypes Resistances
         {
             get
             {
                 DamageTypes resist = DamageTypes.None;
                 if (Equipment.ContainsKey(ItemLayers.Armor))
-                    resist |= (Equipment[ItemLayers.Armor] as Armor).Resistances;
+                {
+                    resist |= ((Armor)Equipment[ItemLayers.Armor]).Resistances;
+                }
 
                 if (Equipment.ContainsKey(ItemLayers.Offhand) && Equipment[ItemLayers.Offhand].IsArmor)
-                    resist |= (Equipment[ItemLayers.Offhand] as Armor).Resistances;
+                {
+                    resist |= ((Armor)Equipment[ItemLayers.Offhand]).Resistances;
+                }
 
                 return resist;
             }
         }
 
-        public int Deaths
-        {
-            get { return m_Deaths; }
-            set
-            {
-                if (value < 0)
-                    value = 0;
+        private int Deaths { get; set; }
 
-                if (value != m_Deaths)
-                    m_Deaths = value;
-            }
-        }
+        private int Kills { get; set; }
 
-        public int Kills
-        {
-            get { return m_Kills; }
-            set
-            {
-                if (value < 0)
-                    value = 0;
-
-                if (value != m_Kills)
-                    m_Kills = value;
-            }
-        }
         #endregion
 
-        public void Logout() { isLoggedIn = false; }
-        public void Login() { isLoggedIn = true; }
+        public void Logout() { IsLoggedIn = false; }
+        public void Login() { IsLoggedIn = true; }
 
         #region Combat
         public override int Attack()
         {
-            return Weapon.Damage + ProficiencyModifier +  AbilityModifier;
+            return Weapon.Damage + ProficiencyModifier + AbilityModifier;
         }
 
-        public void AddKill() { ++m_Kills; }
+        public void AddKill() { ++Kills; }
 
         public override void Kill()
         {
-            ++m_Deaths;
+            ++Deaths;
             Hits = 0;
         }
 
-        public override void Ressurrect()
+        public override void Resurrect()
         {
             Hits = HitsMax / 2;
             Mana = ManaMax / 2;
-            Stam = StamMax / 2;
+            Stamina = StaminaMax / 2;
         }
         #endregion
     }

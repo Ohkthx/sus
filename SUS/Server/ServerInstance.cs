@@ -5,27 +5,22 @@ using System.Threading;
 
 namespace SUS.Server
 {
-    public partial class ServerInstance
+    public static class ServerInstance
     {
-        private const int port = 8411;
+        private const int Port = 8411;
 
         // Thread signal.  
-        public static ManualResetEvent allDone = new ManualResetEvent(false);
-
-        public ServerInstance() { }
+        private static readonly ManualResetEvent AllDone = new ManualResetEvent(false);
 
         public static void StartListening()
         {
-            // Data buffer for incoming data.  
-            byte[] bytes = new Byte[1024];
-
             // Establish the local endpoint for the socket.  
-            IPHostEntry ipHostInfo = Dns.GetHostEntry("localhost");
-            IPAddress ipAddress = ipHostInfo.AddressList[0];
-            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
+            var ipHostInfo = Dns.GetHostEntry("localhost");
+            var ipAddress = ipHostInfo.AddressList[0];
+            var localEndPoint = new IPEndPoint(ipAddress, Port);
 
             // Create a TCP/IP socket.  
-            Socket listener = new Socket(ipAddress.AddressFamily,
+            var listener = new Socket(ipAddress.AddressFamily,
                 SocketType.Stream, ProtocolType.Tcp);
 
             // Bind the socket to the local endpoint and listen for incoming connections.  
@@ -38,16 +33,16 @@ namespace SUS.Server
 
                 while (true)
                 {
-                    // Set the event to nonsignaled state.  
-                    allDone.Reset();
+                    // Set the event to non-signaled state.  
+                    AllDone.Reset();
 
                     // Start an asynchronous socket to listen for connections.  
                     listener.BeginAccept(
-                        new AsyncCallback(AcceptCallback),
+                        AcceptCallback,
                         listener);
 
                     // Wait until a connection is made before continuing.  
-                    allDone.WaitOne();
+                    AllDone.WaitOne();
                 }
 
             }
@@ -61,17 +56,18 @@ namespace SUS.Server
 
         }
 
-        public static void AcceptCallback(IAsyncResult ar)
+        private static void AcceptCallback(IAsyncResult ar)
         {
             // Signal the main thread to continue.  
-            allDone.Set();
+            AllDone.Set();
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
 
             try
             {
                 Program.ClientHandler(ref handler);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Console.WriteLine($"Something happened within a client. {e.Message}");
             }

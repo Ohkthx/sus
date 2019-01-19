@@ -4,7 +4,7 @@ namespace SUS.Shared.Packets
 {
     public enum PacketTypes
     {
-        OK,
+        Ok,
         Error,
 
         Authenticate,
@@ -26,33 +26,37 @@ namespace SUS.Shared.Packets
     public abstract class Packet : IPacket
     {
         private PacketTypes m_Type;     // Type of the packet.
-        private UInt64 m_PlayerID;      // Author / Owner of the packet.
+        private ulong m_PlayerId;      // Author / Owner of the packet.
 
         // Creates an instance of a Request based on supplied Type and Object.
-        public Packet(PacketTypes type, UInt64 playerID)
+        protected Packet(PacketTypes type, ulong playerId)
         {
             Type = type;
-            PlayerID = playerID;
+            PlayerId = playerId;
         }
 
         #region Getters / Setters
         public PacketTypes Type
         {
-            get { return m_Type; }
+            get => m_Type;
             private set
             {
                 if (value != Type)
+                {
                     m_Type = value;
+                }
             }
         }
 
-        public UInt64 PlayerID
+        public ulong PlayerId
         {
-            get { return m_PlayerID; }
+            get => m_PlayerId;
             private set
             {
-                if (value != PlayerID)
-                    m_PlayerID = value;
+                if (value != PlayerId)
+                {
+                    m_PlayerId = value;
+                }
             }
         }
         #endregion
@@ -62,9 +66,9 @@ namespace SUS.Shared.Packets
     }
 
     [Serializable]
-    public class OKPacket : Packet
+    public class OkPacket : Packet
     {
-        public OKPacket() : base(PacketTypes.OK, 0) { }
+        public OkPacket() : base(PacketTypes.Ok, 0) { }
     }
 
     [Serializable]
@@ -77,16 +81,22 @@ namespace SUS.Shared.Packets
         #region Getters / Setters
         public string Message
         {
-            get { return m_Error; }
+            get => m_Error;
             private set
             {
-                if (value == null || value == string.Empty)
+                if (string.IsNullOrEmpty(value))
+                {
                     return;
-                else if (Message == string.Empty)
-                    m_Error = value;
+                }
 
-                if (Message != value)
+                if (Message == string.Empty)
+                {
                     m_Error = value;
+                }
+                else if (Message != value)
+                {
+                    m_Error = value;
+                }
             }
         }
         #endregion

@@ -9,44 +9,28 @@ namespace SUS.Shared.Packets
         private List<int> m_Targets;     // List of Targets
         private List<string> m_Updates;     // Updates on all.
         private string m_Result;            // Result of the combat.
-        public bool IsAlive { get; set; }   // Determines if the Initator (Player) died.
+        public bool IsAlive { get; set; }   // Determines if the Initiator (Player) died.
 
         #region Constructors
-        public CombatMobilePacket(UInt64 playerID) 
-            : base(PacketTypes.MobileCombat, playerID)
+        public CombatMobilePacket(ulong playerId)
+            : base(PacketTypes.MobileCombat, playerId)
         { }
         #endregion
 
         #region Getters / Setters
-        public List<int> Targets
-        {
-            get
-            {
-                if (m_Targets == null)
-                    m_Targets = new List<int>();
+        public List<int> Targets => m_Targets ?? (m_Targets = new List<int>());
 
-                return m_Targets;
-            }
-        }
-
-        public List<string> Updates
-        {
-            get
-            {
-                if (m_Updates == null)
-                    m_Updates = new List<string>();
-
-                return m_Updates;
-            }
-        }
+        public List<string> Updates => m_Updates ?? (m_Updates = new List<string>());
 
         public string Result
         {
-            get { return m_Result; }
+            get => m_Result;
             set
             {
-                if (value == null || value == string.Empty)
+                if (string.IsNullOrEmpty(value))
+                {
                     return;
+                }
 
                 m_Result = value;
             }
@@ -64,7 +48,9 @@ namespace SUS.Shared.Packets
         public void AddUpdate(List<string> info)
         {
             if (info == null)
+            {
                 return;
+            }
 
             Updates.AddRange(info);
         }
@@ -78,23 +64,26 @@ namespace SUS.Shared.Packets
         private BaseRegion m_NewRegion;
 
         #region Constructors
-        public MoveMobilePacket(Regions region, UInt64 playerID) : this(region, playerID, MobileDirections.None) { }
-        public MoveMobilePacket(Regions region, UInt64 playerID, MobileDirections direction) 
-            : base(PacketTypes.MobileMove, playerID)
+
+        public MoveMobilePacket(Regions region, ulong playerId, MobileDirections direction = MobileDirections.None)
+            : base(PacketTypes.MobileMove, playerId)
         {
             Region = region;
             Direction = direction;
         }
+
         #endregion
 
         #region Getters / Setters
         public MobileDirections Direction
         {
-            get { return m_Direction; }
-            set
+            get => m_Direction;
+            private set
             {
-                if (value == MobileDirections.None || value == Direction) 
+                if (value == MobileDirections.None || value == Direction)
+                {
                     return; // Prevent assigning a bad value or reassigning.
+                }
 
                 m_Direction = value;
             }
@@ -102,61 +91,64 @@ namespace SUS.Shared.Packets
 
         public Regions Region
         {
-            get { return m_Region; }
-            set
+            get => m_Region;
+            private set
             {
                 if (Region != value)
+                {
                     m_Region = value;
+                }
             }
         }
 
         public BaseRegion NewRegion
         {
-            get { return m_NewRegion; }
+            get => m_NewRegion;
             set
             {
-                if (value == null)
-                    return;
-                else if (NewRegion == null)
-                    m_NewRegion = value;
-
                 if (NewRegion != value)
+                {
                     m_NewRegion = value;
+                }
             }
         }
         #endregion
     }
 
     [Serializable]
-    public class RessurrectMobilePacket : Packet
+    public class ResurrectMobilePacket : Packet
     {
         private Regions m_Region;        // Region to be sent to.
-        private bool m_Success = false;
+        private bool m_Success;
 
         #region Constructors
-        public RessurrectMobilePacket(UInt64 playerID) 
-            : base(PacketTypes.MobileResurrect, playerID)
+        public ResurrectMobilePacket(ulong playerId)
+            : base(PacketTypes.MobileResurrect, playerId)
         { }
         #endregion
 
         #region Getters / Setters
         public Regions Region
         {
-            get { return m_Region; }
+            get => m_Region;
             set
             {
                 if (Region != value)
+                {
                     m_Region = value;
+                }
             }
         }
 
-        public bool isSuccessful
+        public bool IsSuccessful
         {
-            get { return m_Success; }
+            get => m_Success;
             set
             {
-                if (value != isSuccessful)
+                if (value != IsSuccessful)
+                {
                     m_Success = value;
+                }
             }
         }
         #endregion
@@ -165,12 +157,12 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class UseItemPacket : Packet
     {
-        public int Item { get; private set; }
+        public int Item { get; }
         private string m_Response = string.Empty;
 
         #region Constructor
-        public UseItemPacket(int serial, UInt64 playerID) 
-            : base(PacketTypes.UseItem, playerID)
+        public UseItemPacket(int serial, ulong playerId)
+            : base(PacketTypes.UseItem, playerId)
         {
             Item = serial;
         }
@@ -179,11 +171,13 @@ namespace SUS.Shared.Packets
         #region Getters / Setters
         public string Response
         {
-            get { return m_Response; }
+            get => m_Response;
             set
             {
-                if (value == null || value == string.Empty)
+                if (string.IsNullOrEmpty(value))
+                {
                     return;
+                }
 
                 m_Response = value;
             }

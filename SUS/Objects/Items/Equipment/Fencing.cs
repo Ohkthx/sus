@@ -2,7 +2,7 @@
 {
     public class Dagger : OneHanded
     {
-        public Dagger(Materials material) 
+        public Dagger(Materials material)
             : base(material, "1d6")
         {
             Name = "Dagger";
@@ -14,7 +14,7 @@
 
     public class Kryss : OneHanded
     {
-        public Kryss(Materials material) 
+        public Kryss(Materials material)
             : base(material, "1d8")
         {
             Name = "Kryss";
