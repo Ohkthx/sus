@@ -8,12 +8,24 @@ namespace SUS.Objects.Mobiles
 
         protected Npc()
             : base(MobileTypes.Npc)
-        { }
+        {
+        }
+
         #endregion
 
         #region Combat
-        public override void Kill() { Hits = 0; IsDeleted = true; }
-        public override void Resurrect() { Hits = HitsMax / 2; }
+
+        public override void Kill()
+        {
+            Hits = 0;
+            IsDeleted = true;
+        }
+
+        public override void Resurrect()
+        {
+            Hits = HitsMax / 2;
+        }
+
         #endregion
     }
 }

@@ -21,12 +21,12 @@ namespace SUS.Spells
         Fireball,
         Explosion,
         Flamestrike,
-        Lightning,
+        Lightning
     }
 
     public abstract class Spell
     {
-        private static readonly int[] ManaTable = new int[] { 4, 6, 9, 11, 14, 20, 40, 50 };
+        private static readonly int[] ManaTable = {4, 6, 9, 11, 14, 20, 40, 50};
 
         private SpellCircle m_Circle;
 
@@ -36,11 +36,13 @@ namespace SUS.Spells
             Circle = circle;
         }
 
+        public abstract int Effect(Mobile caster, Mobile target);
+
         #region Getters / Setters
 
         private static string Name { get; set; }
 
-        protected int ManaRequired => ManaTable[(int)Circle];
+        protected int ManaRequired => ManaTable[(int) Circle];
 
         private SpellCircle Circle
         {
@@ -53,8 +55,7 @@ namespace SUS.Spells
                 m_Circle = value;
             }
         }
-        #endregion
 
-        public abstract int Effect(Mobile caster, Mobile target);
+        #endregion
     }
 }

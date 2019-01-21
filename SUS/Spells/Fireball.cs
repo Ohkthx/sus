@@ -7,7 +7,8 @@ namespace SUS.Spells
     {
         public Fireball()
             : base(SpellName.Fireball, SpellCircle.Second)
-        { }
+        {
+        }
 
         public override int Effect(Mobile caster, Mobile target)
         {
@@ -15,8 +16,6 @@ namespace SUS.Spells
 
             caster.Mana -= ManaRequired;
             return SpellHelper.Damage(caster, target, Utility.RandomMinMax(10, 17), DamageTypes.Fire);
-
         }
-
     }
 }

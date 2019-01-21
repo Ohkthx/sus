@@ -56,13 +56,13 @@ namespace SUS
     {
         string ToString();
         int GetHashCode();
-        bool Equals(Object obj);
+        bool Equals(object obj);
         void ToInsert(SQLiteCommand cmd);
     }
 
     public interface IPlayer : IDamageable
     {
-        UInt64 PlayerID { get; }
+        ulong PlayerID { get; }
 
         void AddKill();
     }

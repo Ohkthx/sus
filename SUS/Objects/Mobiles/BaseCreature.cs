@@ -6,20 +6,19 @@ namespace SUS.Objects.Mobiles
 {
     public abstract class BaseCreature : Mobile, ISpawnable
     {
-        private int m_HitsMax = -1;
-        private int m_StaminaMax = -1;
-        private int m_ManaMax = -1;
-        private int m_DamageMin = -1;
+        private Ai.Types m_AiType;
         private int m_DamageMax = -1;
+        private int m_DamageMin = -1;
+        private DamageTypes m_DamageType = DamageTypes.None;
+        private int m_HitsMax = -1;
+        private int m_ManaMax = -1;
 
         private ISpawner m_OwningSpawner;
-
-        private Ai.Types m_AiType;
-        private DamageTypes m_DamageType = DamageTypes.None;
+        private int m_StaminaMax = -1;
 
         #region Constructors
 
-        protected BaseCreature() 
+        protected BaseCreature()
             : base(MobileTypes.Creature)
         {
             StatCap = int.MaxValue;
@@ -27,7 +26,27 @@ namespace SUS.Objects.Mobiles
 
         #endregion
 
+        public void Spawned(ISpawner spawner, Regions region, Point2D location)
+        {
+            Spawner = spawner;
+            Region = region;
+            Location = location;
+        }
+
+        protected void SetSkill(SkillName skill, double min, double max)
+        {
+            if (min > max)
+            {
+                var val = min;
+                min = max;
+                max = val;
+            }
+
+            Skills[skill].Value = Utility.RandomMinMax(min, max);
+        }
+
         #region Getters / Setters - Basic
+
         public ISpawner Spawner
         {
             get => m_OwningSpawner;
@@ -45,9 +64,11 @@ namespace SUS.Objects.Mobiles
             m_DamageMin = min;
             m_DamageMax = max;
         }
+
         #endregion
 
         #region Getters / Setters - Stats
+
         protected void SetStr(int val)
         {
             RawStr = val;
@@ -161,6 +182,7 @@ namespace SUS.Objects.Mobiles
                 return Int;
             }
         }
+
         #endregion
 
         #region Getters / Setters - Combat
@@ -193,7 +215,7 @@ namespace SUS.Objects.Mobiles
         {
             get
             {
-                Weapon weapon = base.Weapon;
+                var weapon = base.Weapon;
                 if (weapon is Unarmed && weapon.DamageType != DamageOverride)
                     weapon.DamageType = DamageOverride;
 
@@ -203,36 +225,15 @@ namespace SUS.Objects.Mobiles
 
         public override int AttackRating => Weapon is Unarmed ? m_DamageMax : base.AttackRating;
 
-        protected override int ProficiencyModifier => (CR / 4) + 2 > 9 ? 9 : (CR / 4) + 2;
+        protected override int ProficiencyModifier => CR / 4 + 2 > 9 ? 9 : CR / 4 + 2;
 
         #endregion
 
-        public void Spawned(ISpawner spawner, Regions region, Point2D location)
-        {
-            Spawner = spawner;
-            Region = region;
-            Location = location;
-        }
-
-        protected void SetSkill(SkillName skill, double min, double max)
-        {
-            if (min > max)
-            {
-                var val = min;
-                min = max;
-                max = val;
-            }
-
-            Skills[skill].Value = Utility.RandomMinMax(min, max);
-        }
-
         #region Combat
+
         public override int Attack()
         {
-            if (Weapon is Unarmed)
-            {
-                return Utility.RandomMinMax(m_DamageMin, m_DamageMax);
-            }
+            if (Weapon is Unarmed) return Utility.RandomMinMax(m_DamageMin, m_DamageMax);
 
             return Weapon.Damage + ProficiencyModifier;
         }
@@ -249,6 +250,7 @@ namespace SUS.Objects.Mobiles
             Mana = ManaMax / 2;
             Stamina = StaminaMax / 2;
         }
+
         #endregion
     }
 }

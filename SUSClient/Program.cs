@@ -9,14 +9,16 @@ namespace SUSClient
     {
         private static bool DEBUG;
 
-        public static void Main(string[] args) 
-            => StartUp(args);
-        
+        public static void Main(string[] args)
+        {
+            StartUp(args);
+        }
+
         /// <summary>
         ///     Launches the client, parses all arguments passed at launch.
         /// </summary>
         /// <param name="args"></param>
-        private static void StartUp(string []args)
+        private static void StartUp(string[] args)
         {
             if (args == null) throw new ArgumentNullException(nameof(args));
 
@@ -28,7 +30,7 @@ namespace SUSClient
                 DEBUG = true;
             }
 
-            AsynchronousClient.StartClient();   // Starts the Client.
+            AsynchronousClient.StartClient(); // Starts the Client.
             Console.Read();
         }
 
@@ -41,7 +43,8 @@ namespace SUSClient
         {
             ulong id;
             do
-            {    // Get our User ID, ensure it is valid.
+            {
+                // Get our User ID, ensure it is valid.
                 Console.Write("Select an ID: ");
             } while (!ulong.TryParse(Console.ReadLine(), out id));
 
@@ -50,7 +53,7 @@ namespace SUSClient
             var username = Console.ReadLine();
 
             // The Socket to communicate over to the server.
-            var socketHandler = new SocketHandler(server, SocketHandler.Types.Server, debug: DEBUG);
+            var socketHandler = new SocketHandler(server, SocketHandler.Types.Server, DEBUG);
 
             // Send the authentication to the server.
             socketHandler.ToServer(new AccountAuthenticatePacket(id, username).ToByte());
@@ -60,13 +63,13 @@ namespace SUSClient
 
         private static void ServerHandler(SocketHandler socketHandler)
         {
-            ClientState clientState = null;     // Gamestate of this client.
-            InteractiveConsole ia = null;   // Interactive console tracks user actions and sends data.
+            ClientState clientState = null; // Gamestate of this client.
+            InteractiveConsole ia = null; // Interactive console tracks user actions and sends data.
 
             // While we are receiving information from the server, continue to decipher and process it.
             for (object obj; (obj = socketHandler.FromClient()) != null;)
             {
-                Packet clientRequest = null;            // Client REQuest. Used by functions not called in interactive console. 
+                Packet clientRequest = null; // Client REQuest. Used by functions not called in interactive console. 
                 if (!(obj is Packet req))
                     continue;
 
@@ -74,7 +77,7 @@ namespace SUSClient
                 {
                     case PacketTypes.Ok:
                         ia?.Reset();
-                        break;  // Server sent back empty information.
+                        break; // Server sent back empty information.
                     case PacketTypes.Error:
                         Utility.ConsoleNotify(((ErrorPacket) req).Message);
                         ia?.Reset();
@@ -115,8 +118,9 @@ namespace SUSClient
                         ia?.Reset();
                         break;
                     case PacketTypes.MobileResurrect:
-                        clientRequest = clientState?.Resurrect(req as ResurrectMobilePacket);   // If we require a new current node,
-                        ia?.Reset();                                             //  the request will be made and sent early.
+                        clientRequest =
+                            clientState?.Resurrect(req as ResurrectMobilePacket); // If we require a new current node,
+                        ia?.Reset(); //  the request will be made and sent early.
                         break;
                     case PacketTypes.UseItem:
                         ClientState.UseItemResponse(req as UseItemPacket);
@@ -129,14 +133,16 @@ namespace SUSClient
                 }
 
                 if (clientRequest != null)
-                {   // If clientRequest was assigned early, send it and loop again.
+                {
+                    // If clientRequest was assigned early, send it and loop again.
                     socketHandler.ToServer(clientRequest.ToByte());
                     continue;
                 }
 
                 if (ia == null) continue; // Get an action to perform and send it to the server.
 
-                clientState = ia.Core();   // Activates the interactive console to grab the next action desired to be performed.
+                clientState =
+                    ia.Core(); // Activates the interactive console to grab the next action desired to be performed.
 
                 if (ia.Request != null)
                     clientRequest = ia.Request;

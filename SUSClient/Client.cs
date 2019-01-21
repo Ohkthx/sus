@@ -44,7 +44,6 @@ namespace SUSClient
                 // Release the socket.  
                 client.Shutdown(SocketShutdown.Both);
                 client.Close();
-
             }
             catch (Exception e)
             {
@@ -57,7 +56,7 @@ namespace SUSClient
             try
             {
                 // Retrieve the socket from the state object.  
-                var client = (Socket)ar.AsyncState;
+                var client = (Socket) ar.AsyncState;
 
                 // Complete the connection.  
                 client.EndConnect(ar);

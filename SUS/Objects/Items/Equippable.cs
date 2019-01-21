@@ -15,14 +15,14 @@ namespace SUS.Objects.Items
         TwoHanded = MainHand | Offhand,
         Bow = TwoHanded | Ranged,
 
-        Armor = 0x00000010,
+        Armor = 0x00000010
     }
 
     public enum Weights
     {
         Light,
         Medium,
-        Heavy,
+        Heavy
     }
 
     public abstract class Equippable : Item
@@ -31,28 +31,29 @@ namespace SUS.Objects.Items
         private Weights m_Weight;
 
         #region Constructors
+
         protected Equippable(ItemTypes type, ItemLayers layer, int magicRating)
             : base(type)
         {
             Layer = layer;
             MagicRating = magicRating;
         }
+
         #endregion
 
         #region Getters / Setters
+
         public bool IsArmor => !IsWeapon;
 
-        public bool IsWeapon => (Layer & ItemLayers.MainHand) == ItemLayers.MainHand || (Layer & ItemLayers.TwoHanded) == ItemLayers.TwoHanded;
+        public bool IsWeapon => (Layer & ItemLayers.MainHand) == ItemLayers.MainHand ||
+                                (Layer & ItemLayers.TwoHanded) == ItemLayers.TwoHanded;
 
         public ItemLayers Layer
         {
             get => m_Layer;
             private set
             {
-                if (value != ItemLayers.None && value != Layer)
-                {
-                    m_Layer = value;
-                }
+                if (value != ItemLayers.None && value != Layer) m_Layer = value;
             }
         }
 
@@ -61,10 +62,7 @@ namespace SUS.Objects.Items
             get => m_Weight;
             protected set
             {
-                if (value == Weight)
-                {
-                    return;
-                }
+                if (value == Weight) return;
 
                 m_Weight = value;
             }
@@ -78,6 +76,7 @@ namespace SUS.Objects.Items
 
         // Can be magical with either a negative(cursed) or positive rating.
         public bool IsMagical => MagicRating != 0;
+
         #endregion
     }
 }

@@ -1,21 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
 using SUS.Shared;
 
 namespace SUS
 {
     public abstract class Node
     {
-        private string m_Name;
         private string m_Description = string.Empty;
-
-        public bool isSpawnable { get; protected set; } = false;
+        private string m_Name;
+        private Regions m_Region;
 
         private RegionType m_Type;
-        private Regions m_Region;
-        private Regions m_Connections = Regions.None;
 
         #region Constructors
+
         public Node(RegionType type, Regions region, string description)
         {
             Name = Enum.GetName(typeof(Regions), region);
@@ -24,32 +21,52 @@ namespace SUS
             Type = type;
             Region = region;
         }
+
         #endregion
 
+        public bool isSpawnable { get; protected set; } = false;
+
+        /// <summary>
+        ///     Validates that the location is not invalid and not a combination of locations.
+        /// </summary>
+        /// <param name="loc">Location to evaluate.</param>
+        public static bool isValidRegion(Regions loc)
+        {
+            // Check if it is not a 'None' location. If it is not, verifies that it is a power of 2.
+            return loc != Regions.None && (loc & (loc - 1)) == 0;
+        }
+
+        public abstract Point2D StartingLocation();
+
+        public BaseRegion GetBase()
+        {
+            return new BaseRegion(Type, Region, Connections, isSpawnable);
+        }
+
         #region Overrides
+
         public override bool Equals(object obj)
         {
-            Node node = obj as Node;
-            return this.ID == node.ID && (int)this.Region == (int)node.Region && (int)this.Type == (int)node.Type;
+            var node = obj as Node;
+            return ID == node.ID && (int) Region == (int) node.Region && (int) Type == (int) node.Type;
         }
 
         public override int GetHashCode()
         {
-            int hash = 37;
-            hash += this.ID.GetHashCode();
+            var hash = 37;
+            hash += ID.GetHashCode();
             hash *= 397;
-            hash += this.Region.GetHashCode();
+            hash += Region.GetHashCode();
             hash *= 397;
-            hash += this.Type.GetHashCode();
+            hash += Type.GetHashCode();
             return hash *= 397;
         }
+
         #endregion
 
         #region Getters / Setters
-        public int ID
-        {
-            get { return (int)Region; }
-        }
+
+        public int ID => (int) Region;
 
         public string Name
         {
@@ -57,8 +74,7 @@ namespace SUS
             {
                 if (m_Name != null)
                     return m_Name;
-                else
-                    return "Unknown";
+                return "Unknown";
             }
             set
             {
@@ -69,7 +85,7 @@ namespace SUS
 
         public string Description
         {
-            get { return m_Description; }
+            get => m_Description;
             set
             {
                 if (value != null && value != m_Description)
@@ -79,7 +95,7 @@ namespace SUS
 
         public RegionType Type
         {
-            get { return m_Type; }
+            get => m_Type;
             set
             {
                 if (value != m_Type)
@@ -89,7 +105,7 @@ namespace SUS
 
         public Regions Region
         {
-            get { return m_Region; }
+            get => m_Region;
             set
             {
                 if (value != m_Region)
@@ -97,42 +113,36 @@ namespace SUS
             }
         }
 
-        public Regions Connections
-        {
-            get { return m_Connections; }
-        }
+        public Regions Connections { get; private set; } = Regions.None;
 
         public int ConnectionsCount
         {
             get
             {
-                int value = 0;
+                var value = 0;
                 foreach (Regions region in Enum.GetValues(typeof(Regions)))
                     if ((Connections & region) == region)
                         ++value;
                 return value;
             }
         }
+
         #endregion
 
         #region Updates
+
         public void AddConnection(Regions connections)
         {
             if (connections == Regions.None || connections == Region)
-            {   // Location is empty or our location, do not add.
                 return;
-            }
-            else if ((connections & Region) == Region)
-            {   // Extract the location and remove it from connections.
-                connections &= ~Region;
-            }
+            if ((connections & Region) == Region) connections &= ~Region;
 
-            m_Connections |= connections;
+            Connections |= connections;
         }
 
         public bool HasConnection(Regions connection)
         {
-            return ((Connections & connection) == connection);
+            return (Connections & connection) == connection;
         }
 
         /// <summary>
@@ -147,38 +157,21 @@ namespace SUS
 
             foreach (Regions region in Enum.GetValues(typeof(Regions)))
             {
-                if (region == Regions.None)          // A connection cannot be 'None'
+                if (region == Regions.None) // A connection cannot be 'None'
                     continue;
-                else if ((region & (region - 1)) != 0)    // Check if this is not a power of two (indicating it is a combination location)
-                    continue;                       //  It was a combination.
-                else if (!HasConnection(region))       // Validate if it is not a connection.
-                    continue;                       //  It is not a connection, return.
+                if ((region & (region - 1)) != 0
+                ) // Check if this is not a power of two (indicating it is a combination location)
+                    continue; //  It was a combination.
+                if (!HasConnection(region)) // Validate if it is not a connection.
+                    continue; //  It is not a connection, return.
 
-                if (location.ToLower() == Enum.GetName(typeof(Regions), region).ToLower())
-                {
-                    return region;
-                }
+                if (location.ToLower() == Enum.GetName(typeof(Regions), region).ToLower()) return region;
             }
 
             // Location never found through string parsing.
             return Regions.None;
         }
+
         #endregion
-
-        /// <summary>
-        ///     Validates that the location is not invalid and not a combination of locations.
-        /// </summary>
-        /// <param name="loc">Location to evaluate.</param>
-        public static bool isValidRegion(Regions loc)
-        {   // Check if it is not a 'None' location. If it is not, verifies that it is a power of 2.
-            return loc != Regions.None && (loc & (loc - 1)) == 0;
-        }
-
-        public abstract Point2D StartingLocation();
-
-        public BaseRegion GetBase()
-        {
-            return new BaseRegion(Type, Region, Connections, isSpawnable);
-        }
     }
 }

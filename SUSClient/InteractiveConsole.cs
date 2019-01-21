@@ -9,33 +9,6 @@ namespace SUSClient
 {
     public class InteractiveConsole
     {
-        private enum ConsoleActions
-        {
-            None,
-            Move,
-            Look,
-            LastLoc,
-            Players,
-            Npcs,
-            Mobiles,
-            Attack,
-            Actions,
-            Use,
-            Update,
-            Paperdoll,
-            Exit
-        }
-
-        #region Getters / Setters
-
-        private static ClientState Client { get; set; }
-
-        public Packet Request { get; private set; }
-
-        private static ulong Rounds { get; set; }
-
-        #endregion
-
         private ConsoleActions m_LastAction;
 
         #region Constructors
@@ -82,7 +55,8 @@ namespace SUSClient
             {
                 // Lists all currently accessible actions.
                 var name = Enum.GetName(typeof(ConsoleActions), action)?.ToLower();
-                validActions.Add(name ?? throw new InvalidOperationException(), action); // **IMPORTANT**, adds the action to a list of Valid Actions.
+                validActions.Add(name ?? throw new InvalidOperationException(),
+                    action); // **IMPORTANT**, adds the action to a list of Valid Actions.
 
                 if (c != 0 && c % 6 == 0) Console.Write("\n");
 
@@ -142,18 +116,17 @@ namespace SUSClient
                         printActions();
                         break;
                     case ConsoleActions.Attack when actions.Length > 1:
-                        Console.WriteLine("attacking");
                         Attack(actions[1]);
                         break;
                     case ConsoleActions.Attack:
                         Attack();
                         break;
                     case ConsoleActions.Paperdoll:
-                        {
-                            var pd = new Paperdoll(Client.PlayerId, Client.Account);
-                            Request = pd.Display();
-                            break;
-                        }
+                    {
+                        var pd = new Paperdoll(Client.PlayerId, Client.Account);
+                        Request = pd.Display();
+                        break;
+                    }
                     case ConsoleActions.Use:
                         Request = Client.UseItems();
                         break;
@@ -332,7 +305,6 @@ namespace SUSClient
 
             var pos = 0;
             if (mobiles != null && mobiles.Count > 0)
-            {
                 foreach (var m in mobiles)
                 {
                     if ((type & m.Type) != m.Type) continue;
@@ -340,7 +312,6 @@ namespace SUSClient
                     pos++;
                     Console.WriteLine($"  [Pos: {pos}] {m.Name},  ID: {m.Serial}");
                 }
-            }
 
             // If not Players found, print 'None'.
             if (pos == 0) Console.WriteLine("    => None.");
@@ -432,5 +403,32 @@ namespace SUSClient
         {
             Request = new SocketKillPacket(Client.PlayerId);
         }
+
+        private enum ConsoleActions
+        {
+            None,
+            Move,
+            Look,
+            LastLoc,
+            Players,
+            Npcs,
+            Mobiles,
+            Attack,
+            Actions,
+            Use,
+            Update,
+            Paperdoll,
+            Exit
+        }
+
+        #region Getters / Setters
+
+        private static ClientState Client { get; set; }
+
+        public Packet Request { get; private set; }
+
+        private static ulong Rounds { get; set; }
+
+        #endregion
     }
 }

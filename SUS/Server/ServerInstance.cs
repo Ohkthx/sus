@@ -7,7 +7,8 @@ namespace SUS.Server
 {
     public static class ServerInstance
     {
-        private const int Port = 8411;
+        private const int ConsolePort = 8410;
+        private const int PlayerPort = 8411;
 
         // Thread signal.  
         private static readonly ManualResetEvent AllDone = new ManualResetEvent(false);
@@ -17,17 +18,25 @@ namespace SUS.Server
             // Establish the local endpoint for the socket.  
             var ipHostInfo = Dns.GetHostEntry("localhost");
             var ipAddress = ipHostInfo.AddressList[0];
-            var localEndPoint = new IPEndPoint(ipAddress, Port);
+
+            var localConsole = new IPEndPoint(ipAddress, ConsolePort);
+            var localEndPoint = new IPEndPoint(ipAddress, PlayerPort);
 
             // Create a TCP/IP socket.  
-            var listener = new Socket(ipAddress.AddressFamily,
+            var playerListener = new Socket(ipAddress.AddressFamily,
+                SocketType.Stream, ProtocolType.Tcp);
+
+            var consoleListener = new Socket(ipAddress.AddressFamily,
                 SocketType.Stream, ProtocolType.Tcp);
 
             // Bind the socket to the local endpoint and listen for incoming connections.  
             try
             {
-                listener.Bind(localEndPoint);
-                listener.Listen(100);
+                consoleListener.Bind(localConsole);
+                consoleListener.Listen(100);
+
+                playerListener.Bind(localEndPoint);
+                playerListener.Listen(100);
 
                 Console.WriteLine("[ Server Started ]");
 
@@ -37,14 +46,18 @@ namespace SUS.Server
                     AllDone.Reset();
 
                     // Start an asynchronous socket to listen for connections.  
-                    listener.BeginAccept(
+                    consoleListener.BeginAccept(
                         AcceptCallback,
-                        listener);
+                        consoleListener);
+
+                    playerListener.BeginAccept(
+                        AcceptCallback,
+                        playerListener);
+
 
                     // Wait until a connection is made before continuing.  
                     AllDone.WaitOne();
                 }
-
             }
             catch (Exception e)
             {
@@ -53,19 +66,22 @@ namespace SUS.Server
 
             Console.WriteLine("\nPress ENTER to continue...");
             Console.Read();
-
         }
 
         private static void AcceptCallback(IAsyncResult ar)
         {
             // Signal the main thread to continue.  
             AllDone.Set();
-            Socket listener = (Socket)ar.AsyncState;
-            Socket handler = listener.EndAccept(ar);
+            var listener = (Socket) ar.AsyncState;
+            var socket = listener.EndAccept(ar);
 
             try
             {
-                Program.ClientHandler(ref handler);
+                var handler = ((IPEndPoint) listener.LocalEndPoint).Port == PlayerPort
+                    ? (Handler) new ClientHandler(socket)
+                    : new ConsoleHandler(socket);
+
+                handler.Core();
             }
             catch (Exception e)
             {

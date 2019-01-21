@@ -10,7 +10,7 @@ namespace SUS.Objects.Items
             Leather = 11,
             Hide = 12,
             Chainmail = 16,
-            Plate = 18,
+            Plate = 18
         }
 
         private int m_ArmorRating;
@@ -24,7 +24,7 @@ namespace SUS.Objects.Items
         {
             Name = name;
             Material = material;
-            ArmorRating = (int)Material;
+            ArmorRating = (int) Material;
             Weight = Weights.Light;
             Resistances = DamageTypes.None;
         }
@@ -32,6 +32,7 @@ namespace SUS.Objects.Items
         #endregion
 
         #region Getters / Setters
+
         public override string Name => $"{Enum.GetName(typeof(Materials), Material)} {base.Name}";
 
         private Materials Material
@@ -39,10 +40,7 @@ namespace SUS.Objects.Items
             get => m_Material;
             set
             {
-                if (value == Material)
-                {
-                    return;
-                }
+                if (value == Material) return;
 
                 m_Material = value;
             }
@@ -55,10 +53,7 @@ namespace SUS.Objects.Items
             get => m_ArmorRating;
             set
             {
-                if (value != ArmorRating)
-                {
-                    m_ArmorRating = value;
-                }
+                if (value != ArmorRating) m_ArmorRating = value;
             }
         }
 
@@ -67,10 +62,7 @@ namespace SUS.Objects.Items
             get => m_Resistances;
             protected set
             {
-                if (value == Resistances)
-                {
-                    return;
-                }
+                if (value == Resistances) return;
 
                 m_Resistances = value;
             }

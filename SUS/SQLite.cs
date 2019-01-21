@@ -14,25 +14,16 @@ namespace SUS
 
         public SqlWrapper()
         {
-            if (string.IsNullOrEmpty(m_Source))
-            {
-                m_Source = $"Data Source={Database};Version=3;";
-            }
+            if (string.IsNullOrEmpty(m_Source)) m_Source = $"Data Source={Database};Version=3;";
 
             if (m_Queries == null)
             {
                 m_Queries = new List<string>();
-                if (m_Queries.Count == 0)
-                {
-                    QueryInit();
-                }
+                if (m_Queries.Count == 0) QueryInit();
             }
 
             // Setup the database if it doesn't exist.
-            if (!File.Exists(Database))
-            {
-                setupDatabase();
-            }
+            if (!File.Exists(Database)) setupDatabase();
         }
 
         private void setupDatabase()
@@ -65,10 +56,12 @@ namespace SUS
                     transaction.Commit();
                 }
             }
+
             Console.WriteLine("[ Database Established. ]");
         }
 
         #region Queries
+
         // Returns all matches to the index.
         public HashSet<T> GetAll<T>(int index)
         {
@@ -81,10 +74,7 @@ namespace SUS
 
             // Get our query string, return if it is a bad string.
             var queryString = QueryGet(index);
-            if (string.IsNullOrEmpty(queryString))
-            {
-                return null;
-            }
+            if (string.IsNullOrEmpty(queryString)) return null;
 
             // Passed the initial checks, create the HashSet.
             var items = new HashSet<T>();
@@ -102,7 +92,7 @@ namespace SUS
                     while (r.Read())
                     {
                         // Process data here.
-                        var obj = (T)Activator.CreateInstance(typeof(T), r);
+                        var obj = (T) Activator.CreateInstance(typeof(T), r);
                         items.Add(obj);
                     }
                 }
@@ -123,10 +113,7 @@ namespace SUS
 
             // Get our query string, return if it is a bad string.
             var queryString = QueryGet(index);
-            if (string.IsNullOrEmpty(queryString))
-            {
-                return default(T);
-            }
+            if (string.IsNullOrEmpty(queryString)) return default(T);
 
             // Begin out query.
             using (var dbConnection = new SQLiteConnection(m_Source))
@@ -141,7 +128,7 @@ namespace SUS
                     while (r.Read())
                     {
                         // Process data here.
-                        var obj = (T)Activator.CreateInstance(typeof(T), r);
+                        var obj = (T) Activator.CreateInstance(typeof(T), r);
                         return obj;
                     }
                 }
@@ -153,17 +140,11 @@ namespace SUS
         public void Insert(int index, object toInsert)
         {
             // Validate we have a database, if not create it and prepare for processing.
-            if (!File.Exists(Database))
-            {
-                setupDatabase();
-            }
+            if (!File.Exists(Database)) setupDatabase();
 
             // Get our query string, return if it is a bad string.
             var queryString = QueryGet(index);
-            if (string.IsNullOrEmpty(queryString))
-            {
-                return;
-            }
+            if (string.IsNullOrEmpty(queryString)) return;
 
             // Begin out query.
             using (var dbConnection = new SQLiteConnection(m_Source))
@@ -174,10 +155,7 @@ namespace SUS
                 fmd.CommandType = CommandType.Text;
 
                 // Verify the object is compatible and meets the minimum requirements to be inserted and selected.
-                if (!(toInsert is ISQLCompatible obj))
-                {
-                    return;
-                }
+                if (!(toInsert is ISQLCompatible obj)) return;
 
                 // Get our information to store and assign it back to the SQLiteCommand.
                 obj.ToInsert(fmd);
@@ -185,16 +163,15 @@ namespace SUS
                 fmd.ExecuteNonQuery();
             }
         }
+
         #endregion
 
         #region Miscellaneous
+
         private static string QueryGet(int index)
         {
             // If it is an invalid number (OOB on the List) then return early.
-            if (index + 1 > m_Queries.Count || index < 0)
-            {
-                return "";
-            }
+            if (index + 1 > m_Queries.Count || index < 0) return "";
 
             return m_Queries[index];
         }
@@ -207,8 +184,8 @@ namespace SUS
 
         private void TableInit(ref SQLiteConnection db)
         {
-
         }
+
         #endregion
     }
 }

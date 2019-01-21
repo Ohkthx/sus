@@ -1,10 +1,10 @@
-﻿using SUS.Objects.Items;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using SUS.Objects.Items;
 using SUS.Objects.Items.Consumables;
 using SUS.Objects.Items.Equipment;
 using SUS.Shared;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace SUS.Objects
 {
@@ -36,6 +36,8 @@ namespace SUS.Objects
 
     public abstract class Mobile : IEntity
     {
+        // Mobile Stats.
+        private readonly Stopwatch m_StatTimer;
         private Dictionary<ItemLayers, Equippable> m_Equipped;
         private int m_Hits, m_Stamina, m_Mana;
 
@@ -49,9 +51,6 @@ namespace SUS.Objects
 
         // Mobile Properties
         private int m_Speed = 1; // Speed that the Mobile moves at.
-
-        // Mobile Stats.
-        private readonly Stopwatch m_StatTimer;
         private int m_Str, m_Dex, m_Int;
 
         private Mobile m_Target; // Current target.
@@ -79,39 +78,27 @@ namespace SUS.Objects
 
         public void Delete()
         {
-            if (!IsDeleted || IsPlayer)
-            {
-                return;
-            }
+            if (!IsDeleted || IsPlayer) return;
 
-            foreach (Item i in Items)
-            {
-                World.RemoveItem(i);
-            }
+            foreach (var i in Items) World.RemoveItem(i);
 
             World.RemoveMobile(this);
         }
 
         public void MoveInDirection(MobileDirections direction, int xMax, int yMax)
         {
-            if (direction == MobileDirections.None || direction == MobileDirections.Nearby)
-            {
-                return;
-            }
+            if (direction == MobileDirections.None || direction == MobileDirections.Nearby) return;
 
 
             // Gets a pseudo-random distance between our vision (default: 15) and 30 * Speed (default: 2 - 3)
-            int distance = Utility.RandomMinMax(Vision, Vision * Speed / 2);
+            var distance = Utility.RandomMinMax(Vision, Vision * Speed / 2);
 
             // Factor in our current direction.
             while (direction > MobileDirections.None)
-            {
                 foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
                 {
                     if (dir == MobileDirections.None || (dir & (dir - 1)) != 0)
-                    {
                         continue; // Current iteration is either 'None' or it is a combination of directions.
-                    }
 
                     if ((direction & dir) == dir)
                     {
@@ -139,7 +126,6 @@ namespace SUS.Objects
                         direction &= ~dir; // Removes our value from direction.
                     }
                 }
-            }
         }
 
         public BaseMobile Base()
@@ -151,14 +137,14 @@ namespace SUS.Objects
 
         public override string ToString()
         {
-            string info = "                  ___________________\n" +
+            var info = "                  ___________________\n" +
                        "                  [Character Profile]\n" +
                        "  + ---------------------------------------------------+\n" +
                        $"  | Character Name: {Name}\n" +
                        "  | Title: The Player\n" +
                        $"  | Location: {Region}{(Location.IsValid ? ": " + Location : string.Empty)}\n" +
-                       $"  | {(this is IPlayer ? "Player ID: " + ((IPlayer)this).PlayerID + "\t" : "")}Serial: {Serial}\n" +
-                       $"{(this is IDamageable ? $"  | CR: {((IDamageable)this).CR}\n" : string.Empty)}" +
+                       $"  | {(this is IPlayer ? "Player ID: " + ((IPlayer) this).PlayerID + "\t" : "")}Serial: {Serial}\n" +
+                       $"{(this is IDamageable ? $"  | CR: {((IDamageable) this).CR}\n" : string.Empty)}" +
                        "  |\n" +
                        "  +-[ Attributes ]\n" +
                        $"  | +-- Health: {Hits} / {HitsMax}\n" +
@@ -184,19 +170,16 @@ namespace SUS.Objects
         {
             unchecked
             {
-                int hash = 13;
-                hash = hash * 7 + (Serial.GetHashCode());
-                hash = hash * 7 + (Type.GetHashCode());
+                var hash = 13;
+                hash = hash * 7 + Serial.GetHashCode();
+                hash = hash * 7 + Type.GetHashCode();
                 return hash;
             }
         }
 
         public static bool operator ==(Mobile m1, Mobile m2)
         {
-            if (ReferenceEquals(m1, m2))
-            {
-                return true;
-            }
+            if (ReferenceEquals(m1, m2)) return true;
 
             return !ReferenceEquals(null, m1) && m1.Equals(m2);
         }
@@ -208,35 +191,20 @@ namespace SUS.Objects
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value))
-            {
-                return false;
-            }
+            if (ReferenceEquals(null, value)) return false;
 
-            if (ReferenceEquals(this, value))
-            {
-                return true;
-            }
+            if (ReferenceEquals(this, value)) return true;
 
-            if (value.GetType() != GetType())
-            {
-                return false;
-            }
+            if (value.GetType() != GetType()) return false;
 
-            return IsEqual((Mobile)value);
+            return IsEqual((Mobile) value);
         }
 
         private bool Equals(Mobile mobile)
         {
-            if (ReferenceEquals(null, mobile))
-            {
-                return false;
-            }
+            if (ReferenceEquals(null, mobile)) return false;
 
-            if (ReferenceEquals(this, mobile))
-            {
-                return true;
-            }
+            if (ReferenceEquals(this, mobile)) return true;
 
             return IsEqual(mobile);
         }
@@ -252,25 +220,19 @@ namespace SUS.Objects
 
         public int CompareTo(IEntity other)
         {
-            if (other == null)
-            {
-                return -1;
-            }
+            if (other == null) return -1;
 
             return Serial.CompareTo(other.Serial);
         }
 
         public int CompareTo(Mobile other)
         {
-            return CompareTo((IEntity)other);
+            return CompareTo((IEntity) other);
         }
 
         public int CompareTo(object other)
         {
-            if (other == null || other is IEntity)
-            {
-                return CompareTo((IEntity)other);
-            }
+            if (other == null || other is IEntity) return CompareTo((IEntity) other);
 
             return -1;
         }
@@ -288,10 +250,7 @@ namespace SUS.Objects
             get => m_Target;
             set
             {
-                if (value == Target)
-                {
-                    return;
-                }
+                if (value == Target) return;
 
                 m_Target = value;
             }
@@ -302,10 +261,7 @@ namespace SUS.Objects
             get => m_Location;
             set
             {
-                if (value != Location)
-                {
-                    m_Location = value;
-                }
+                if (value != Location) m_Location = value;
             }
         }
 
@@ -316,10 +272,7 @@ namespace SUS.Objects
             get => m_Name ?? "Unknown";
             protected set
             {
-                if (string.IsNullOrEmpty(value))
-                {
-                    value = "Unknown";
-                }
+                if (string.IsNullOrEmpty(value)) value = "Unknown";
 
                 m_Name = value;
             }
@@ -341,13 +294,8 @@ namespace SUS.Objects
             protected set
             {
                 if (value < 0)
-                {
                     m_Speed = 0;
-                }
-                else if (value == Speed)
-                {
-                    return;
-                }
+                else if (value == Speed) return;
 
                 m_Speed = value;
             }
@@ -361,48 +309,31 @@ namespace SUS.Objects
         {
             get
             {
-                if (m_Items == null)
-                {
-                    m_Items = new Dictionary<Serial, Item>();
-                }
+                if (m_Items == null) m_Items = new Dictionary<Serial, Item>();
 
-                List<Item> items = new List<Item>();
-                foreach (Item item in m_Items.Values)
-                {
+                var items = new List<Item>();
+                foreach (var item in m_Items.Values)
                     if (item == null || item.Owner == null || item.Owner.Serial != Serial)
-                    {
                         ItemRemove(item);
-                    }
                     else
-                    {
                         items.Add(item);
-                    }
-                }
 
                 return items;
             }
         }
 
-        public Dictionary<ItemLayers, Equippable> Equipment => m_Equipped ?? (m_Equipped = new Dictionary<ItemLayers, Equippable>());
+        public Dictionary<ItemLayers, Equippable> Equipment =>
+            m_Equipped ?? (m_Equipped = new Dictionary<ItemLayers, Equippable>());
 
         public virtual Weapon Weapon
         {
             get
             {
-                if (Equipment.ContainsKey(ItemLayers.Bow))
-                {
-                    return Equipment[ItemLayers.Bow] as Weapon;
-                }
+                if (Equipment.ContainsKey(ItemLayers.Bow)) return Equipment[ItemLayers.Bow] as Weapon;
 
-                if (Equipment.ContainsKey(ItemLayers.TwoHanded))
-                {
-                    return Equipment[ItemLayers.TwoHanded] as Weapon;
-                }
+                if (Equipment.ContainsKey(ItemLayers.TwoHanded)) return Equipment[ItemLayers.TwoHanded] as Weapon;
 
-                if (Equipment.ContainsKey(ItemLayers.MainHand))
-                {
-                    return Equipment[ItemLayers.MainHand] as Weapon;
-                }
+                if (Equipment.ContainsKey(ItemLayers.MainHand)) return Equipment[ItemLayers.MainHand] as Weapon;
 
                 return new Unarmed();
             }
@@ -412,10 +343,7 @@ namespace SUS.Objects
         {
             get
             {
-                if (Equipment.ContainsKey(ItemLayers.Armor))
-                {
-                    return Equipment[ItemLayers.Armor] as Armor;
-                }
+                if (Equipment.ContainsKey(ItemLayers.Armor)) return Equipment[ItemLayers.Armor] as Armor;
 
                 return new ArmorSuit(Armor.Materials.Cloth);
             }
@@ -430,10 +358,7 @@ namespace SUS.Objects
             get
             {
                 Gold g;
-                if ((g = FindConsumable(ConsumableTypes.Gold) as Gold) != null)
-                {
-                    return g;
-                }
+                if ((g = FindConsumable(ConsumableTypes.Gold) as Gold) != null) return g;
 
                 g = new Gold();
                 ItemAdd(g);
@@ -442,17 +367,11 @@ namespace SUS.Objects
             }
             set
             {
-                if (value == null)
-                {
-                    return;
-                }
+                if (value == null) return;
 
-                if (!(value is Gold))
-                {
-                    return;
-                }
+                if (!(value is Gold)) return;
 
-                m_Items[Gold.Serial] = (Gold)value;
+                m_Items[Gold.Serial] = (Gold) value;
             }
         }
 
@@ -461,10 +380,7 @@ namespace SUS.Objects
             get
             {
                 Potion p;
-                if ((p = FindConsumable(ConsumableTypes.HealthPotion) as Potion) != null)
-                {
-                    return p;
-                }
+                if ((p = FindConsumable(ConsumableTypes.HealthPotion) as Potion) != null) return p;
 
                 p = new Potion();
                 ItemAdd(p);
@@ -473,17 +389,11 @@ namespace SUS.Objects
             }
             set
             {
-                if (value == null)
-                {
-                    return;
-                }
+                if (value == null) return;
 
-                if (!(value is Potion))
-                {
-                    return;
-                }
+                if (!(value is Potion)) return;
 
-                m_Items[HealthPotions.Serial] = (Potion)value;
+                m_Items[HealthPotions.Serial] = (Potion) value;
             }
         }
 
@@ -492,10 +402,7 @@ namespace SUS.Objects
             get
             {
                 Bandage b;
-                if ((b = FindConsumable(ConsumableTypes.Bandages) as Bandage) != null)
-                {
-                    return b;
-                }
+                if ((b = FindConsumable(ConsumableTypes.Bandages) as Bandage) != null) return b;
 
                 b = new Bandage();
                 ItemAdd(b);
@@ -504,17 +411,11 @@ namespace SUS.Objects
             }
             set
             {
-                if (value == null)
-                {
-                    return;
-                }
+                if (value == null) return;
 
-                if (!(value is Bandage))
-                {
-                    return;
-                }
+                if (!(value is Bandage)) return;
 
-                m_Items[Bandages.Serial] = (Bandage)value;
+                m_Items[Bandages.Serial] = (Bandage) value;
             }
         }
 
@@ -523,10 +424,7 @@ namespace SUS.Objects
             get
             {
                 Arrow a;
-                if ((a = FindConsumable(ConsumableTypes.Arrows) as Arrow) != null)
-                {
-                    return a;
-                }
+                if ((a = FindConsumable(ConsumableTypes.Arrows) as Arrow) != null) return a;
 
                 a = new Arrow();
                 ItemAdd(a);
@@ -535,17 +433,11 @@ namespace SUS.Objects
             }
             set
             {
-                if (value == null)
-                {
-                    return;
-                }
+                if (value == null) return;
 
-                if (!(value is Arrow))
-                {
-                    return;
-                }
+                if (!(value is Arrow)) return;
 
-                m_Items[Arrows.Serial] = (Arrow)value;
+                m_Items[Arrows.Serial] = (Arrow) value;
             }
         }
 
@@ -570,25 +462,14 @@ namespace SUS.Objects
             set
             {
                 if (value < 1)
-                {
                     value = 1;
-                }
-                else if (value > 65000)
-                {
-                    value = 65000;
-                }
+                else if (value > 65000) value = 65000;
 
-                if (m_Str == value)
-                {
-                    return;
-                }
+                if (m_Str == value) return;
 
                 m_Str = value;
 
-                if (Hits > HitsMax)
-                {
-                    Hits = HitsMax;
-                }
+                if (Hits > HitsMax) Hits = HitsMax;
             }
         }
 
@@ -596,16 +477,11 @@ namespace SUS.Objects
         {
             get
             {
-                int value = m_Str;
+                var value = m_Str;
 
                 if (value < 1)
-                {
                     value = 1;
-                }
-                else if (value > 65000)
-                {
-                    value = 65000;
-                }
+                else if (value > 65000) value = 65000;
 
                 return value;
             }
@@ -618,25 +494,14 @@ namespace SUS.Objects
             set
             {
                 if (value < 1)
-                {
                     value = 1;
-                }
-                else if (value > 65000)
-                {
-                    value = 65000;
-                }
+                else if (value > 65000) value = 65000;
 
-                if (m_Dex == value)
-                {
-                    return;
-                }
+                if (m_Dex == value) return;
 
                 m_Dex = value;
 
-                if (Stamina > StaminaMax)
-                {
-                    Stamina = StaminaMax;
-                }
+                if (Stamina > StaminaMax) Stamina = StaminaMax;
             }
         }
 
@@ -644,16 +509,11 @@ namespace SUS.Objects
         {
             get
             {
-                int value = m_Dex;
+                var value = m_Dex;
 
                 if (value < 1)
-                {
                     value = 1;
-                }
-                else if (value > 65000)
-                {
-                    value = 65000;
-                }
+                else if (value > 65000) value = 65000;
 
                 return value;
             }
@@ -666,25 +526,14 @@ namespace SUS.Objects
             set
             {
                 if (value < 1)
-                {
                     value = 1;
-                }
-                else if (value > 65000)
-                {
-                    value = 65000;
-                }
+                else if (value > 65000) value = 65000;
 
-                if (m_Int == value)
-                {
-                    return;
-                }
+                if (m_Int == value) return;
 
                 m_Int = value;
 
-                if (Mana > ManaMax)
-                {
-                    Mana = ManaMax;
-                }
+                if (Mana > ManaMax) Mana = ManaMax;
             }
         }
 
@@ -692,16 +541,11 @@ namespace SUS.Objects
         {
             get
             {
-                int value = m_Int;
+                var value = m_Int;
 
                 if (value < 1)
-                {
                     value = 1;
-                }
-                else if (value > 65000)
-                {
-                    value = 65000;
-                }
+                else if (value > 65000) value = 65000;
 
                 return value;
             }
@@ -714,17 +558,11 @@ namespace SUS.Objects
             set
             {
                 if (value < 0)
-                {
                     m_Hits = 0;
-                }
                 else if (value > HitsMax)
-                {
                     m_Hits = HitsMax;
-                }
                 else
-                {
                     m_Hits = value;
-                }
             }
         }
 
@@ -736,13 +574,8 @@ namespace SUS.Objects
             set
             {
                 if (value < 0)
-                {
                     value = 0;
-                }
-                else if (value >= StaminaMax)
-                {
-                    value = StaminaMax;
-                }
+                else if (value >= StaminaMax) value = StaminaMax;
 
                 m_Stamina = value;
             }
@@ -756,13 +589,8 @@ namespace SUS.Objects
             set
             {
                 if (value < 0)
-                {
                     value = 0;
-                }
-                else if (value >= ManaMax)
-                {
-                    value = ManaMax;
-                }
+                else if (value >= ManaMax) value = ManaMax;
 
                 m_Mana = value;
             }
@@ -784,49 +612,27 @@ namespace SUS.Objects
             }
 
             if (StatTotal >= 250 && m_StatTimer.ElapsedMilliseconds >= 600000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 240 && m_StatTimer.ElapsedMilliseconds >= 540000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 230 && m_StatTimer.ElapsedMilliseconds >= 480000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 220 && m_StatTimer.ElapsedMilliseconds >= 420000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 210 && m_StatTimer.ElapsedMilliseconds >= 360000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 200 && m_StatTimer.ElapsedMilliseconds >= 300000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 175 && m_StatTimer.ElapsedMilliseconds >= 240000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 150 && m_StatTimer.ElapsedMilliseconds >= 180000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 100 && m_StatTimer.ElapsedMilliseconds >= 120000)
-            {
                 m_StatTimer.Restart();
-            }
             else if (StatTotal >= 0 && m_StatTimer.ElapsedMilliseconds >= 660000)
-            {
                 m_StatTimer.Restart();
-            }
             else
-            {
                 return string.Empty;
-            }
 
             switch (stat)
             {
@@ -852,14 +658,10 @@ namespace SUS.Objects
         {
             get
             {
-                int rating = 0;
-                foreach (KeyValuePair<ItemLayers, Equippable> item in Equipment)
-                {
+                var rating = 0;
+                foreach (var item in Equipment)
                     if (item.Value.IsWeapon)
-                    {
                         rating += item.Value.Rating;
-                    }
-                }
 
                 return rating;
             }
@@ -869,30 +671,22 @@ namespace SUS.Objects
         {
             get
             {
-                int rating = 0;
+                var rating = 0;
                 if (Equipment.ContainsKey(ItemLayers.Armor))
                 {
                     // dexModMax allows for + 3 AC to medium armor if dex is GTE 16. Default: 2, >= 16: 3.
-                    int dexModMax = DexterityModifier > 15 ? 3 : 2;
-                    int r = Equipment[ItemLayers.Armor].Rating;
+                    var dexModMax = DexterityModifier > 15 ? 3 : 2;
+                    var r = Equipment[ItemLayers.Armor].Rating;
                     if (r < 12)
-                    {
                         rating += r + DexterityModifier;
-                    }
                     else if (r < 16)
-                    {
                         rating += r + (DexterityModifier >= dexModMax ? dexModMax : DexterityModifier);
-                    }
                     else
-                    {
                         rating += r;
-                    }
                 }
 
                 if (Equipment.ContainsKey(ItemLayers.Offhand) && Equipment[ItemLayers.Offhand].IsArmor)
-                {
                     rating += Equipment[ItemLayers.Offhand].Rating;
-                }
 
                 return rating > 0 ? rating : IsPlayer ? 10 + DexterityModifier : 0;
             }
@@ -903,10 +697,7 @@ namespace SUS.Objects
             get => m_Resistances;
             set
             {
-                if (value == Resistances)
-                {
-                    return;
-                }
+                if (value == Resistances) return;
 
                 m_Resistances = value;
             }
@@ -930,10 +721,7 @@ namespace SUS.Objects
         {
             get
             {
-                if (m_Skills != null)
-                {
-                    return m_Skills;
-                }
+                if (m_Skills != null) return m_Skills;
 
                 m_Skills = new Dictionary<SkillName, Skill>();
                 InitSkills();
@@ -942,10 +730,7 @@ namespace SUS.Objects
             }
             private set
             {
-                if (value == null)
-                {
-                    return;
-                }
+                if (value == null) return;
 
                 m_Skills = value;
             }
@@ -955,11 +740,8 @@ namespace SUS.Objects
         {
             get
             {
-                double value = 0.0;
-                foreach (KeyValuePair<SkillName, Skill> kp in Skills)
-                {
-                    value += kp.Value.Value;
-                }
+                var value = 0.0;
+                foreach (var kp in Skills) value += kp.Value.Value;
 
                 return value;
             }
@@ -967,37 +749,23 @@ namespace SUS.Objects
 
         public string SkillIncrease(SkillName skill)
         {
-            if (IsPlayer && SkillTotal >= 720.0)
-            {
-                return string.Empty;
-            }
+            if (IsPlayer && SkillTotal >= 720.0) return string.Empty;
 
-            double increase = Skills[skill].Increase();
-            if (increase <= 0)
-            {
-                return string.Empty;
-            }
+            var increase = Skills[skill].Increase();
+            if (increase <= 0) return string.Empty;
 
-            Skill s = Skills[skill];
+            var s = Skills[skill];
             return $"{s.Name} increased by {increase:F1}.";
         }
 
         private void InitSkills()
         {
             if (Skills == null)
-            {
                 Skills = new Dictionary<SkillName, Skill>();
-            }
-            else if (Skills.Count > 0)
-            {
-                return;
-            }
+            else if (Skills.Count > 0) return;
 
             // Iterate each of the existing skills and add it to the dictionary.
-            foreach (SkillName skill in Enum.GetValues(typeof(SkillName)))
-            {
-                Skills.Add(skill, new Skill(skill));
-            }
+            foreach (SkillName skill in Enum.GetValues(typeof(SkillName))) Skills.Add(skill, new Skill(skill));
         }
 
         #endregion
@@ -1008,23 +776,15 @@ namespace SUS.Objects
         {
             if (item == null
                 || !item.IsEquippable)
-            {
                 return;
-            }
 
             item.Owner = this;
-            if (ItemAdd(item))
-            {
-                Equip(item);
-            }
+            if (ItemAdd(item)) Equip(item);
         }
 
         public void Equip(Equippable item)
         {
-            if (item == null || !item.IsEquippable)
-            {
-                return;
-            }
+            if (item == null || !item.IsEquippable) return;
 
             // Equip Armor (excluding shields, those are handled with weaponry.
             if (item.IsArmor && item.Layer == ItemLayers.Armor)
@@ -1042,13 +802,8 @@ namespace SUS.Objects
             }
 
             if (m_Equipped.ContainsKey(ItemLayers.TwoHanded))
-            {
                 m_Equipped.Remove(ItemLayers.TwoHanded);
-            }
-            else if (m_Equipped.ContainsKey(ItemLayers.Bow))
-            {
-                m_Equipped.Remove(ItemLayers.Bow);
-            }
+            else if (m_Equipped.ContainsKey(ItemLayers.Bow)) m_Equipped.Remove(ItemLayers.Bow);
 
             m_Equipped[item.Layer] = item;
         }
@@ -1065,26 +820,17 @@ namespace SUS.Objects
 
         protected bool ItemAdd(Item item)
         {
-            if (item == null)
-            {
-                return false;
-            }
+            if (item == null) return false;
 
             item.Owner = this;
-            if (!Items.Contains(item))
-            {
-                m_Items[item.Serial] = item;
-            }
+            if (!Items.Contains(item)) m_Items[item.Serial] = item;
 
             return true;
         }
 
         private void ItemRemove(Item item)
         {
-            if (!Items.Contains(item))
-            {
-                return;
-            }
+            if (!Items.Contains(item)) return;
 
             m_Items?.Remove(item.Serial);
         }
@@ -1099,14 +845,10 @@ namespace SUS.Objects
 
         private Consumable FindConsumable(ConsumableTypes type)
         {
-            foreach (Item i in Items)
-            {
+            foreach (var i in Items)
                 if (i.Type == ItemTypes.Consumable
-                    && ((Consumable)i).ConsumableType == type)
-                {
-                    return (Consumable)i;
-                }
-            }
+                    && ((Consumable) i).ConsumableType == type)
+                    return (Consumable) i;
 
             return null;
         }
@@ -1118,10 +860,7 @@ namespace SUS.Objects
 
         private int ConsumableAdd(ConsumableTypes type, int amt)
         {
-            if (amt <= 0)
-            {
-                return 0;
-            }
+            if (amt <= 0) return 0;
 
             int tValue;
             int tMax;
@@ -1170,20 +909,13 @@ namespace SUS.Objects
         public int Damage(int damage, Mobile from, bool isMagical)
         {
             if (!isMagical)
-            {
                 if (Armor.Weight == Weights.Heavy)
-                {
                     damage -= 3;
-                }
-            }
 
             // Do not allow negative damage that would otherwise heal.
-            if (damage <= 0)
-            {
-                return 0;
-            }
+            if (damage <= 0) return 0;
 
-            int originalHp = Hits;
+            var originalHp = Hits;
             if (damage > Hits)
             {
                 Hits = 0;
@@ -1196,45 +928,31 @@ namespace SUS.Objects
 
         public int ApplyResistance(DamageTypes damageType, int damage)
         {
-            if (Resistances == DamageTypes.None)
-            {
-                return damage;
-            }
+            if (Resistances == DamageTypes.None) return damage;
 
-            if (damageType == DamageTypes.None)
-            {
-                damageType = DamageTypes.Bludgeoning;
-            }
+            if (damageType == DamageTypes.None) damageType = DamageTypes.Bludgeoning;
 
-            int armorResists = 0;
+            var armorResists = 0;
             while (damageType != DamageTypes.None)
-            {
                 foreach (DamageTypes dt in Enum.GetValues(typeof(DamageTypes)))
                 {
                     // Ignore values that are either 'None' or not part of the damageType.
-                    if (dt == DamageTypes.None || (damageType & dt) != dt)
-                    {
-                        continue;
-                    }
+                    if (dt == DamageTypes.None || (damageType & dt) != dt) continue;
 
                     // Compare the value to the Resistances.
-                    if ((Resistances & dt) == dt)
-                    {
-                        ++armorResists;
-                    }
+                    if ((Resistances & dt) == dt) ++armorResists;
 
                     damageType &= ~dt; // Remove the value.
                 }
-            }
 
-            int dmg = (int)(damage * (1 - 0.1 * armorResists));
+            var dmg = (int) (damage * (1 - 0.1 * armorResists));
 
             return dmg < 0 ? 0 : dmg;
         }
 
         private int ConvertAbilityScore(StatCode stat)
         {
-            int statValue = 0;
+            var statValue = 0;
             switch (stat)
             {
                 // Gets the stat that is proficient for the equipped weapon.
@@ -1249,14 +967,14 @@ namespace SUS.Objects
                     break;
             }
 
-            int modifier = statValue / 8 - 5;
+            var modifier = statValue / 8 - 5;
 
             return modifier > 10 ? 10 : modifier;
         }
 
         private int ConvertProficiencyScore()
         {
-            int val = ((int)Skills[Weapon.RequiredSkill].Value - 60) / 10;
+            var val = ((int) Skills[Weapon.RequiredSkill].Value - 60) / 10;
             return val > 0 ? val > 6 ? 6 : val : 0;
         }
 

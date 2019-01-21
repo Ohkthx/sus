@@ -1,11 +1,11 @@
-﻿using SUS.Shared;
-using SUS.Objects;
+﻿using SUS.Objects;
+using SUS.Shared;
 
 namespace SUS.Map
 {
     public class Wilderness : Spawnable
     {
-        public Wilderness() 
+        public Wilderness()
             : base(RegionType.OpenWorld | RegionType.PvP, Regions.Wilderness, "A vast open world.", 150, 150)
         {
             NPCs = Spawnables.Graveyard | Spawnables.Orc | Spawnables.Titan | Spawnables.Cyclops;

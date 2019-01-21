@@ -7,24 +7,24 @@ namespace SUS
 {
     public static class Ai
     {
+        public enum Actions
+        {
+            Attack
+        }
+
         public enum Types
         {
             Melee,
             Archer,
-            Mage,
-        }
-
-        public enum Actions
-        {
-            Attack,
+            Mage
         }
 
         public static void PerformAction(Mobile creature, Actions action)
         {
-            switch(action)
+            switch (action)
             {
                 case Actions.Attack:
-                    int distance = 0;
+                    var distance = 0;
                     if (creature.Target != null && creature.Target.Location.IsValid)
                         distance = Point2D.Distance(creature, creature.Target);
                     Attack(creature, distance);
@@ -47,17 +47,14 @@ namespace SUS
 
                 // Attempt to equip the longest ranged weapon.
                 if (distance > 1 && w.Range > weapon.Range)
-                    weapon = w;     // Range is greater than our current range.
+                    weapon = w; // Range is greater than our current range.
                 else if (distance > 1 && w.Range == weapon.Range && w.Rating > creature.AttackRating)
-                    weapon = w;     // Range is equal, but the attack rating is higher.
+                    weapon = w; // Range is equal, but the attack rating is higher.
                 else if (w.Rating > weapon.Rating && w.Rating > creature.AttackRating)
                     weapon = w;
             }
 
-            if (!(weapon is Unarmed) && weapon != creature.Weapon)
-            {
-                creature.Equip(weapon);
-            }
+            if (!(weapon is Unarmed) && weapon != creature.Weapon) creature.Equip(weapon);
         }
     }
 }

@@ -3,6 +3,7 @@
 namespace SUS.Shared
 {
     #region Enums
+
     [Flags]
     public enum RegionType
     {
@@ -10,7 +11,7 @@ namespace SUS.Shared
         Dungeon = 2,
         OpenWorld = 4,
         PvP = 8
-    };
+    }
 
     [Flags]
     public enum Regions
@@ -59,6 +60,7 @@ namespace SUS.Shared
 
         Basic = Britain | Graveyard | Sewers | Wilderness
     }
+
     #endregion
 
     [Serializable]
@@ -67,6 +69,7 @@ namespace SUS.Shared
         public bool Navigable { get; }
 
         #region Constructors
+
         public BaseRegion(RegionType type, Regions region, Regions connections, bool navigable)
         {
             Type = type;
@@ -74,6 +77,7 @@ namespace SUS.Shared
             Connections = connections;
             Navigable = navigable;
         }
+
         #endregion
 
         #region Getters / Settersa
@@ -87,9 +91,11 @@ namespace SUS.Shared
         public Regions Connections { get; }
 
         public bool IsValid => Location != Regions.None && (Location & (Location - 1)) == 0;
+
         #endregion
 
         #region Overrides
+
         public override string ToString()
         {
             return Name;
@@ -100,8 +106,8 @@ namespace SUS.Shared
             unchecked
             {
                 var hash = 13;
-                hash = (hash * 7) + Location.GetHashCode();
-                hash = (hash * 7) + Type.GetHashCode();
+                hash = hash * 7 + Location.GetHashCode();
+                hash = hash * 7 + Type.GetHashCode();
                 return hash;
             }
         }
@@ -118,12 +124,9 @@ namespace SUS.Shared
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value))
-            {
-                return false;
-            }
+            if (ReferenceEquals(null, value)) return false;
 
-            return value.GetType() == GetType() && IsEqual((BaseRegion)value);
+            return value.GetType() == GetType() && IsEqual((BaseRegion) value);
         }
 
         private bool Equals(BaseRegion value)
@@ -133,10 +136,10 @@ namespace SUS.Shared
 
         private bool IsEqual(BaseRegion value)
         {
-            return (Type == value.Type)
-                && (Location == value.Location);
-
+            return Type == value.Type
+                   && Location == value.Location;
         }
+
         #endregion
     }
 }

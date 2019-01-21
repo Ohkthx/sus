@@ -1,16 +1,17 @@
-﻿using SUS.Objects.Mobiles;
+﻿using System.Data.SQLite;
+using SUS.Objects.Mobiles;
 using SUS.Shared;
-using System.Data.SQLite;
 
 namespace SUS
 {
     public class Gamestate : ISQLCompatible
     {
-        private ulong m_PlayerId;
-        private Player m_Account;
         private readonly Regions m_Unlocked = Regions.None;
+        private Player m_Account;
+        private ulong m_PlayerId;
 
         #region Constructors
+
         public Gamestate(ulong playerId, Player account, Regions unlocked)
         {
             PlayerId = playerId;
@@ -19,9 +20,21 @@ namespace SUS
             m_Unlocked |= unlocked;
             World.AddGamestate(this);
         }
+
         #endregion
 
+        public ClientState ToClientState()
+        {
+            return new ClientState(PlayerId, Account.Base(), World.FindNode(Account.Region).GetBase(), m_Unlocked);
+        }
+
+        private byte[] ToByte()
+        {
+            return Network.Serialize(this);
+        }
+
         #region Overrides
+
         public void ToInsert(SQLiteCommand cmd)
         {
             cmd.Parameters.Add(new SQLiteParameter("@p1", PlayerId));
@@ -33,19 +46,16 @@ namespace SUS
             unchecked
             {
                 var hash = 13;
-                hash = (hash * 7) + PlayerId.GetHashCode();
-                hash = (hash * 7) + Account.Serial.GetHashCode();
-                hash = (hash * 7) + Account.Type.GetHashCode();
+                hash = hash * 7 + PlayerId.GetHashCode();
+                hash = hash * 7 + Account.Serial.GetHashCode();
+                hash = hash * 7 + Account.Type.GetHashCode();
                 return hash;
             }
         }
 
         public static bool operator ==(Gamestate gs1, Gamestate gs2)
         {
-            if (ReferenceEquals(gs1, gs2))
-            {
-                return true;
-            }
+            if (ReferenceEquals(gs1, gs2)) return true;
 
             return !ReferenceEquals(null, gs1) && gs1.Equals(gs2);
         }
@@ -57,49 +67,39 @@ namespace SUS
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value))
-            {
-                return false;
-            }
+            if (ReferenceEquals(null, value)) return false;
 
-            if (ReferenceEquals(this, value))
-            {
-                return true;
-            }
+            if (ReferenceEquals(this, value)) return true;
 
-            return value.GetType() == GetType() && IsEqual((Gamestate)value);
+            return value.GetType() == GetType() && IsEqual((Gamestate) value);
         }
 
         private bool Equals(Gamestate gamestate)
         {
-            if (ReferenceEquals(null, gamestate))
-            {
-                return false;
-            }
+            if (ReferenceEquals(null, gamestate)) return false;
 
             return ReferenceEquals(this, gamestate) || IsEqual(gamestate);
         }
 
         private bool IsEqual(Gamestate value)
         {
-            return (value != null)
-                && (value.Account != null)
-                && (PlayerId == value.PlayerId)
-                && (Account.Type == value.Account.Type)
-                && (Account.Serial == value.Account.Serial);
+            return value != null
+                   && value.Account != null
+                   && PlayerId == value.PlayerId
+                   && Account.Type == value.Account.Type
+                   && Account.Serial == value.Account.Serial;
         }
+
         #endregion
 
         #region Getters / Setters
+
         public ulong PlayerId
         {
             get => m_PlayerId;
             private set
             {
-                if (value == PlayerId)
-                {
-                    return;
-                }
+                if (value == PlayerId) return;
 
                 m_PlayerId = value;
             }
@@ -110,21 +110,12 @@ namespace SUS
             get => m_Account;
             private set
             {
-                if (value == null || !value.IsPlayer)
-                {
-                    return;
-                }
+                if (value == null || !value.IsPlayer) return;
 
                 m_Account = value;
             }
         }
+
         #endregion
-
-        public ClientState ToClientState()
-        {
-            return new ClientState(PlayerId, Account.Base(), World.FindNode(Account.Region).GetBase(), m_Unlocked);
-        }
-
-        private byte[] ToByte() { return Network.Serialize(this); }
     }
 }

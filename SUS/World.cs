@@ -189,9 +189,7 @@ namespace SUS
             var mobiles = new HashSet<BaseMobile>();
             var i = 0;
             while (mobiles.Count == 0 && ++i * v < 120)
-            {
                 mobiles = FindNearbyMobiles(mobile.Region, mobile, v * i) ?? new HashSet<BaseMobile>();
-            }
 
             if (mobiles.Count == 0)
                 return null; // Just return null since we found no nearby.

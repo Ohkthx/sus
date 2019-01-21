@@ -14,17 +14,16 @@ namespace SUS.Shared.Packets
         }
 
         #region Getters / Setters
+
         public bool Kill
         {
             get => m_Kill;
             private set
             {
-                if (value != Kill)
-                {
-                    m_Kill = value;
-                }
+                if (value != Kill) m_Kill = value;
             }
         }
+
         #endregion
     }
 }

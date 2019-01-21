@@ -3,6 +3,7 @@
 namespace SUS.Shared
 {
     #region Enums
+
     [Flags]
     public enum MobileTypes
     {
@@ -10,7 +11,7 @@ namespace SUS.Shared
         Npc = 2,
         Creature = 4,
 
-        Mobile = Player | Npc | Creature,
+        Mobile = Player | Npc | Creature
     }
 
     [Flags]
@@ -28,8 +29,9 @@ namespace SUS.Shared
         NorthEast = North | East,
         NorthWest = North | West,
         SouthEast = South | East,
-        SouthWest = South | West,
+        SouthWest = South | West
     }
+
     #endregion
 
     [Serializable]
@@ -38,6 +40,7 @@ namespace SUS.Shared
         private readonly string m_Name;
 
         #region Constructors
+
         public BaseMobile(MobileTypes type, int serial, string name) : this()
         {
             Type = type;
@@ -60,14 +63,15 @@ namespace SUS.Shared
         #endregion
 
         #region Overrides
+
         public override int GetHashCode()
         {
             unchecked
             {
-                int hash = 13;
-                hash = (hash * 7) + Serial.GetHashCode();
-                hash = (hash * 7) + m_Name?.GetHashCode() ?? 0;
-                hash = (hash * 7) + Type.GetHashCode();
+                var hash = 13;
+                hash = hash * 7 + Serial.GetHashCode();
+                hash = hash * 7 + m_Name?.GetHashCode() ?? 0;
+                hash = hash * 7 + Type.GetHashCode();
                 return hash;
             }
         }
@@ -84,12 +88,9 @@ namespace SUS.Shared
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value))
-            {
-                return false;
-            }
+            if (ReferenceEquals(null, value)) return false;
 
-            return value.GetType() == GetType() && IsEqual((BaseMobile)value);
+            return value.GetType() == GetType() && IsEqual((BaseMobile) value);
         }
 
         private bool Equals(BaseMobile mobile)
@@ -101,6 +102,7 @@ namespace SUS.Shared
         {
             return Type == value.Type && Serial == value.Serial;
         }
+
         #endregion
     }
 }

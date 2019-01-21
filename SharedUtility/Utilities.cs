@@ -19,30 +19,31 @@ namespace SUS.Shared
         private static readonly object NotifyLock = new object();
 
         public static IEnumerable<T> EnumToIEnumerable<T>(Enum mask, bool powerOf2 = false)
-        {   // Thanks to [stackoverflow.com/users/1612975].
-            if (!typeof(T).IsEnum)
-            {
-                return new List<T>();
-            }
+        {
+            // Thanks to [stackoverflow.com/users/1612975].
+            if (!typeof(T).IsEnum) return new List<T>();
 
             // Anonymous function that determines if it needs to validate if it is a power of two, if so- it does.
-            bool PowerCheck(int v) => !powerOf2 || (v & (v - 1)) == 0;
+            bool PowerCheck(int v)
+            {
+                return !powerOf2 || (v & (v - 1)) == 0;
+            }
 
             return Enum.GetValues(typeof(T))
-                       .Cast<Enum>()
-                       .Where(x => mask.HasFlag(x) && PowerCheck(Convert.ToInt32(x)))
-                       .Cast<T>()
-                       .Skip(1);
+                .Cast<Enum>()
+                .Where(x => mask.HasFlag(x) && PowerCheck(Convert.ToInt32(x)))
+                .Cast<T>()
+                .Skip(1);
         }
 
         public static void ConsoleNotify(string msg)
         {
             lock (NotifyLock)
             {
-                ConsoleColor cc = Console.ForegroundColor;          // Save the console's color.
-                Console.ForegroundColor = ConsoleColor.DarkRed;     // Set the color to Dark Red.
+                var cc = Console.ForegroundColor; // Save the console's color.
+                Console.ForegroundColor = ConsoleColor.DarkRed; // Set the color to Dark Red.
                 Console.WriteLine($" !! {msg}");
-                Console.ForegroundColor = cc;                       // Reset the color to the default.
+                Console.ForegroundColor = cc; // Reset the color to the default.
             }
         }
 
@@ -59,14 +60,14 @@ namespace SUS.Shared
                 return min;
             }
 
-            return min + (RandomImpl.NextDouble() * (max - min));
+            return min + RandomImpl.NextDouble() * (max - min);
         }
 
         public static int RandomMinMax(int min, int max)
         {
             if (min > max)
             {
-                int copy = min;
+                var copy = min;
                 min = max;
                 max = copy;
             }
@@ -75,20 +76,14 @@ namespace SUS.Shared
                 return min;
             }
 
-            return min + RandomImpl.Next((max - min) + 1);
+            return min + RandomImpl.Next(max - min + 1);
         }
 
         public static int Random(int from, int count)
         {
-            if (count == 0)
-            {
-                return from;
-            }
+            if (count == 0) return from;
 
-            if (count > 0)
-            {
-                return from + RandomImpl.Next(count);
-            }
+            if (count > 0) return from + RandomImpl.Next(count);
 
             return from - RandomImpl.Next(-count);
         }
@@ -114,7 +109,7 @@ namespace SUS.Shared
     /// </summary>
     public static class Network
     {
-        private const int HeaderSize = sizeof(long);    // A constant that stores length that prefixes the byte array.
+        private const int HeaderSize = sizeof(long); // A constant that stores length that prefixes the byte array.
 
         /// <summary>
         ///     Takes an object and converts it to a byte array prefixing its size.
@@ -123,13 +118,13 @@ namespace SUS.Shared
         /// <returns>Byte array containing the object.</returns>
         public static byte[] Serialize(object obj)
         {
-            using (MemoryStream memoryStream = new MemoryStream())
+            using (var memoryStream = new MemoryStream())
             {
-                (new BinaryFormatter()).Serialize(memoryStream, obj);
+                new BinaryFormatter().Serialize(memoryStream, obj);
 
-                byte[] message = new byte[HeaderSize + memoryStream.Length];
-                byte[] header = BitConverter.GetBytes(memoryStream.Length);
-                byte[] body = memoryStream.ToArray();
+                var message = new byte[HeaderSize + memoryStream.Length];
+                var header = BitConverter.GetBytes(memoryStream.Length);
+                var body = memoryStream.ToArray();
                 Array.Copy(header, 0, message, 0, header.Length);
                 Array.Copy(body, 0, message, header.Length, body.Length);
 
@@ -159,44 +154,39 @@ namespace SUS.Shared
     // State object for reading client data asynchronously  
     public class StateObject
     {
-        // Check if we have got the read size.
-        private bool m_HaveSize;
-        // Stores the extracted object size.
-        public long ObjectSize = -1;
-        // Client  socket.  
-        public Socket workSocket;
         private const int HeaderSize = sizeof(long);
         public const int BufferSize = 1024;
 
         // Receive buffer.  
         public readonly byte[] buffer = new byte[BufferSize];
+
+        // Check if we have got the read size.
+        private bool m_HaveSize;
+
+        // Stores the extracted object size.
+        public long ObjectSize = -1;
+
         // Received data total.
         public byte[] Value;
+
+        // Client  socket.  
+        public Socket workSocket;
 
         // Extracts the size of the object.
         public bool ExtractSize(byte[] array, int size)
         {
             // Return early if it's already been performed. This should be called before attempting this.
-            if (m_HaveSize)
-            {
-                return true;
-            }
+            if (m_HaveSize) return true;
 
-            if (ObjectSize >= 0)
-            {
-                return true;
-            }
+            if (ObjectSize >= 0) return true;
 
-            if (size < HeaderSize)
-            {
-                return true;
-            }
+            if (size < HeaderSize) return true;
 
             // Attempt to get first sizeof(long) bytes from buffer.
             ObjectSize = BitConverter.ToInt64(array, 0);
 
             // Reassign new buffer with trimmed header.
-            byte[] tBuffer = new byte[size - HeaderSize];
+            var tBuffer = new byte[size - HeaderSize];
             Array.Copy(buffer, HeaderSize, tBuffer, 0, size - HeaderSize);
 
             // Add to our current value.
@@ -209,15 +199,12 @@ namespace SUS.Shared
         // Add to the current Value.
         public void Add(byte[] array, int size)
         {
-            int iLength = 0;
-            if (Value != null && Value.Length > 0)
-            {
-                iLength = Value.Length;
-            }
+            var iLength = 0;
+            if (Value != null && Value.Length > 0) iLength = Value.Length;
 
-            byte[] newValue = new byte[size + iLength];
+            var newValue = new byte[size + iLength];
 
-            int offset = 0;
+            var offset = 0;
             if (Value != null && Value.Length > 0)
             {
                 Array.Copy(Value, 0, newValue, 0, Value.Length);
@@ -232,14 +219,18 @@ namespace SUS.Shared
 
     public class SocketHandler
     {
+        public enum Types
+        {
+            Server = 1,
+            Client = 2
+        }
+
         private readonly bool m_Debug;
-        private readonly ManualResetEvent m_SendDone = new ManualResetEvent(false);
         private readonly ManualResetEvent m_ReadDone = new ManualResetEvent(false);
-        private object m_Response;
+        private readonly ManualResetEvent m_SendDone = new ManualResetEvent(false);
         private readonly Socket m_Socket;
         private readonly Types m_Type;
-
-        public enum Types { Server = 1, Client = 2 }
+        private object m_Response;
 
         /// <summary>
         ///     Creates an instance of a SocketHandler with the information provided.
@@ -255,8 +246,8 @@ namespace SUS.Shared
         {
             // Retrieve the state object and the handler socket  
             // from the asynchronous state object.  
-            StateObject state = (StateObject)ar.AsyncState;
-            Socket handler = state.workSocket;
+            var state = (StateObject) ar.AsyncState;
+            var handler = state.workSocket;
 
             // Read data from the client socket.
             int bytesRead;
@@ -273,18 +264,13 @@ namespace SUS.Shared
             if (bytesRead > 0)
             {
                 // Extract our ObjectSize if we haven't already.
-                if (state.ExtractSize(state.buffer, bytesRead))
-                {
-                    // There  might be more data, so store the data received so far.
-                    state.Add(state.buffer, bytesRead);
-                }
+                if (state.ExtractSize(state.buffer, bytesRead)) state.Add(state.buffer, bytesRead);
 
                 if (state.Value.Length == state.ObjectSize)
                 {
                     if (m_Debug)
-                    {
-                        Console.WriteLine($" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), m_Type)}.");
-                    }
+                        Console.WriteLine(
+                            $" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), m_Type)}.");
 
                     m_Response = Network.Deserialize(state.Value);
                     m_ReadDone.Set();
@@ -302,15 +288,12 @@ namespace SUS.Shared
             try
             {
                 // Retrieve the socket from the state object.  
-                Socket handler = (Socket)ar.AsyncState;
+                var handler = (Socket) ar.AsyncState;
 
                 // Complete sending the data to the remote device.  
-                int bytesSent = handler.EndSend(ar);
+                var bytesSent = handler.EndSend(ar);
 
-                if (m_Debug)
-                {
-                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), m_Type)}.");
-                }
+                if (m_Debug) Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), m_Type)}.");
 
                 m_SendDone.Set();
             }
@@ -326,7 +309,7 @@ namespace SUS.Shared
             try
             {
                 m_Socket.BeginSend(data, 0, data.Length, 0,
-                        SendCallback, m_Socket);
+                    SendCallback, m_Socket);
             }
             catch (SocketException)
             {
@@ -339,15 +322,12 @@ namespace SUS.Shared
             try
             {
                 // Retrieve the socket from the state object.  
-                Socket handler = (Socket)ar.AsyncState;
+                var handler = (Socket) ar.AsyncState;
 
                 // Complete sending the data to the remote device.  
-                int bytesSent = handler.EndSend(ar);
+                var bytesSent = handler.EndSend(ar);
 
-                if (m_Debug)
-                {
-                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), m_Type)}.");
-                }
+                if (m_Debug) Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), m_Type)}.");
 
                 m_SendDone.Set();
             }
@@ -366,7 +346,7 @@ namespace SUS.Shared
 
         public object FromClient()
         {
-            StateObject state = new StateObject
+            var state = new StateObject
             {
                 workSocket = m_Socket
             };
@@ -375,7 +355,7 @@ namespace SUS.Shared
             //this.Receive();
             m_ReadDone.WaitOne();
 
-            object obj = m_Response;
+            var obj = m_Response;
             m_Response = null;
 
             m_ReadDone.Reset();

@@ -6,10 +6,11 @@ namespace SUSClient.Menus
 {
     public class Paperdoll : Menu
     {
-        private readonly ulong m_PlayerId;
         private readonly BaseMobile m_Mobile;
+        private readonly ulong m_PlayerId;
 
         #region Constructors
+
         public Paperdoll(ulong playerId, BaseMobile mobile)
             : base("What information would you like to observe?")
         {
@@ -17,13 +18,10 @@ namespace SUSClient.Menus
             m_Mobile = mobile;
 
             foreach (GetMobilePacket.RequestReason opt in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
-            {
                 if (opt != GetMobilePacket.RequestReason.None)
-                {
                     Options.Add(Enum.GetName(typeof(GetMobilePacket.RequestReason), opt));
-                }
-            }
         }
+
         #endregion
 
         public override Packet Display()
@@ -41,10 +39,7 @@ namespace SUSClient.Menus
 
         protected override void PrintOptions()
         {
-            foreach (var str in Options)
-            {
-                Console.Write($"{str}  ");
-            }
+            foreach (var str in Options) Console.Write($"{str}  ");
 
             Console.WriteLine();
         }
@@ -54,17 +49,12 @@ namespace SUSClient.Menus
             input = input.ToLower();
             foreach (GetMobilePacket.RequestReason opt in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
             {
-                if (opt == GetMobilePacket.RequestReason.None)
-                {
-                    continue;
-                }
+                if (opt == GetMobilePacket.RequestReason.None) continue;
 
-                if (Enum.GetName(typeof(GetMobilePacket.RequestReason), opt)?.ToLower() == input)
-                {
-                    return (int)opt;
-                }
+                if (Enum.GetName(typeof(GetMobilePacket.RequestReason), opt)?.ToLower() == input) return (int) opt;
             }
-            return (int)GetMobilePacket.RequestReason.None;
+
+            return (int) GetMobilePacket.RequestReason.None;
         }
     }
 }

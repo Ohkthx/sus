@@ -1,9 +1,11 @@
-﻿namespace SUS.Shared
+﻿using SUS.Shared.Packets;
+
+namespace SUS.Shared
 {
     public interface IPacket
     {
         ulong PlayerId { get; }
-        Packets.PacketTypes Type { get; }
+        PacketTypes Type { get; }
         byte[] ToByte();
     }
 }

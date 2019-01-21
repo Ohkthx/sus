@@ -1,10 +1,10 @@
-﻿using SUS.Objects.Mobiles;
-using SUS.Objects.Mobiles.Spawns;
-using SUS.Shared;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
+using SUS.Objects.Mobiles;
+using SUS.Objects.Mobiles.Spawns;
+using SUS.Shared;
 
 namespace SUS.Objects
 {
@@ -48,23 +48,23 @@ namespace SUS.Objects
         Unused23 = 0x20000000,
         Unused24 = 0x40000000,
 
-        Graveyard = Skeleton | Zombie | Ghoul | Wraith,
-    };
+        Graveyard = Skeleton | Zombie | Ghoul | Wraith
+    }
 
     public class Spawner : ISpawner
     {
-        private Guid m_Id;
-        private Point2D m_Location;             // Location of the Spawner on the map.
-        private Spawnables m_Spawns;            // Types of spawns that are acceptable.
-        private HashSet<Mobile> m_Spawned;
-
-        private readonly int m_Limit;
+        private const int SpawnTimer = 15000;
         private readonly int m_CanvasMaxX;
         private readonly int m_CanvasMaxY;
 
-        private const int SpawnTimer = 15000;
+        private readonly int m_Limit;
+        private Guid m_Id;
+        private Point2D m_Location; // Location of the Spawner on the map.
+        private HashSet<Mobile> m_Spawned;
+        private Spawnables m_Spawns; // Types of spawns that are acceptable.
 
         #region Constructors
+
         public Spawner(Regions loc, Spawnables spawns, int baseX, int baseY, int range, int limit, int mapX, int mapY)
         {
             Region = loc;
@@ -80,21 +80,20 @@ namespace SUS.Objects
 
             // Start the timer.
             var timer = new System.Timers.Timer(SpawnTimer);
-            timer.Elapsed += Spawn;           // Calls "CheckSpawns" when it hits the interval.
-            timer.AutoReset = true;           // Timer to reset or not once it hits it's limit.
-            timer.Enabled = true;             // Enable it.
+            timer.Elapsed += Spawn; // Calls "CheckSpawns" when it hits the interval.
+            timer.AutoReset = true; // Timer to reset or not once it hits it's limit.
+            timer.Enabled = true; // Enable it.
         }
+
         #endregion
 
         #region Getters / Setters
+
         public Guid ID
         {
             get
             {
-                if (m_Id == Guid.Empty)
-                {
-                    m_Id = Guid.NewGuid();
-                }
+                if (m_Id == Guid.Empty) m_Id = Guid.NewGuid();
 
                 return m_Id;
             }
@@ -105,10 +104,7 @@ namespace SUS.Objects
             get => m_Location;
             private set
             {
-                if (value != HomeLocation)
-                {
-                    m_Location = value;
-                }
+                if (value != HomeLocation) m_Location = value;
             }
         }
 
@@ -119,10 +115,7 @@ namespace SUS.Objects
             get => m_Spawns;
             set
             {
-                if (value != Spawns)
-                {
-                    m_Spawns = value;
-                }
+                if (value != Spawns) m_Spawns = value;
             }
         }
 
@@ -135,13 +128,11 @@ namespace SUS.Objects
         #region Spawning
 
         private void Spawn(object source, ElapsedEventArgs e)
-        {   // Clean the spawner.
+        {
+            // Clean the spawner.
             Spawned.RemoveWhere(x => x.IsDeleted);
 
-            if (Spawned.Count >= m_Limit)
-            {
-                return;
-            }
+            if (Spawned.Count >= m_Limit) return;
 
             var spawns = Utility.EnumToIEnumerable<Spawnables>(m_Spawns, true);
             if (spawns == null || !spawns.Any())
@@ -152,13 +143,10 @@ namespace SUS.Objects
             {
                 var pos = Utility.RandomMinMax(0, spawns.Count() - 1);
                 var mob = spawnOffType(spawns.ElementAt(pos));
-                if (mob == null)
-                {
-                    continue;
-                }
+                if (mob == null) continue;
 
                 mob.Spawned(this, Region, ValidCoordinate(HomeLocation.X, HomeLocation.Y, HomeRange));
-                Spawned.Add(mob);       // Add it to the tracked spawned.
+                Spawned.Add(mob); // Add it to the tracked spawned.
             }
         }
 
@@ -184,38 +172,34 @@ namespace SUS.Objects
                     return null;
             }
         }
+
         #endregion
 
         #region Coordinates
+
         public Point2D ValidCoordinate(int baseX, int baseY, int range)
         {
-            int newX = validAxis(baseX, m_CanvasMaxX, range);
-            int newY = validAxis(baseY, m_CanvasMaxY, range);
+            var newX = validAxis(baseX, m_CanvasMaxX, range);
+            var newY = validAxis(baseY, m_CanvasMaxY, range);
 
             return new Point2D(newX, newY);
         }
 
         private int validAxis(int baseN, int maxN, int range)
         {
-            if (baseN < 0)
-            {
-                baseN = 0;
-            }
+            if (baseN < 0) baseN = 0;
 
-            if (baseN > maxN)
-            {
-                baseN = maxN;
-            }
+            if (baseN > maxN) baseN = maxN;
 
             int baseModified;
             do
             {
-                baseModified = baseN + Utility.RandomMinMax((-range), range);
+                baseModified = baseN + Utility.RandomMinMax(-range, range);
             } while (baseModified < 0 || baseModified > maxN);
 
             return baseModified;
         }
-        #endregion
 
+        #endregion
     }
 }

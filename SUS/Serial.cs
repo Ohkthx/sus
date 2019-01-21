@@ -11,12 +11,13 @@ namespace SUS
         private static Serial LastItem { get; set; } = 0x40000000;
 
 
-
         public static Serial NewMobile
         {
             get
             {
-                while (World.FindMobile(LastMobile = (LastMobile + 1)) != null) { }
+                while (World.FindMobile(LastMobile = LastMobile + 1) != null)
+                {
+                }
 
                 return LastMobile;
             }
@@ -26,7 +27,9 @@ namespace SUS
         {
             get
             {
-                while (World.FindItem(LastItem = (LastItem + 1)) != null) { }
+                while (World.FindItem(LastItem = LastItem + 1) != null)
+                {
+                }
 
                 return LastItem;
             }
@@ -39,13 +42,14 @@ namespace SUS
 
         private int Value { get; }
 
-        public bool IsMobile => (Value > 0 && Value < 0x40000000);
+        public bool IsMobile => Value > 0 && Value < 0x40000000;
 
-        public bool IsItem => (Value >= 0x40000000);
+        public bool IsItem => Value >= 0x40000000;
 
-        public bool IsValid => (Value > 0);
+        public bool IsValid => Value > 0;
 
         #region Overrides
+
         public override int GetHashCode()
         {
             return Value;
@@ -71,12 +75,9 @@ namespace SUS
 
         public override bool Equals(object o)
         {
-            if (!(o is Serial))
-            {
-                return false;
-            }
+            if (!(o is Serial)) return false;
 
-            return ((Serial)o).Value == Value;
+            return ((Serial) o).Value == Value;
         }
 
         public static bool operator ==(Serial l, Serial r)
@@ -123,6 +124,7 @@ namespace SUS
         {
             return new Serial(a);
         }
+
         #endregion
     }
 }

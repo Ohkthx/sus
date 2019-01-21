@@ -3,18 +3,19 @@
 namespace SUS.Objects
 {
     #region Enums
+
     [Flags]
     public enum ItemTypes
     {
-        None        = 0x00000000,
+        None = 0x00000000,
 
-        Consumable  = 0x00000001,
+        Consumable = 0x00000001,
 
         // Equippable
-        Armor       = 0x00000002,
-        Weapon      = 0x00000004,
+        Armor = 0x00000002,
+        Weapon = 0x00000004,
 
-        Equippable  = Armor | Weapon,
+        Equippable = Armor | Weapon
     }
 
     public enum ConsumableTypes
@@ -22,26 +23,30 @@ namespace SUS.Objects
         Gold,
         Arrows,
         Bandages,
-        HealthPotion,
+        HealthPotion
     }
+
     #endregion
 
     public abstract class Item
     {
-        private IEntity m_Owner;
         private string m_Name;
+        private IEntity m_Owner;
         private ItemTypes m_Type;
 
         #region Constructors
+
         protected Item(ItemTypes type)
         {
             Serial = Serial.NewItem;
             Type = type;
             World.AddItem(this);
         }
+
         #endregion
 
         #region Getters / Setters
+
         public Serial Serial { get; }
 
         public IEntity Owner
@@ -81,15 +86,19 @@ namespace SUS.Objects
         #endregion
 
         #region Overrides
-        public override string ToString() { return Name; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
 
         public override int GetHashCode()
         {
             unchecked
             {
                 var hash = 13;
-                hash = (hash * 7) + (Serial.GetHashCode());
-                hash = (hash * 7) + (Type.GetHashCode());
+                hash = hash * 7 + Serial.GetHashCode();
+                hash = hash * 7 + Type.GetHashCode();
                 return hash;
             }
         }
@@ -109,7 +118,7 @@ namespace SUS.Objects
         {
             if (ReferenceEquals(null, value)) return false;
             if (ReferenceEquals(this, value)) return true;
-            return value.GetType() == GetType() && IsEqual((Item)value);
+            return value.GetType() == GetType() && IsEqual((Item) value);
         }
 
         private bool Equals(Item mobile)
@@ -120,10 +129,11 @@ namespace SUS.Objects
 
         private bool IsEqual(Item value)
         {
-            return (value != null)
-                && (Type == value.Type)
-                && (Serial == value.Serial);
+            return value != null
+                   && Type == value.Type
+                   && Serial == value.Serial;
         }
+
         #endregion
     }
 }
