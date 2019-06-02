@@ -155,14 +155,19 @@ namespace SUS.Shared
                 return;
             }
 
-            var fn = @"C:\Users\d0x1p2\Desktop\combat.txt";
-            using (var file = new StreamWriter(fn, true))
-            {
-                file.WriteLine();
-                file.WriteLine($"[{DateTime.Now}]");
-                foreach (var str in u) file.WriteLine(str);
+            // Get the Desktop Folder location for the local user.
+            var desktopLocation = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+            // Concatenate "combat.log" to the the Desktop location.
+            var fn = Path.Combine(desktopLocation, "combat.log");
+            using (var sw = File.AppendText(fn))
+            {   // Appends to the file if it exists, otherwise it will be created and written to.
+                sw.WriteLine($"[{DateTime.Now}]");          // Timestamp the log.
+                foreach (var str in u) sw.WriteLine(str);   // Write the server responses to the log.
+                sw.WriteLine();                             // Blank line for the next log.
             }
 
+            // Print the contents to the console.
             foreach (var str in u) Console.WriteLine(str);
         }
 
