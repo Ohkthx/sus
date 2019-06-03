@@ -108,12 +108,12 @@ namespace SUS.Server
             if (!File.Exists(Database))
             {
                 setupDatabase();
-                return default(T);
+                return default;
             }
 
             // Get our query string, return if it is a bad string.
             var queryString = QueryGet(index);
-            if (string.IsNullOrEmpty(queryString)) return default(T);
+            if (string.IsNullOrEmpty(queryString)) return default;
 
             // Begin out query.
             using (var dbConnection = new SQLiteConnection(_source))
@@ -134,7 +134,7 @@ namespace SUS.Server
                 }
             }
 
-            return default(T);
+            return default;
         }
 
         public void Insert(int index, object toInsert)

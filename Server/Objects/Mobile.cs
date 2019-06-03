@@ -15,6 +15,13 @@ namespace SUS.Server.Objects
         Intelligence
     }
 
+    public enum SecondaryStatCode
+    {
+        Hits,
+        Stamina,
+        Mana
+    }
+
     [Flags]
     public enum DamageTypes
     {
@@ -37,23 +44,28 @@ namespace SUS.Server.Objects
     public abstract class Mobile : IEntity
     {
         // Mobile Stats.
-        private readonly Stopwatch m_StatTimer;
-        private Dictionary<ItemLayers, Equippable> m_Equipped;
-        private int m_Hits, m_Stamina, m_Mana;
+        private readonly Stopwatch _statTimer;
+
+        private Mobile _currentTarget; // Current target.
+        private Dictionary<ItemLayers, Equippable> _equipped;
+        private int _hits, _stamina, _mana;
+
+        // Regenerators for Stats.
+        private readonly Regenerator _hitsRegenerator;
 
         // Currently owned and equipped items.
-        private Dictionary<Serial, Item> m_Items;
-        private Point2D m_Location;
-        private string m_Name; // Name of the mobile.
-        private DamageTypes m_Resistances;
+        private Dictionary<Serial, Item> _items;
+        private Point2D _location;
+        private readonly Regenerator _manaRegenerator;
+        private string _name; // Name of the mobile.
+        private DamageTypes _resistances;
 
-        private Dictionary<SkillName, Skill> m_Skills; // Skills possessed by the mobile.
+        private Dictionary<SkillName, Skill> _skills; // Skills possessed by the mobile.
 
         // Mobile Properties
-        private int m_Speed = 1; // Speed that the Mobile moves at.
-        private int m_Str, m_Dex, m_Int;
-
-        private Mobile m_Target; // Current target.
+        private int _speed = 1; // Speed that the Mobile moves at.
+        private readonly Regenerator _staminaRegenerator;
+        private int _str, _dex, _int;
 
         #region Contructors
 
@@ -64,10 +76,14 @@ namespace SUS.Server.Objects
             IsDeleted = false;
 
             InitConsumables();
-            m_Equipped = new Dictionary<ItemLayers, Equippable>();
+            _equipped = new Dictionary<ItemLayers, Equippable>();
 
-            m_StatTimer = new Stopwatch();
-            m_StatTimer.Start();
+            _statTimer = new Stopwatch();
+            _statTimer.Start();
+
+            _hitsRegenerator = new Regenerator(Regenerator.Speeds.Normal);
+            _staminaRegenerator = new Regenerator(Regenerator.Speeds.Medium);
+            _manaRegenerator = new Regenerator(Regenerator.Speeds.Medium);
 
             InitSkills();
 
@@ -107,19 +123,19 @@ namespace SUS.Server.Objects
                         {
                             case MobileDirections.North:
                                 // Protect ourselves from extending beyond the coordinates we are allowed to.
-                                m_Location.Y = Location.Y + distance > yMax ? yMax : Location.Y + distance;
+                                _location.Y = Location.Y + distance > yMax ? yMax : Location.Y + distance;
                                 break;
                             case MobileDirections.South:
                                 // Protection from negative coordinate.
-                                m_Location.Y = Location.Y - distance < 0 ? 0 : Location.Y - distance;
+                                _location.Y = Location.Y - distance < 0 ? 0 : Location.Y - distance;
                                 break;
                             case MobileDirections.East:
                                 // Protect ourselves from extending beyond the coordinates we are allowed to.
-                                m_Location.X = Location.X + distance > xMax ? xMax : Location.X + distance;
+                                _location.X = Location.X + distance > xMax ? xMax : Location.X + distance;
                                 break;
                             case MobileDirections.West:
                                 // Protection from negative coordinate.
-                                m_Location.X = Location.X - distance < 0 ? 0 : Location.X - distance;
+                                _location.X = Location.X - distance < 0 ? 0 : Location.X - distance;
                                 break;
                         }
 
@@ -247,21 +263,21 @@ namespace SUS.Server.Objects
 
         public Mobile Target
         {
-            get => m_Target;
+            get => _currentTarget;
             set
             {
                 if (value == Target) return;
 
-                m_Target = value;
+                _currentTarget = value;
             }
         }
 
         public Point2D Location
         {
-            get => m_Location;
+            get => _location;
             set
             {
-                if (value != Location) m_Location = value;
+                if (value != Location) _location = value;
             }
         }
 
@@ -269,12 +285,12 @@ namespace SUS.Server.Objects
 
         public string Name
         {
-            get => m_Name ?? "Unknown";
+            get => _name ?? "Unknown";
             protected set
             {
                 if (string.IsNullOrEmpty(value)) value = "Unknown";
 
-                m_Name = value;
+                _name = value;
             }
         }
 
@@ -290,14 +306,14 @@ namespace SUS.Server.Objects
 
         public int Speed
         {
-            get => m_Speed;
+            get => _speed;
             protected set
             {
                 if (value < 0)
-                    m_Speed = 0;
+                    _speed = 0;
                 else if (value == Speed) return;
 
-                m_Speed = value;
+                _speed = value;
             }
         }
 
@@ -309,10 +325,10 @@ namespace SUS.Server.Objects
         {
             get
             {
-                if (m_Items == null) m_Items = new Dictionary<Serial, Item>();
+                if (_items == null) _items = new Dictionary<Serial, Item>();
 
                 var items = new List<Item>();
-                foreach (var item in m_Items.Values)
+                foreach (var item in _items.Values)
                     if (item == null || item.Owner == null || item.Owner.Serial != Serial)
                         ItemRemove(item);
                     else
@@ -323,7 +339,7 @@ namespace SUS.Server.Objects
         }
 
         public Dictionary<ItemLayers, Equippable> Equipment =>
-            m_Equipped ?? (m_Equipped = new Dictionary<ItemLayers, Equippable>());
+            _equipped ?? (_equipped = new Dictionary<ItemLayers, Equippable>());
 
         public virtual Weapon Weapon
         {
@@ -371,7 +387,7 @@ namespace SUS.Server.Objects
 
                 if (!(value is Gold)) return;
 
-                m_Items[Gold.Serial] = (Gold) value;
+                _items[Gold.Serial] = (Gold) value;
             }
         }
 
@@ -393,7 +409,7 @@ namespace SUS.Server.Objects
 
                 if (!(value is Potion)) return;
 
-                m_Items[HealthPotions.Serial] = (Potion) value;
+                _items[HealthPotions.Serial] = (Potion) value;
             }
         }
 
@@ -415,7 +431,7 @@ namespace SUS.Server.Objects
 
                 if (!(value is Bandage)) return;
 
-                m_Items[Bandages.Serial] = (Bandage) value;
+                _items[Bandages.Serial] = (Bandage) value;
             }
         }
 
@@ -437,7 +453,7 @@ namespace SUS.Server.Objects
 
                 if (!(value is Arrow)) return;
 
-                m_Items[Arrows.Serial] = (Arrow) value;
+                _items[Arrows.Serial] = (Arrow) value;
             }
         }
 
@@ -447,9 +463,9 @@ namespace SUS.Server.Objects
 
         protected void InitStats(int rawStr, int rawDex, int rawInt)
         {
-            m_Str = rawStr;
-            m_Dex = rawDex;
-            m_Int = rawInt;
+            _str = rawStr;
+            _dex = rawDex;
+            _int = rawInt;
 
             Hits = HitsMax;
             Stamina = StaminaMax;
@@ -458,16 +474,16 @@ namespace SUS.Server.Objects
 
         protected int RawStr
         {
-            get => m_Str;
+            get => _str;
             set
             {
                 if (value < 1)
                     value = 1;
                 else if (value > 65000) value = 65000;
 
-                if (m_Str == value) return;
+                if (_str == value) return;
 
-                m_Str = value;
+                _str = value;
 
                 if (Hits > HitsMax) Hits = HitsMax;
             }
@@ -477,7 +493,7 @@ namespace SUS.Server.Objects
         {
             get
             {
-                var value = m_Str;
+                var value = _str;
 
                 if (value < 1)
                     value = 1;
@@ -490,16 +506,16 @@ namespace SUS.Server.Objects
 
         protected int RawDex
         {
-            get => m_Dex;
+            get => _dex;
             set
             {
                 if (value < 1)
                     value = 1;
                 else if (value > 65000) value = 65000;
 
-                if (m_Dex == value) return;
+                if (_dex == value) return;
 
-                m_Dex = value;
+                _dex = value;
 
                 if (Stamina > StaminaMax) Stamina = StaminaMax;
             }
@@ -509,7 +525,7 @@ namespace SUS.Server.Objects
         {
             get
             {
-                var value = m_Dex;
+                var value = _dex;
 
                 if (value < 1)
                     value = 1;
@@ -522,16 +538,16 @@ namespace SUS.Server.Objects
 
         protected int RawInt
         {
-            get => m_Int;
+            get => _int;
             set
             {
                 if (value < 1)
                     value = 1;
                 else if (value > 65000) value = 65000;
 
-                if (m_Int == value) return;
+                if (_int == value) return;
 
-                m_Int = value;
+                _int = value;
 
                 if (Mana > ManaMax) Mana = ManaMax;
             }
@@ -541,7 +557,7 @@ namespace SUS.Server.Objects
         {
             get
             {
-                var value = m_Int;
+                var value = _int;
 
                 if (value < 1)
                     value = 1;
@@ -554,15 +570,28 @@ namespace SUS.Server.Objects
 
         public int Hits
         {
-            get => m_Hits;
+            get
+            {
+                if (_hits < HitsMax && !_hitsRegenerator.Running)
+                    _hitsRegenerator.Restart();
+
+                if (!_hitsRegenerator.Running) return _hits;
+
+                // If we are currently regenerating health, retrieve our health ticks.
+                RecoverStat(SecondaryStatCode.Hits, _hitsRegenerator.RetrieveTicks());
+                if (_hits == HitsMax)
+                    _hitsRegenerator.Stop();
+
+                return _hits;
+            }
             set
             {
                 if (value < 0)
-                    m_Hits = 0;
+                    _hits = 0;
                 else if (value > HitsMax)
-                    m_Hits = HitsMax;
+                    _hits = HitsMax;
                 else
-                    m_Hits = value;
+                    _hits = value;
             }
         }
 
@@ -570,14 +599,28 @@ namespace SUS.Server.Objects
 
         protected int Stamina
         {
-            private get => m_Stamina;
+            private get
+            {
+                if (_stamina < StaminaMax && !_staminaRegenerator.Running)
+                    _staminaRegenerator.Restart();
+
+                // Stamina regenerator is not running, return current stamina.
+                if (!_staminaRegenerator.Running) return _stamina;
+
+                // Attempt to get the banked stamina ticks and apply it.
+                RecoverStat(SecondaryStatCode.Stamina, _staminaRegenerator.RetrieveTicks());
+                if (_stamina == StaminaMax)
+                    _staminaRegenerator.Stop();
+
+                return _stamina;
+            }
             set
             {
                 if (value < 0)
                     value = 0;
                 else if (value >= StaminaMax) value = StaminaMax;
 
-                m_Stamina = value;
+                _stamina = value;
             }
         }
 
@@ -585,14 +628,28 @@ namespace SUS.Server.Objects
 
         public int Mana
         {
-            get => m_Mana;
+            get
+            {
+                if (_mana < ManaMax && !_manaRegenerator.Running)
+                    _manaRegenerator.Restart();
+
+                // Max health and not running the mana regenerator.
+                if (!_manaRegenerator.Running) return _mana;
+
+                // Try to pull the most recent ticks and apply it to our current mana.
+                RecoverStat(SecondaryStatCode.Mana, _manaRegenerator.RetrieveTicks());
+                if (_mana == ManaMax)
+                    _manaRegenerator.Stop();
+
+                return _mana;
+            }
             set
             {
                 if (value < 0)
                     value = 0;
                 else if (value >= ManaMax) value = ManaMax;
 
-                m_Mana = value;
+                _mana = value;
             }
         }
 
@@ -607,30 +664,30 @@ namespace SUS.Server.Objects
             // Do not exceed the cap.
             if (StatTotal >= StatCap)
             {
-                m_StatTimer.Reset();
+                _statTimer.Reset();
                 return string.Empty;
             }
 
-            if (StatTotal >= 250 && m_StatTimer.ElapsedMilliseconds >= 600000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 240 && m_StatTimer.ElapsedMilliseconds >= 540000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 230 && m_StatTimer.ElapsedMilliseconds >= 480000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 220 && m_StatTimer.ElapsedMilliseconds >= 420000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 210 && m_StatTimer.ElapsedMilliseconds >= 360000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 200 && m_StatTimer.ElapsedMilliseconds >= 300000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 175 && m_StatTimer.ElapsedMilliseconds >= 240000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 150 && m_StatTimer.ElapsedMilliseconds >= 180000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 100 && m_StatTimer.ElapsedMilliseconds >= 120000)
-                m_StatTimer.Restart();
-            else if (StatTotal >= 0 && m_StatTimer.ElapsedMilliseconds >= 660000)
-                m_StatTimer.Restart();
+            if (StatTotal >= 250 && _statTimer.ElapsedMilliseconds >= 600000)
+                _statTimer.Restart();
+            else if (StatTotal >= 240 && _statTimer.ElapsedMilliseconds >= 540000)
+                _statTimer.Restart();
+            else if (StatTotal >= 230 && _statTimer.ElapsedMilliseconds >= 480000)
+                _statTimer.Restart();
+            else if (StatTotal >= 220 && _statTimer.ElapsedMilliseconds >= 420000)
+                _statTimer.Restart();
+            else if (StatTotal >= 210 && _statTimer.ElapsedMilliseconds >= 360000)
+                _statTimer.Restart();
+            else if (StatTotal >= 200 && _statTimer.ElapsedMilliseconds >= 300000)
+                _statTimer.Restart();
+            else if (StatTotal >= 175 && _statTimer.ElapsedMilliseconds >= 240000)
+                _statTimer.Restart();
+            else if (StatTotal >= 150 && _statTimer.ElapsedMilliseconds >= 180000)
+                _statTimer.Restart();
+            else if (StatTotal >= 100 && _statTimer.ElapsedMilliseconds >= 120000)
+                _statTimer.Restart();
+            else if (StatTotal >= 0 && _statTimer.ElapsedMilliseconds >= 660000)
+                _statTimer.Restart();
             else
                 return string.Empty;
 
@@ -694,12 +751,12 @@ namespace SUS.Server.Objects
 
         protected virtual DamageTypes Resistances
         {
-            get => m_Resistances;
+            get => _resistances;
             set
             {
                 if (value == Resistances) return;
 
-                m_Resistances = value;
+                _resistances = value;
             }
         }
 
@@ -721,18 +778,18 @@ namespace SUS.Server.Objects
         {
             get
             {
-                if (m_Skills != null) return m_Skills;
+                if (_skills != null) return _skills;
 
-                m_Skills = new Dictionary<SkillName, Skill>();
+                _skills = new Dictionary<SkillName, Skill>();
                 InitSkills();
 
-                return m_Skills;
+                return _skills;
             }
             private set
             {
                 if (value == null) return;
 
-                m_Skills = value;
+                _skills = value;
             }
         }
 
@@ -789,23 +846,23 @@ namespace SUS.Server.Objects
             // Equip Armor (excluding shields, those are handled with weaponry.
             if (item.IsArmor && item.Layer == ItemLayers.Armor)
             {
-                m_Equipped[item.Layer] = item;
+                _equipped[item.Layer] = item;
                 return;
             }
 
             // Check to see if we need to remove our Main-Hand and Off-Hand
             if ((item.Layer & ItemLayers.TwoHanded) == ItemLayers.TwoHanded)
             {
-                m_Equipped.Remove(ItemLayers.MainHand);
-                m_Equipped.Remove(ItemLayers.Offhand);
-                m_Equipped.Remove(ItemLayers.Bow);
+                _equipped.Remove(ItemLayers.MainHand);
+                _equipped.Remove(ItemLayers.Offhand);
+                _equipped.Remove(ItemLayers.Bow);
             }
 
-            if (m_Equipped.ContainsKey(ItemLayers.TwoHanded))
-                m_Equipped.Remove(ItemLayers.TwoHanded);
-            else if (m_Equipped.ContainsKey(ItemLayers.Bow)) m_Equipped.Remove(ItemLayers.Bow);
+            if (_equipped.ContainsKey(ItemLayers.TwoHanded))
+                _equipped.Remove(ItemLayers.TwoHanded);
+            else if (_equipped.ContainsKey(ItemLayers.Bow)) _equipped.Remove(ItemLayers.Bow);
 
-            m_Equipped[item.Layer] = item;
+            _equipped[item.Layer] = item;
         }
 
         public void Unequip(Equippable item)
@@ -815,7 +872,7 @@ namespace SUS.Server.Objects
 
         private void Unequip(ItemLayers item)
         {
-            m_Equipped.Remove(item);
+            _equipped.Remove(item);
         }
 
         protected bool ItemAdd(Item item)
@@ -823,7 +880,7 @@ namespace SUS.Server.Objects
             if (item == null) return false;
 
             item.Owner = this;
-            if (!Items.Contains(item)) m_Items[item.Serial] = item;
+            if (!Items.Contains(item)) _items[item.Serial] = item;
 
             return true;
         }
@@ -832,7 +889,7 @@ namespace SUS.Server.Objects
         {
             if (!Items.Contains(item)) return;
 
-            m_Items?.Remove(item.Serial);
+            _items?.Remove(item.Serial);
         }
 
         private void InitConsumables(int gold = 0, int potions = 0, int bandages = 0, int arrows = 0)
@@ -908,9 +965,8 @@ namespace SUS.Server.Objects
 
         public int Damage(int damage, Mobile from, bool isMagical)
         {
-            if (!isMagical)
-                if (Armor.Weight == Weights.Heavy)
-                    damage -= 3;
+            if (!isMagical && Armor.Weight == Weights.Heavy)
+                damage -= 3;
 
             // Do not allow negative damage that would otherwise heal.
             if (damage <= 0) return 0;
@@ -924,6 +980,54 @@ namespace SUS.Server.Objects
 
             Hits -= damage;
             return damage; // Damage taken was damage received.
+        }
+
+        private int RecoverStat(SecondaryStatCode statCode, int amount, Mobile from = null)
+        {
+            // Anonymous function that determines how much to apply of the maximum amount.
+            int AmountChanged(int min, int max)
+            {
+                if (amount <= 0) return 0;
+                if (min + amount > max) return max - min;
+                return amount;
+            }
+
+            int statDifference;
+            switch (statCode)
+            {
+                case SecondaryStatCode.Hits:
+                    statDifference = AmountChanged(_hits, HitsMax);
+                    _hits += statDifference;
+                    break;
+                case SecondaryStatCode.Stamina:
+                    statDifference = AmountChanged(_stamina, StaminaMax);
+                    _stamina += statDifference;
+                    break;
+                case SecondaryStatCode.Mana:
+                    statDifference = AmountChanged(_mana, ManaMax);
+                    _mana += statDifference;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(statCode), statCode,
+                        "Unknown StatCode used in Recovering Stats.");
+            }
+
+            return statDifference;
+        }
+
+        /// <summary>
+        ///     Heals the mobile.
+        /// </summary>
+        /// <param name="amount">Amount to attempt to apply to the mobile.</param>
+        /// <param name="from">Optional mobile that applied the heal.</param>
+        /// <returns>Amount of health actually healed.</returns>
+        public int Heal(int amount, Mobile from = null)
+        {
+            // We can't heal the dead and we cannot heal negative or 0.
+            if (Hits <= 0 || amount <= 0)
+                return 0;
+
+            return RecoverStat(SecondaryStatCode.Hits, amount, from);
         }
 
         public int ApplyResistance(DamageTypes damageType, int damage)

@@ -417,7 +417,7 @@ namespace SUS.Server.Server
                     if (mobile.Hits == mobile.HitsMax)
                         return new ErrorPacket("Server: You are already at full health.");
 
-                    int effect;
+                    var effect = 0;
                     if (item.ConsumableType == ConsumableTypes.Bandages)
                     {
                         // Uses a bandage.
@@ -436,15 +436,8 @@ namespace SUS.Server.Server
                         effect = Potion.GetEffect(mobile.HitsMax);
                     }
 
-                    if (mobile.Hits + effect >= mobile.HitsMax)
-                    {
-                        effect = mobile.HitsMax - mobile.Hits;
-                        mobile.Hits = mobile.HitsMax;
-                    }
-                    else
-                    {
-                        mobile.Hits += effect;
-                    }
+                    // Apply the heal.
+                    effect = mobile.Heal(effect, mobile);
 
                     uip.Response +=
                         $"You used one of your {item.Name} that heal {effect} health points.\nHealth: {mobile.Hits} / {mobile.HitsMax}. {item.Amount} {item.Name} remain.";

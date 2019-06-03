@@ -1,7 +1,7 @@
 ﻿using System;
 using SUS.Shared;
 
-namespace SUS
+namespace SUS.Server
 {
     public enum SkillName
     {
@@ -16,12 +16,12 @@ namespace SUS
 
     public class Skill
     {
-        private readonly Timer m_Timer;
-        private double m_Cap;
+        private readonly Timer _timer;
+        private double _cap;
 
-        private string m_Name;
-        private SkillName m_Type;
-        private double m_Value;
+        private string _name;
+        private SkillName _type;
+        private double _value;
 
         #region Constructors
 
@@ -32,8 +32,8 @@ namespace SUS
             Cap = cap;
             Value = value;
 
-            m_Timer = new Timer();
-            m_Timer.Start();
+            _timer = new Timer();
+            _timer.Start();
         }
 
         #endregion
@@ -43,7 +43,7 @@ namespace SUS
             if (Value >= Cap)
             {
                 // No need to try and increase skill.
-                m_Timer.Restart();
+                _timer.Restart();
                 return 0.0;
             }
 
@@ -111,10 +111,10 @@ namespace SUS
             }
 
             var d11 = Utility.RandomMinMax(0, 10);
-            if (d11 < chance || m_Timer.ElapsedTime <= time) return 0.0;
+            if (d11 < chance || _timer.ElapsedTime <= time) return 0.0;
 
             // chance is right, and timer is exceeded.
-            m_Timer.Restart();
+            _timer.Restart();
             var tValue = Value;
             var skillAmt = Math.Round(Utility.RandomMinMax(0.1, amount), 1);
             Value += skillAmt;
@@ -141,38 +141,38 @@ namespace SUS
 
         public string Name
         {
-            get => m_Name ?? "Unknown";
+            get => _name ?? "Unknown";
             private set
             {
-                if (!string.IsNullOrEmpty(value)) m_Name = value;
+                if (!string.IsNullOrEmpty(value)) _name = value;
             }
         }
 
         private SkillName Type
         {
-            get => m_Type;
+            get => _type;
             set
             {
-                if (value != Type) m_Type = value;
+                if (value != Type) _type = value;
             }
         }
 
         public double Value
         {
-            get => m_Value;
+            get => _value;
             set
             {
                 if (value < 0.0)
                     value = 0.0;
                 else if (value > Cap) value = Cap;
 
-                m_Value = value;
+                _value = value;
             }
         }
 
         public double Cap
         {
-            get => m_Cap;
+            get => _cap;
             private set
             {
                 if (value < Value) return;
@@ -181,7 +181,7 @@ namespace SUS
                     value = 0.0;
                 else if (value > 200.0) value = 200.0;
 
-                m_Cap = value;
+                _cap = value;
             }
         }
 
