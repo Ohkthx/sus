@@ -60,7 +60,6 @@ namespace SUS.Server
         bool IsBroken { get; }
 
         bool DurabilityLoss();
-
     }
 
     public interface ISQLCompatible

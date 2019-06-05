@@ -28,12 +28,11 @@ namespace SUS.Server.Objects.Items
 
     public abstract class Equippable : Item, IDestroyable
     {
-        private ItemLayers _layer;
-        private Weights _weight;
-
         protected int _durability;
         protected int _durabilityMax;
         private bool _invulnerable;
+        private ItemLayers _layer;
+        private Weights _weight;
 
         #region Constructors
 
@@ -45,6 +44,25 @@ namespace SUS.Server.Objects.Items
         }
 
         #endregion
+
+        public bool DurabilityLoss()
+        {
+            // Do not take damage if the item is invulnerable or already broken.
+            if (Invulnerable || IsBroken) return false;
+
+            var lossChance = (int) (Durability / (float) DurabilityMax * 12);
+            if (lossChance < 5)
+                lossChance = 5;
+
+            // Check if durability needs to be lost on the item. Return early if not.
+            if (Utility.RandomMinMax(1, 100) > lossChance) return false;
+
+            // Decrease the current durability by 1.
+            if (Durability > 0)
+                --Durability;
+
+            return true;
+        }
 
         #region Getters / Setters
 
@@ -136,23 +154,5 @@ namespace SUS.Server.Objects.Items
         public bool IsStarter { get; protected set; }
 
         #endregion
-
-        public bool DurabilityLoss()
-        {
-            // Do not take damage if the item is invulnerable or already broken.
-            if (Invulnerable || IsBroken) return false;
-
-            var lossChance = (int)(((float)Durability / (float)DurabilityMax) * 12);
-            if (lossChance < 5)
-                lossChance = 5;
-
-            // Check if durability needs to be lost on the item. Return early if not.
-            if (Utility.RandomMinMax(1, 100) > lossChance) return false;
-
-            if (Durability > 0)
-                --Durability; // Decrease the current durability by 1.
-
-            return true;
-        }
     }
 }

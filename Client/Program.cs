@@ -93,7 +93,7 @@ namespace SUS.Client
 
                     case PacketTypes.GetLocalMobiles:
                         if (clientState != null)
-                            clientState.Mobiles = ((GetMobilesPacket) req).Mobiles;
+                            clientState.LocalMobiles = ((GetMobilesPacket) req).Mobiles;
                         break;
                     case PacketTypes.GetMobile:
                         clientState?.ParseGetMobilePacket(req as GetMobilePacket);
@@ -102,7 +102,7 @@ namespace SUS.Client
                     case PacketTypes.GetNode:
                         if (ia != null)
                         {
-                            clientState.Region = ((GetNodePacket) req).NewRegion;
+                            clientState.CurrentRegion = ((GetNodePacket) req).NewRegion;
                             ia.Reset();
                         }
 
@@ -114,7 +114,7 @@ namespace SUS.Client
                         ia?.Reset();
                         break;
                     case PacketTypes.MobileMove:
-                        if (clientState != null) clientState.Region = ((MoveMobilePacket) req).NewRegion;
+                        if (clientState != null) clientState.CurrentRegion = ((MoveMobilePacket) req).NewRegion;
                         ia?.Reset();
                         break;
                     case PacketTypes.MobileResurrect:

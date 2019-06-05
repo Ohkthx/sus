@@ -258,17 +258,21 @@ namespace SUS.Server.Server
                             break;
                         case GetMobilePacket.RequestReason.Items:
                             foreach (var i in Gamestate.Account.Items)
-                            {   // Ensure that we do not send starter gear to the client.
+                            {
+                                // Ensure that we do not send starter gear to the client.
                                 if (i is Equippable equippable && equippable.IsStarter) continue;
                                 gmp.AddItem(i.Serial, i.ToString());
                             }
+
                             break;
                         case GetMobilePacket.RequestReason.Equipment:
                             foreach (var e in Gamestate.Account.Equipment.Values)
-                            {   // Prevent starter gear being sent as "equipped"
+                            {
+                                // Prevent starter gear being sent as "equipped"
                                 if (e.IsStarter) continue;
                                 gmp.AddEquipment(e.Serial, e.ToString());
                             }
+
                             break;
                     }
 
@@ -317,7 +321,7 @@ namespace SUS.Server.Server
             var mobiles = new List<Mobile>(); // This will hold all good mobiles.
             if (cmp.Targets.Count == 0) return new ErrorPacket("Server: No targets provided for attacking.");
 
-            // Iterate each of the affected, adding it to our list of Mobiles.
+            // Iterate each of the affected, adding it to our list of Local Mobiles.
             foreach (Serial serial in cmp.Targets)
             {
                 // Lookup the affected mobile.
@@ -459,7 +463,7 @@ namespace SUS.Server.Server
         {
             if (item.IsBroken)
             {
-                uip.Response = $"Cannot equip that item, it is broken.";
+                uip.Response = "Cannot equip that item, it is broken.";
                 return uip;
             }
 

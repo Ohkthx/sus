@@ -43,6 +43,11 @@ namespace SUS.Server.Objects
 
     public abstract class Mobile : IEntity
     {
+        // Regenerators for Stats.
+        private readonly Regenerator _hitsRegenerator;
+        private readonly Regenerator _manaRegenerator;
+        private readonly Regenerator _staminaRegenerator;
+
         // Mobile Stats.
         private readonly Stopwatch _statTimer;
 
@@ -50,13 +55,9 @@ namespace SUS.Server.Objects
         private Dictionary<ItemLayers, Equippable> _equipped;
         private int _hits, _stamina, _mana;
 
-        // Regenerators for Stats.
-        private readonly Regenerator _hitsRegenerator;
-
         // Currently owned and equipped items.
         private Dictionary<Serial, Item> _items;
         private Point2D _location;
-        private readonly Regenerator _manaRegenerator;
         private string _name; // Name of the mobile.
         private DamageTypes _resistances;
 
@@ -64,7 +65,6 @@ namespace SUS.Server.Objects
 
         // Mobile Properties
         private int _speed = 1; // Speed that the Mobile moves at.
-        private readonly Regenerator _staminaRegenerator;
         private int _str, _dex, _int;
 
         #region Contructors
@@ -361,7 +361,7 @@ namespace SUS.Server.Objects
                     Unequip(weapon);
                 }
 
-                var newWeapon =  new Unarmed();
+                var newWeapon = new Unarmed();
                 Equip(newWeapon);
                 return newWeapon;
             }
@@ -383,7 +383,8 @@ namespace SUS.Server.Objects
                     Unequip(armor);
                 }
 
-                var newArmor = FindEquippable(ItemLayers.Armor, Weights.Light) as Armor ?? new ArmorSuit(Armor.Materials.Cloth); 
+                var newArmor = FindEquippable(ItemLayers.Armor, Weights.Light) as Armor ??
+                               new ArmorSuit(Armor.Materials.Cloth);
                 Equip(newArmor);
                 return newArmor;
             }
@@ -865,10 +866,7 @@ namespace SUS.Server.Objects
             {
                 if (!(i is Equippable equipmentItem)) continue;
 
-                if (equipmentItem.Layer == layer && equipmentItem.Weight == weight)
-                {
-                    return equipmentItem;
-                }
+                if (equipmentItem.Layer == layer && equipmentItem.Weight == weight) return equipmentItem;
             }
 
             return null;

@@ -122,11 +122,9 @@ namespace SUS.Client
                         Attack();
                         break;
                     case ConsoleActions.Paperdoll:
-                    {
                         var pd = new Paperdoll(Client.PlayerId, Client.Account);
                         Request = pd.Display();
                         break;
-                    }
                     case ConsoleActions.Use:
                         Request = Client.UseItems();
                         break;
@@ -195,13 +193,13 @@ namespace SUS.Client
                 Console.Write("Select location: ");
                 var input = Console.ReadLine();
 
-                if (Client.Region.Navigable)
+                if (Client.CurrentRegion.Navigable)
                 {
                     MobileDirections newDir;
                     if ((newDir = Client.StringToDirection(input)) != MobileDirections.None)
                     {
                         Console.WriteLine($"Selected: {newDir.ToString()}");
-                        Request = new MoveMobilePacket(Client.Region.Location, Client.PlayerId, newDir);
+                        Request = new MoveMobilePacket(Client.CurrentRegion.Location, Client.PlayerId, newDir);
                         return;
                     }
                 }
@@ -220,11 +218,11 @@ namespace SUS.Client
             MobileDirections newDir;
             Regions newLoc;
 
-            if (Client.Region.Navigable)
+            if (Client.CurrentRegion.Navigable)
                 if ((newDir = Client.StringToDirection(position)) != MobileDirections.None)
                 {
                     Console.WriteLine($"Selected: {newDir.ToString()}");
-                    Request = new MoveMobilePacket(Client.Region.Location, Client.PlayerId, newDir);
+                    Request = new MoveMobilePacket(Client.CurrentRegion.Location, Client.PlayerId, newDir);
                     return;
                 }
 
@@ -243,7 +241,7 @@ namespace SUS.Client
         /// </summary>
         private static void Look()
         {
-            if (Client.Region.Navigable)
+            if (Client.CurrentRegion.Navigable)
             {
                 // Print our directions since we can move within this map.
                 Console.WriteLine(" Directions to travel locally:");
@@ -259,7 +257,7 @@ namespace SUS.Client
 
             var pos = 0;
             Console.WriteLine(" Nearby Locations:");
-            foreach (var n in Utility.EnumToIEnumerable<Regions>(Client.Region.Connections, true))
+            foreach (var n in Utility.EnumToIEnumerable<Regions>(Client.CurrentRegion.Connections, true))
             {
                 ++pos;
                 Console.WriteLine($"  [Pos: {pos}] {Enum.GetName(typeof(Regions), n)}");
@@ -285,10 +283,10 @@ namespace SUS.Client
         /// <returns>List of Players from the server.</returns>
         private List<BaseMobile> GetMobiles()
         {
-            if (Request != null) return Client.Mobiles.ToList();
+            if (Request != null) return Client.LocalMobiles.ToList();
 
             // Create a request for the server to respond to.
-            Request = new GetMobilesPacket(Client.Region.Location, Client.PlayerId);
+            Request = new GetMobilesPacket(Client.CurrentRegion.Location, Client.PlayerId);
             return null;
         }
 
