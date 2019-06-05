@@ -345,13 +345,25 @@ namespace SUS.Server.Objects
         {
             get
             {
-                if (Equipment.ContainsKey(ItemLayers.Bow)) return Equipment[ItemLayers.Bow] as Weapon;
+                Weapon weapon = null;
+                if (Equipment.ContainsKey(ItemLayers.Bow))
+                    weapon = Equipment[ItemLayers.Bow] as Weapon;
+                else if (Equipment.ContainsKey(ItemLayers.TwoHanded))
+                    weapon = Equipment[ItemLayers.TwoHanded] as Weapon;
+                else if (Equipment.ContainsKey(ItemLayers.MainHand))
+                    weapon = Equipment[ItemLayers.MainHand] as Weapon;
 
-                if (Equipment.ContainsKey(ItemLayers.TwoHanded)) return Equipment[ItemLayers.TwoHanded] as Weapon;
+                if (weapon != null)
+                {
+                    if (!weapon.IsBroken)
+                        return weapon;
 
-                if (Equipment.ContainsKey(ItemLayers.MainHand)) return Equipment[ItemLayers.MainHand] as Weapon;
+                    Unequip(weapon);
+                }
 
-                return new Unarmed();
+                var newWeapon =  new Unarmed();
+                Equip(newWeapon);
+                return newWeapon;
             }
         }
 
@@ -359,9 +371,21 @@ namespace SUS.Server.Objects
         {
             get
             {
-                if (Equipment.ContainsKey(ItemLayers.Armor)) return Equipment[ItemLayers.Armor] as Armor;
+                Armor armor = null;
+                if (Equipment.ContainsKey(ItemLayers.Armor))
+                    armor = Equipment[ItemLayers.Armor] as Armor;
 
-                return new ArmorSuit(Armor.Materials.Cloth);
+                if (armor != null)
+                {
+                    if (!armor.IsBroken)
+                        return armor;
+
+                    Unequip(armor);
+                }
+
+                var newArmor = FindEquippable(ItemLayers.Armor, Weights.Light) as Armor ?? new ArmorSuit(Armor.Materials.Cloth); 
+                Equip(newArmor);
+                return newArmor;
             }
         }
 
@@ -572,7 +596,9 @@ namespace SUS.Server.Objects
         {
             get
             {
-                if (_hits < HitsMax && !_hitsRegenerator.Running)
+                if (_hits <= 0)
+                    _hitsRegenerator.Stop();
+                else if (_hits < HitsMax && !_hitsRegenerator.Running)
                     _hitsRegenerator.Restart();
 
                 if (!_hitsRegenerator.Running) return _hits;
@@ -601,7 +627,9 @@ namespace SUS.Server.Objects
         {
             private get
             {
-                if (_stamina < StaminaMax && !_staminaRegenerator.Running)
+                if (Hits <= 0)
+                    _staminaRegenerator.Stop();
+                else if (_stamina < StaminaMax && !_staminaRegenerator.Running)
                     _staminaRegenerator.Restart();
 
                 // Stamina regenerator is not running, return current stamina.
@@ -630,7 +658,9 @@ namespace SUS.Server.Objects
         {
             get
             {
-                if (_mana < ManaMax && !_manaRegenerator.Running)
+                if (Hits <= 0)
+                    _manaRegenerator.Stop();
+                else if (_mana < ManaMax && !_manaRegenerator.Running)
                     _manaRegenerator.Restart();
 
                 // Max health and not running the mana regenerator.
@@ -829,6 +859,21 @@ namespace SUS.Server.Objects
 
         #region Items / Equippables / Consumables
 
+        private Equippable FindEquippable(ItemLayers layer, Weights weight)
+        {
+            foreach (var i in Items)
+            {
+                if (!(i is Equippable equipmentItem)) continue;
+
+                if (equipmentItem.Layer == layer && equipmentItem.Weight == weight)
+                {
+                    return equipmentItem;
+                }
+            }
+
+            return null;
+        }
+
         protected void EquipmentAdd(Equippable item)
         {
             if (item == null
@@ -846,6 +891,7 @@ namespace SUS.Server.Objects
             // Equip Armor (excluding shields, those are handled with weaponry.
             if (item.IsArmor && item.Layer == ItemLayers.Armor)
             {
+                _equipped.Remove(ItemLayers.Armor);
                 _equipped[item.Layer] = item;
                 return;
             }
@@ -867,7 +913,8 @@ namespace SUS.Server.Objects
 
         public void Unequip(Equippable item)
         {
-            Unequip(item.Layer);
+            if (Equipment[item.Layer] == item)
+                Unequip(item.Layer);
         }
 
         private void Unequip(ItemLayers item)

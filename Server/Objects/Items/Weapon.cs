@@ -9,6 +9,8 @@ namespace SUS.Server.Objects.Items
             : base(ItemLayers.TwoHanded, material, damage)
         {
             Weight = Weights.Heavy;
+            DurabilityMax = 80;
+            Durability = 80;
         }
     }
 
@@ -18,6 +20,8 @@ namespace SUS.Server.Objects.Items
             : base(ItemLayers.MainHand, material, damage)
         {
             Weight = Weights.Light;
+            DurabilityMax = 60;
+            Durability = 60;
         }
     }
 

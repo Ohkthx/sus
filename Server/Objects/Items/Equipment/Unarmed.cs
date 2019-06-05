@@ -12,6 +12,9 @@
 
             Material = Materials.None;
             Weight = Weights.Light;
+
+            Invulnerable = true;
+            IsStarter = true;
         }
     }
 }

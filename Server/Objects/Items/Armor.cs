@@ -13,9 +13,10 @@ namespace SUS.Server.Objects.Items
             Plate = 18
         }
 
-        private int m_ArmorRating;
-        private Materials m_Material;
-        private DamageTypes m_Resistances;
+        private int _armorRating;
+        private Materials _material;
+        private DamageTypes _resistances;
+
 
         #region Constructors
 
@@ -37,12 +38,12 @@ namespace SUS.Server.Objects.Items
 
         private Materials Material
         {
-            get => m_Material;
+            get => _material;
             set
             {
                 if (value == Material) return;
 
-                m_Material = value;
+                _material = value;
             }
         }
 
@@ -50,24 +51,24 @@ namespace SUS.Server.Objects.Items
 
         private int ArmorRating
         {
-            get => m_ArmorRating;
+            get => _armorRating;
             set
             {
-                if (value != ArmorRating) m_ArmorRating = value;
+                if (value != ArmorRating) _armorRating = value;
             }
         }
 
         public virtual DamageTypes Resistances
         {
-            get => m_Resistances;
+            get => _resistances;
             protected set
             {
                 if (value == Resistances) return;
 
-                m_Resistances = value;
+                _resistances = value;
             }
-
-            #endregion
         }
+
+        #endregion
     }
 }

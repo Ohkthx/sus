@@ -36,6 +36,9 @@ namespace SUS.Server.Objects.Mobiles
             ItemAdd(new ShortSword(Weapon.Materials.Steel));
             ItemAdd(new Shield());
 
+            // Default Equipment
+            ItemAdd(new ArmorSuit(Armor.Materials.Cloth));
+
             // Skills
             Skills[SkillName.Archery].Value = 83.0;
             Skills[SkillName.Swordsmanship].Value = 72.0;
@@ -58,12 +61,16 @@ namespace SUS.Server.Objects.Mobiles
                          "  +-[ Skills ]\n" +
                          $"  | +-- Skills Total: {SkillTotal:F1}\n";
 
-            foreach (var skill in Skills)
-                paperdoll += $"  | +-- [{skill.Value.Value,-5:F1} / {skill.Value.Cap,-5:F1}] {skill.Value.Name}\n";
+            foreach (var skill in Skills.Values)
+                paperdoll += $"  | +-- [{skill.Value,-5:F1} / {skill.Cap,-5:F1}] {skill.Name}\n";
 
             paperdoll += "  |\n  +-[ Equipment ]\n";
-            foreach (var item in Equipment)
-                paperdoll += $"  | +-- {"[" + item.Value.Rating + "]",-4} {item.Value.Name}\n";
+            foreach (var equippable in Equipment.Values)
+            {
+                if (equippable.IsWeapon && equippable.IsStarter) continue;
+                paperdoll +=
+                    $"  | +-- {"[" + equippable.Rating + "]",-4} {equippable.Name} {(!equippable.Invulnerable ? $"[Durability: {equippable.Durability} / {equippable.DurabilityMax}]" : string.Empty)}\n";
+            }
 
             paperdoll += "  +---------------------------------------------------+";
 

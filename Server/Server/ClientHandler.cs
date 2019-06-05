@@ -257,13 +257,18 @@ namespace SUS.Server.Server
                             gmp.IsAlive = Gamestate.Account.Alive;
                             break;
                         case GetMobilePacket.RequestReason.Items:
-                            foreach (var i in Gamestate.Account.Items) gmp.AddItem(i.Serial, i.ToString());
-
+                            foreach (var i in Gamestate.Account.Items)
+                            {   // Ensure that we do not send starter gear to the client.
+                                if (i is Equippable equippable && equippable.IsStarter) continue;
+                                gmp.AddItem(i.Serial, i.ToString());
+                            }
                             break;
                         case GetMobilePacket.RequestReason.Equipment:
                             foreach (var e in Gamestate.Account.Equipment.Values)
+                            {   // Prevent starter gear being sent as "equipped"
+                                if (e.IsStarter) continue;
                                 gmp.AddEquipment(e.Serial, e.ToString());
-
+                            }
                             break;
                     }
 
@@ -452,6 +457,12 @@ namespace SUS.Server.Server
 
         private Packet EquipItem(UseItemPacket uip, Equippable item)
         {
+            if (item.IsBroken)
+            {
+                uip.Response = $"Cannot equip that item, it is broken.";
+                return uip;
+            }
+
             Mobile mobile = Gamestate.Account;
             mobile.Equip(item);
             uip.Response = $"You have equipped [{item.Name}].";

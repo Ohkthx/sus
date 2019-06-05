@@ -2,8 +2,8 @@
 {
     public abstract class Consumable : Item
     {
-        private int m_Amount;
-        private int m_AmountMaximum;
+        private int _amount;
+        private int _amountMaximum;
 
         #region Constructors
 
@@ -35,25 +35,25 @@
 
         public int Amount
         {
-            get => m_Amount;
+            get => _amount;
             protected set
             {
                 if (value < 0)
                     value = 0;
                 else if (value > Maximum) value = Maximum;
 
-                m_Amount = value;
+                _amount = value;
             }
         }
 
         public int Maximum
         {
-            get => m_AmountMaximum;
+            get => _amountMaximum;
             private set
             {
                 if (value < 1) value = 1;
 
-                m_AmountMaximum = value;
+                _amountMaximum = value;
             }
         }
 

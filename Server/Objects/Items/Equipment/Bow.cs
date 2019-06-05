@@ -26,6 +26,9 @@
             RequiredSkill = SkillName.Archery;
             Stat = StatCode.Dexterity;
             DamageType = DamageTypes.Piercing;
+
+            DurabilityMax = 80;
+            Durability = 80;
         }
     }
 }

@@ -45,11 +45,22 @@ namespace SUS.Server
     public interface IDamageable : IEntity
     {
         int CR { get; }
-        int Hits { get; set; }
+        int Hits { get; }
         int HitsMax { get; }
         bool Alive { get; }
 
         int Damage(int amount, Mobile attacker);
+    }
+
+    public interface IDestroyable
+    {
+        int Durability { get; }
+        int DurabilityMax { get; }
+        bool Invulnerable { get; }
+        bool IsBroken { get; }
+
+        bool DurabilityLoss();
+
     }
 
     public interface ISQLCompatible

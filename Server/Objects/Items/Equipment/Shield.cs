@@ -7,6 +7,9 @@
         {
             Weight = Weights.Medium;
             Resistances = DamageTypes.Piercing;
+
+            DurabilityMax = 70;
+            Durability = 70;
         }
 
         public override string Name => $"Kite {base.Name}";

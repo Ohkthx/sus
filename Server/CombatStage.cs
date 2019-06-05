@@ -103,12 +103,14 @@ namespace SUS.Server
             #endregion
 
             if (attacker.Weapon.IsBow)
+            {
                 if (attacker.Arrows.Amount == 0)
                 {
                     // Remove the weapon from the aggressor due to not having anymore arrows.
                     log.Add($"{attacker.Name} ran out of arrows. [{attacker.Weapon.Name}] was unequipped.");
                     attacker.Unequip(attacker.Weapon);
                 }
+            }
 
             // Base for determining miss, hit, or critical.
             var d20 = new DiceRoll("1d20");
@@ -117,6 +119,7 @@ namespace SUS.Server
             // If the target's distance is less than (or equal) to the distance.
             if (attacker.Weapon.Range < Point2D.Distance(attacker, target)) return;
 
+            // Remove required resource.
             if (attacker.Weapon.IsBow) --attacker.Arrows;
 
             var hit = false;
@@ -150,6 +153,27 @@ namespace SUS.Server
                     log.Add($"{attacker.Name} performs a critical hit for {damageDealt} damage against {target.Name}.");
                 else // Normal hit, nothing special.
                     log.Add($"{attacker.Name} performs {damageDealt} damage to {target.Name}.");
+
+                // Attempt to damage a piece of equipment.
+                if (target.IsPlayer)
+                {
+                    foreach (var equippable in target.Equipment.Values)
+                    {
+                        if (!equippable.IsArmor || !equippable.DurabilityLoss()) continue;
+
+                        // Log the damage, break because we only damage 1 piece of armor at a time.
+                        if (equippable.IsBroken)
+                        {
+                            log.Add($"{equippable.Name}.");
+                            target.Unequip(equippable);
+                        }
+                        else
+                        {
+                            log.Add($"{equippable.Name} has suffered durability loss.");
+                        }
+                        break;
+                    }
+                }
             }
 
             // Check for skill increase.
@@ -159,6 +183,16 @@ namespace SUS.Server
             // Check for stat increase.
             var statIncrease = attacker.StatIncrease(attacker.Weapon.Stat);
             if (initiator == attacker && statIncrease != string.Empty) log.Add(statIncrease);
+
+            // Attempt durability loss on attackers weapon.
+            if (attacker.IsPlayer)
+            {
+                var weapon = attacker.Weapon;
+                if (attacker.Weapon.DurabilityLoss())
+                {
+                    log.Add(weapon.IsBroken ? $"{weapon.Name}." : $"{weapon.Name} has suffered durability loss.");
+                }
+            }
 
             if (target.Alive) return;
 

@@ -11,15 +11,22 @@
                 case Materials.Chainmail:
                     Weight = Weights.Heavy;
                     Resistances = DamageTypes.Slashing | DamageTypes.Bludgeoning;
+                    DurabilityMax = 80;
+                    Durability = 80;
                     break;
                 case Materials.Hide:
                 case Materials.Leather:
                     Weight = Weights.Medium;
                     Resistances = DamageTypes.Elemental;
+                    DurabilityMax = 60;
+                    Durability = 60;
                     break;
                 default:
-                    Weight = Weights.Medium;
+                    Name = "Rags";
+                    Weight = Weights.Light;
                     Resistances = DamageTypes.None;
+                    Invulnerable = true;
+                    IsStarter = true;
                     break;
             }
         }
