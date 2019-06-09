@@ -6,8 +6,8 @@ namespace SUS.Server.Map
     {
         #region Constructors
 
-        protected Town(RegionType type, Shared.Regions region, string desc)
-            : base(type, region, desc)
+        protected Town(RegionTypes types, Shared.Regions region)
+            : base(types, region)
         {
             IsSpawnable = false;
         }

@@ -5,7 +5,7 @@ namespace SUS.Shared
     #region Enums
 
     [Flags]
-    public enum RegionType
+    public enum RegionTypes
     {
         Town = 1,
         Dungeon = 2,
@@ -70,7 +70,7 @@ namespace SUS.Shared
 
         #region Constructors
 
-        public BaseRegion(RegionType type, Regions region, Regions connections, bool navigable)
+        public BaseRegion(RegionTypes type, Regions region, Regions connections, bool navigable)
         {
             Type = type;
             Location = region;
@@ -84,7 +84,7 @@ namespace SUS.Shared
 
         private string Name => Enum.GetName(typeof(Regions), Location);
 
-        private RegionType Type { get; }
+        private RegionTypes Type { get; }
 
         public Regions Location { get; }
 

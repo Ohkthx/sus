@@ -6,12 +6,14 @@ namespace SUS.Server.Map.Regions
     public class Graveyard : Spawnable
     {
         public Graveyard()
-            : base(RegionType.OpenWorld | RegionType.PvP, Shared.Regions.Graveyard, "Full of bones and bruises.", 45,
-                60)
+            : base(RegionTypes.OpenWorld | RegionTypes.PvP, Shared.Regions.Graveyard, 45, 60)
         {
-            _NPCs = Spawnables.Graveyard;
+            Description = "Full of bones and bruises.";
 
-            SpawnerAdd(22, 30, 21, 15);
+            NPCs = Spawnables.Graveyard;
+            AddSpawner(22, 30, 21, 15);
+
+            AddConnection(Shared.Regions.Britain | Shared.Regions.Wilderness);
         }
     }
 }

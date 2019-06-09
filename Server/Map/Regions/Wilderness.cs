@@ -6,13 +6,19 @@ namespace SUS.Server.Map.Regions
     public class Wilderness : Spawnable
     {
         public Wilderness()
-            : base(RegionType.OpenWorld | RegionType.PvP, Shared.Regions.Wilderness, "A vast open world.", 150, 150)
+            : base(RegionTypes.OpenWorld | RegionTypes.PvP, Shared.Regions.Wilderness, 150, 150)
         {
-            _NPCs = Spawnables.Graveyard | Spawnables.Orc | Spawnables.Titan | Spawnables.Cyclops;
+            Description = "A vast and open world!";
 
-            SpawnerAdd(20, 20, 16, 5);
-            SpawnerAdd(50, 125, 60, 10);
-            SpawnerAdd(120, 60, 60, 10);
+            NPCs = Spawnables.Graveyard | Spawnables.Orc | Spawnables.Titan | Spawnables.Cyclops;
+            AddSpawner(20, 20, 16, 5);
+            AddSpawner(50, 125, 60, 10);
+            AddSpawner(120, 60, 60, 10);
+
+            AddConnection(Shared.Regions.Britain | Shared.Regions.Graveyard | Shared.Regions.Despise);
+
+            // Despise Entrance
+            AddZone(Shared.Regions.Despise, new Point2D(MaxX / 2, MaxY), 3, 3);
         }
     }
 }

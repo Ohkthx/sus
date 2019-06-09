@@ -4,8 +4,8 @@ namespace SUS.Server
 {
     public struct Point2D : IPoint2D
     {
-        private int m_X;
-        private int m_Y;
+        private int _x;
+        private int _y;
 
         public Point2D(int x, int y, bool invalid = false)
         {
@@ -16,31 +16,31 @@ namespace SUS.Server
                 if (y < 0) y = 0;
             }
 
-            m_X = x;
-            m_Y = y;
+            _x = x;
+            _y = y;
         }
 
         #region Getters / Setters
 
         public int X
         {
-            get => m_X;
+            get => _x;
             set
             {
                 if (value < 0 || value == X) return;
 
-                m_X = value;
+                _x = value;
             }
         }
 
         public int Y
         {
-            get => m_Y;
+            get => _y;
             set
             {
                 if (value < 0 || value == Y) return;
 
-                m_Y = value;
+                _y = value;
             }
         }
 
@@ -98,8 +98,8 @@ namespace SUS.Server
 
         public void Invalidate()
         {
-            m_X = -1;
-            m_Y = -1;
+            _x = -1;
+            _y = -1;
         }
 
         public static int Distance(IEntity from, IEntity to)

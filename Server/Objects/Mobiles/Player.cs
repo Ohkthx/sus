@@ -89,6 +89,11 @@ namespace SUS.Server.Objects.Mobiles
             IsLoggedIn = true;
         }
 
+        public void AddUnlockedRegion(Regions region)
+        {
+            UnlockedRegions |= region;
+        }
+
         #region Getters / Setters
 
         public int CR => (int) SkillTotal / 36;
@@ -101,6 +106,8 @@ namespace SUS.Server.Objects.Mobiles
                 if (value != PlayerID) _playerId = value;
             }
         }
+
+        public Regions UnlockedRegions { get; protected set; }
 
         protected override DamageTypes Resistances
         {

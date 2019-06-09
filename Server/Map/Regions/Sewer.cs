@@ -6,11 +6,14 @@ namespace SUS.Server.Map.Regions
     public class Sewers : Spawnable
     {
         public Sewers()
-            : base(RegionType.Dungeon | RegionType.PvP, Shared.Regions.Sewers, "EW! Sticky!", 30, 35)
+            : base(RegionTypes.Dungeon | RegionTypes.PvP, Shared.Regions.Sewers, 30, 35)
         {
-            _NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul;
+            Description = "Ew! Sticky!";
 
-            SpawnerAdd(15, 17, 15, 15);
+            NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul;
+            AddSpawner(15, 17, 15, 15);
+
+            AddConnection(Shared.Regions.Britain);
         }
     }
 }

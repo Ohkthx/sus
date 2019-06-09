@@ -4,6 +4,7 @@ using System.Linq;
 using SUS.Server.Map;
 using SUS.Server.Map.Regions;
 using SUS.Server.Objects;
+using SUS.Server.Objects.Mobiles;
 using SUS.Shared;
 
 namespace SUS.Server
@@ -45,24 +46,12 @@ namespace SUS.Server
             if (Nodes.Any())
                 return;
 
-            // Create some basic nodes.
-            Node britain = new Britain();
-            var sewer = new Sewers();
-            Node wilderness = new Wilderness();
-            Node graveyard = new Graveyard();
-
-            // Add pathing / connections to each. TODO: Move this to the classes.
-            britain.AddConnection(Regions.Sewers | Regions.Graveyard | Regions.Wilderness);
-            sewer.AddConnection(Regions.Britain);
-            wilderness.AddConnection(Regions.Britain | Regions.Graveyard);
-            graveyard.AddConnection(Regions.Britain | Regions.Wilderness);
-
-
             // Add the nodes to be held by the GameObject.
-            AddNode(britain);
-            AddNode(sewer);
-            AddNode(wilderness);
-            AddNode(graveyard);
+            AddNode(new Britain());
+            AddNode(new Sewers());
+            AddNode(new Wilderness());
+            AddNode(new Graveyard());
+            AddNode(new Despise());
         }
 
         /// <summary>
@@ -229,17 +218,17 @@ namespace SUS.Server
                     && toRegion != mobile.Region) //  And it is not a connected location...
                     return null; //   Return failure.
 
-            var n = FindNode(toRegion);
-            if (!n.IsSpawnable)
+            // This validates that the mobile is not trying to access what they cannot.
+            if (!forceMove)
+                if (mobile is Player player)
+                    if ((player.UnlockedRegions & toRegion) != toRegion)
+                        return null;
+
+            var node = FindNode(toRegion);
+            if (node is Spawnable spawnable)
             {
-                mobile.Location.Invalidate();
-            }
-            else
-            {
-                var s = n as Spawnable;
                 if (toRegion != mobile.Region)
-                    if (s != null)
-                        mobile.Location = s.StartingLocation(); // Resets or assigns the new coordinate.
+                    mobile.Location = spawnable.StartingLocation(); // Resets or assigns the new coordinate.
 
                 if (toRegion == mobile.Region)
                 {
@@ -257,13 +246,21 @@ namespace SUS.Server
                     else
                     {
                         // Move in a specific direction.
-                        if (s != null) mobile.MoveInDirection(direction, s.MaxX, s.MaxY);
+                        mobile.MoveInDirection(direction, spawnable.MaxX, spawnable.MaxY);
+
+                        // Checked if the mobile is in an unlockable area. If so, add it to unlocked areas.
+                        if (mobile is Player player)
+                            player.AddUnlockedRegion(spawnable.InUnlockedArea(mobile.Location));
                     }
                 }
             }
+            else
+            {
+                mobile.Location.Invalidate();
+            }
 
             mobile.Region = toRegion; // Update the local mobile to the new location.
-            return n;
+            return node;
         }
 
         public static void Resurrect(Regions region, Mobile mobile)

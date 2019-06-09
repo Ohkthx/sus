@@ -24,8 +24,8 @@ namespace SUS.Server.Objects
         Cyclops = 0x00000040,
         Titan = 0x00000080,
 
-        Unused2 = 0x00000100,
-        Unused3 = 0x00000200,
+        Lizardman = 0x00000100,
+        Ettin = 0x00000200,
         Unused4 = 0x00000400,
         Unused5 = 0x00000800,
         Unused6 = 0x00001000,
@@ -162,6 +162,10 @@ namespace SUS.Server.Objects
                     return new Ghoul();
                 case Spawnables.Wraith:
                     return new Wraith();
+                case Spawnables.Lizardman:
+                    return new Lizardman();
+                case Spawnables.Ettin:
+                    return new Ettin();
                 case Spawnables.Orc:
                     return new Orc();
                 case Spawnables.Cyclops:

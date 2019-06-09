@@ -107,14 +107,23 @@ namespace SUS.Client
                         }
 
                         break;
-
-
                     case PacketTypes.MobileCombat:
                         clientState?.MobileActionHandler(req as CombatMobilePacket);
                         ia?.Reset();
                         break;
                     case PacketTypes.MobileMove:
-                        if (clientState != null) clientState.CurrentRegion = ((MoveMobilePacket) req).NewRegion;
+                        if (clientState != null)
+                            if (req is MoveMobilePacket mmp)
+                            {
+                                clientState.CurrentRegion = mmp.NewRegion; // Reassign our region.
+                                if (mmp.DiscoveredRegion != Regions.None)
+                                {
+                                    // If the client discovered a new location, add it to our potential locations.
+                                    clientState.AddUnlockedRegion(mmp.NewRegion.Connections);
+                                    Console.WriteLine($"Discovered: {mmp.DiscoveredRegion}!");
+                                }
+                            }
+
                         ia?.Reset();
                         break;
                     case PacketTypes.MobileResurrect:

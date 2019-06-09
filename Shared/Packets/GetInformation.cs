@@ -6,8 +6,8 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class GetMobilesPacket : Packet
     {
-        private HashSet<BaseMobile> m_Mobiles;
-        private Regions m_Region;
+        private HashSet<BaseMobile> _mobiles;
+        private Regions _region;
 
         #region Constructors
 
@@ -23,18 +23,18 @@ namespace SUS.Shared.Packets
 
         public Regions Region
         {
-            get => m_Region;
-            private set => m_Region = value;
+            get => _region;
+            private set => _region = value;
         }
 
         public HashSet<BaseMobile> Mobiles
         {
-            get => m_Mobiles ?? (m_Mobiles = new HashSet<BaseMobile>());
+            get => _mobiles ?? (_mobiles = new HashSet<BaseMobile>());
             set
             {
                 if (value == null) return;
 
-                m_Mobiles = value;
+                _mobiles = value;
             }
         }
 
@@ -55,15 +55,15 @@ namespace SUS.Shared.Packets
             Equipment = 16
         }
 
-        private Dictionary<int, string> m_Equipment;
-        private bool m_IsAlive = true;
-        private Dictionary<int, string> m_Items;
+        private Dictionary<int, string> _equipment;
+        private bool _isAlive = true;
+        private Dictionary<int, string> _items;
 
         // Requested information to return.
-        private string m_Paperdoll;
+        private string _paperdoll;
 
-        private RequestReason m_Reason = RequestReason.None;
-        private Regions m_Region = Regions.None;
+        private RequestReason _reason;
+        private Regions _region;
 
         #region Constructors
 
@@ -89,49 +89,49 @@ namespace SUS.Shared.Packets
 
         public RequestReason Reason
         {
-            get => m_Reason;
+            get => _reason;
             private set
             {
                 if (value == RequestReason.None || value == Reason) return;
 
-                m_Reason = value;
+                _reason = value;
             }
         }
 
         public string Paperdoll
         {
-            get => m_Paperdoll ?? (m_Paperdoll = string.Empty);
+            get => _paperdoll ?? (_paperdoll = string.Empty);
             set
             {
                 if (string.IsNullOrEmpty(value)) return;
 
-                m_Paperdoll = value;
+                _paperdoll = value;
             }
         }
 
         public Regions Region
         {
-            get => m_Region;
+            get => _region;
             set
             {
                 if (value == Regions.None || value == Region) return;
 
-                m_Region = value;
+                _region = value;
             }
         }
 
         public bool IsAlive
         {
-            get => m_IsAlive;
+            get => _isAlive;
             set
             {
-                if (value != IsAlive) m_IsAlive = value;
+                if (value != IsAlive) _isAlive = value;
             }
         }
 
-        public Dictionary<int, string> Items => m_Items ?? (m_Items = new Dictionary<int, string>());
+        public Dictionary<int, string> Items => _items ?? (_items = new Dictionary<int, string>());
 
-        public Dictionary<int, string> Equipment => m_Equipment ?? (m_Equipment = new Dictionary<int, string>());
+        public Dictionary<int, string> Equipment => _equipment ?? (_equipment = new Dictionary<int, string>());
 
         #endregion
     }
@@ -139,9 +139,6 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class GetNodePacket : Packet
     {
-        private BaseRegion m_NewRegion;
-        private Regions m_Region;
-
         #region Constructors
 
         public GetNodePacket(Regions region, ulong playerId)
@@ -154,20 +151,9 @@ namespace SUS.Shared.Packets
 
         #region Getters / Setters
 
-        public Regions Region
-        {
-            get => m_Region;
-            private set => m_Region = value;
-        }
+        public Regions Region { get; }
 
-        public BaseRegion NewRegion
-        {
-            get => m_NewRegion;
-            set
-            {
-                if (NewRegion != value) m_NewRegion = value;
-            }
-        }
+        public BaseRegion NewRegion { get; set; }
 
         #endregion
     }

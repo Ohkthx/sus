@@ -6,18 +6,16 @@ namespace SUS.Server
 {
     public class Gamestate : ISQLCompatible
     {
-        private readonly Regions _unlocked = Regions.None;
         private Player _account;
         private ulong _playerId;
 
         #region Constructors
 
-        public Gamestate(ulong playerId, Player account, Regions unlocked)
+        public Gamestate(ulong playerId, Player account)
         {
             PlayerId = playerId;
             Account = account;
             Account.PlayerID = PlayerId;
-            _unlocked |= unlocked;
             World.AddGamestate(this);
         }
 
@@ -25,7 +23,10 @@ namespace SUS.Server
 
         public ClientState ToClientState()
         {
-            return new ClientState(PlayerId, Account.Base(), World.FindNode(Account.Region).GetBase(), _unlocked);
+            var node = World.FindNode(Account.Region);
+            var clientState = new ClientState(PlayerId, Account.Base(), node.GetBase(), UnlockedRegions);
+
+            return clientState;
         }
 
         private byte[] ToByte()
@@ -114,6 +115,12 @@ namespace SUS.Server
 
                 _account = value;
             }
+        }
+
+        public Regions UnlockedRegions
+        {
+            get => _account.UnlockedRegions;
+            private set => _account.AddUnlockedRegion(value);
         }
 
         #endregion

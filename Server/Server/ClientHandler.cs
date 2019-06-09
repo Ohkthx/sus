@@ -199,9 +199,10 @@ namespace SUS.Server.Server
             var player = new Player(name, 45, 45, 10, szRegion, region.StartingLocation());
             // Assign the Starting Zone Location to the player.
             player.Login(); // Log the player in.
+            player.AddUnlockedRegion(Regions.Basic); // Give the player the basic zones.
 
             // Client has sent a player, create a proper gamestate and send it to the client.
-            var gamestate = new Gamestate(playerId, player, Regions.Basic);
+            var gamestate = new Gamestate(playerId, player);
 
             var gsp = new AccountClientPacket(playerId) {ClientState = gamestate.ToClientState()};
             return gsp;
@@ -368,10 +369,17 @@ namespace SUS.Server.Server
         /// <returns>Packed "OK" server response.</returns>
         private Packet MobileMove(MoveMobilePacket mm)
         {
+            var originalUnlocks = Gamestate.UnlockedRegions; // Original unlocks for comparison.
+
             var loc = World.MoveMobile(mm.Region, Gamestate.Account, mm.Direction);
             if (loc == null) return new ErrorPacket("Server: Invalid location to move to.");
 
             mm.NewRegion = loc.GetBase();
+
+            if (originalUnlocks != Gamestate.Account.UnlockedRegions)
+                // Extract the new locations.
+                mm.DiscoveredRegion = originalUnlocks ^ Gamestate.Account.UnlockedRegions;
+
             return mm;
         }
 

@@ -10,10 +10,9 @@ namespace SUS.Server.Map
 
         #region Constructors
 
-        protected Node(RegionType type, Shared.Regions region, string description)
+        protected Node(RegionTypes type, Shared.Regions region)
         {
             Name = Enum.GetName(typeof(Shared.Regions), region);
-            Description = description;
 
             Type = type;
             Region = region;
@@ -37,7 +36,7 @@ namespace SUS.Server.Map
 
         public BaseRegion GetBase()
         {
-            return new BaseRegion(Type, Region, Connections, IsSpawnable);
+            return new BaseRegion(Type, Region, ConnectedRegions, IsSpawnable);
         }
 
         #region Overrides
@@ -78,26 +77,26 @@ namespace SUS.Server.Map
         public string Description
         {
             get => _description;
-            set
+            protected set
             {
                 if (value != null && value != _description)
                     _description = value;
             }
         }
 
-        public RegionType Type { get; }
+        public RegionTypes Type { get; }
 
         public Shared.Regions Region { get; }
 
-        public Shared.Regions Connections { get; private set; } = Shared.Regions.None;
+        public Shared.Regions ConnectedRegions { get; protected set; }
 
-        public int ConnectionsCount
+        public int TotalConnectedCount
         {
             get
             {
                 var value = 0;
                 foreach (Shared.Regions region in Enum.GetValues(typeof(Shared.Regions)))
-                    if ((Connections & region) == region)
+                    if ((ConnectedRegions & region) == region)
                         ++value;
                 return value;
             }
@@ -107,18 +106,18 @@ namespace SUS.Server.Map
 
         #region Updates
 
-        public void AddConnection(Shared.Regions connections)
+        protected void AddConnection(Shared.Regions connections)
         {
             if (connections == Shared.Regions.None || connections == Region)
                 return;
             if ((connections & Region) == Region) connections &= ~Region;
 
-            Connections |= connections;
+            ConnectedRegions |= connections;
         }
 
         public bool HasConnection(Shared.Regions connection)
         {
-            return (Connections & connection) == connection;
+            return (ConnectedRegions & connection) == connection;
         }
 
         /// <summary>

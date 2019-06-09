@@ -8,8 +8,8 @@ namespace SUS.Shared
     [Serializable]
     public class ClientState
     {
-        private readonly Regions _unlockedRegions = Regions.None;
         private BaseMobile _account;
+        private BaseRegion _currentRegion;
         private Dictionary<int, string> _equippedItems; // Equipped items.
         private bool _isAlive;
         private Dictionary<int, string> _items; // Items in the inventory.
@@ -19,19 +19,23 @@ namespace SUS.Shared
         // Objects that need to be requested from the server.
         private HashSet<BaseMobile> _localMobiles; // Local / Nearby creatures.
         private ulong _playerId;
-        private BaseRegion _currentRegion;
 
         #region Constructors
 
-        public ClientState(ulong playerID, BaseMobile account, BaseRegion currentRegion, Regions unlockedRegions)
+        public ClientState(ulong playerId, BaseMobile account, BaseRegion currentRegion, Regions unlockedRegions)
         {
-            PlayerId = playerID;
+            PlayerId = playerId;
             Account = account;
             CurrentRegion = currentRegion;
-            _unlockedRegions |= unlockedRegions;
+            UnlockedRegions |= unlockedRegions;
         }
 
         #endregion
+
+        public void AddUnlockedRegion(Regions unlockedRegions)
+        {
+            UnlockedRegions |= unlockedRegions;
+        }
 
         #region Packet Parsing
 
@@ -93,6 +97,11 @@ namespace SUS.Shared
             }
         }
 
+        /// <summary>
+        ///     Gets all of the current nearby regions, excluding the one that we are currently in.
+        /// </summary>
+        public Regions NearbyUnlockedRegions => CurrentRegion.Connections & UnlockedRegions & ~CurrentRegion.Location;
+
         public BaseRegion CurrentRegion
         {
             get => _currentRegion;
@@ -138,6 +147,8 @@ namespace SUS.Shared
             get => _isAlive;
             private set => _isAlive = value;
         }
+
+        public Regions UnlockedRegions { get; private set; }
 
         #endregion
 
@@ -233,14 +244,14 @@ namespace SUS.Shared
             if (pos == 0) return CurrentRegion.Location;
 
             var count = 0;
-            foreach (var loc in Utility.EnumToIEnumerable<Regions>(CurrentRegion.Connections, true))
+            foreach (var loc in Utility.EnumToIEnumerable<Regions>(NearbyUnlockedRegions, true))
             {
                 // A connection cannot be 'None'
                 if (loc == Regions.None)
                     continue;
 
                 // Check if this is not a power of two (indicating it is a combination location)
-                if ((loc & (loc - 1)) != 0) 
+                if ((loc & (loc - 1)) != 0)
                     continue; //  It was a combination.
 
                 ++count;

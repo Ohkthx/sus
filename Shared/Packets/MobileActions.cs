@@ -6,9 +6,9 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class CombatMobilePacket : Packet
     {
-        private string m_Result; // Result of the combat.
-        private List<int> m_Targets; // List of Targets
-        private List<string> m_Updates; // Updates on all.
+        private string _result; // Result of the combat.
+        private List<int> _targets; // List of Targets
+        private List<string> _updates; // Updates on all.
 
         #region Constructors
 
@@ -35,71 +35,80 @@ namespace SUS.Shared.Packets
 
         #region Getters / Setters
 
-        public List<int> Targets => m_Targets ?? (m_Targets = new List<int>());
+        public List<int> Targets => _targets ?? (_targets = new List<int>());
 
-        public List<string> Updates => m_Updates ?? (m_Updates = new List<string>());
+        public List<string> Updates => _updates ?? (_updates = new List<string>());
 
         public string Result
         {
-            get => m_Result;
+            get => _result;
             set
             {
                 if (string.IsNullOrEmpty(value)) return;
 
-                m_Result = value;
+                _result = value;
             }
         }
 
         #endregion
     }
 
+    /// <summary>
+    ///     Requests a mobile to be moved if sent to the server. If sent to the client, it is an update.
+    ///     DiscoveredRegions is toggled to be 'true' when the mobile discovers a new location. NewRegion
+    ///     will have an updated "ConnectedRegions" to reflect this.
+    /// </summary>
     [Serializable]
     public class MoveMobilePacket : Packet
     {
-        private MobileDirections m_Direction = MobileDirections.None;
-        private BaseRegion m_NewRegion;
-        private Regions m_Region;
+        private MobileDirections _direction;
+        private BaseRegion _newRegion;
+        private Regions _region;
 
         #region Constructors
 
-        public MoveMobilePacket(Regions region, ulong playerId, MobileDirections direction = MobileDirections.None)
+        public MoveMobilePacket(Regions region, ulong playerId, MobileDirections direction = MobileDirections.None,
+            Regions discoveredRegion = Regions.None)
             : base(PacketTypes.MobileMove, playerId)
         {
             Region = region;
             Direction = direction;
+            DiscoveredRegion = discoveredRegion;
         }
 
         #endregion
 
         #region Getters / Setters
 
+        public Regions DiscoveredRegion { get; set; }
+
         public MobileDirections Direction
         {
-            get => m_Direction;
+            get => _direction;
             private set
             {
                 if (value == MobileDirections.None || value == Direction)
                     return; // Prevent assigning a bad value or reassigning.
 
-                m_Direction = value;
+                _direction = value;
             }
         }
 
         public Regions Region
         {
-            get => m_Region;
+            get => _region;
             private set
             {
-                if (Region != value) m_Region = value;
+                if (Region != value) _region = value;
             }
         }
 
         public BaseRegion NewRegion
         {
-            get => m_NewRegion;
+            get => _newRegion;
             set
             {
-                if (NewRegion != value) m_NewRegion = value;
+                if (NewRegion != value) _newRegion = value;
             }
         }
 
@@ -109,8 +118,8 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class ResurrectMobilePacket : Packet
     {
-        private Regions m_Region; // Region to be sent to.
-        private bool m_Success;
+        private Regions _region; // Region to be sent to.
+        private bool _success;
 
         #region Constructors
 
@@ -125,19 +134,19 @@ namespace SUS.Shared.Packets
 
         public Regions Region
         {
-            get => m_Region;
+            get => _region;
             set
             {
-                if (Region != value) m_Region = value;
+                if (Region != value) _region = value;
             }
         }
 
         public bool IsSuccessful
         {
-            get => m_Success;
+            get => _success;
             set
             {
-                if (value != IsSuccessful) m_Success = value;
+                if (value != IsSuccessful) _success = value;
             }
         }
 
@@ -147,7 +156,7 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class UseItemPacket : Packet
     {
-        private string m_Response = string.Empty;
+        private string _response = string.Empty;
 
         #region Constructor
 
@@ -165,12 +174,12 @@ namespace SUS.Shared.Packets
 
         public string Response
         {
-            get => m_Response;
+            get => _response;
             set
             {
                 if (string.IsNullOrEmpty(value)) return;
 
-                m_Response = value;
+                _response = value;
             }
         }
 

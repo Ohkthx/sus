@@ -257,7 +257,7 @@ namespace SUS.Client
 
             var pos = 0;
             Console.WriteLine(" Nearby Locations:");
-            foreach (var n in Utility.EnumToIEnumerable<Regions>(Client.CurrentRegion.Connections, true))
+            foreach (var n in Utility.EnumToIEnumerable<Regions>(Client.NearbyUnlockedRegions, true))
             {
                 ++pos;
                 Console.WriteLine($"  [Pos: {pos}] {Enum.GetName(typeof(Regions), n)}");

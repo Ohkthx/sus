@@ -5,8 +5,11 @@ namespace SUS.Server.Map.Regions
     public class Britain : Town
     {
         public Britain()
-            : base(RegionType.Town, Shared.Regions.Britain, "The greatest city of Britainia.")
+            : base(RegionTypes.Town, Shared.Regions.Britain)
         {
+            Description = "The greatest city of Britania.";
+
+            AddConnection(Shared.Regions.Sewers | Shared.Regions.Graveyard | Shared.Regions.Wilderness);
         }
     }
 }

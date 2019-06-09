@@ -11,6 +11,12 @@ namespace SUS.Server
         int Y { get; }
     }
 
+    public interface IDimension2D
+    {
+        int Length { get; }
+        int Width { get; }
+    }
+
     public interface IWeapon
     {
         int MaxRange { get; }
