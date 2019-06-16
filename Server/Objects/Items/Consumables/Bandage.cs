@@ -1,4 +1,6 @@
-﻿namespace SUS.Server.Objects.Items.Consumables
+﻿using SUS.Shared;
+
+namespace SUS.Server.Objects.Items.Consumables
 {
     public class Bandage : Consumable
     {

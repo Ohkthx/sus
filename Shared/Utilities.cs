@@ -18,6 +18,37 @@ namespace SUS.Shared
     {
         private static readonly object NotifyLock = new object();
 
+        public static int ReadInt(int maxSize, bool zeroIsNone = false)
+        {
+            maxSize = zeroIsNone ? maxSize - 1 : maxSize;
+
+            int opt;
+            do
+            {
+                Console.Write(" Selection: ");
+                if (!int.TryParse(Console.ReadLine(), out opt)) continue;
+
+                if (zeroIsNone && opt >= 0 && opt <= maxSize)
+                    break;
+                if (opt > 0 && opt <= maxSize)
+                    break;
+            } while (true);
+
+            return opt;
+        }
+
+        public static TEnum ReadEnum<TEnum>()
+            where TEnum : struct
+        {
+            TEnum opt;
+            do
+            {
+                Console.Write(" Selection: ");
+            } while (!Enum.TryParse(Console.ReadLine(), true, out opt));
+
+            return opt;
+        }
+
         public static IEnumerable<T> EnumToIEnumerable<T>(Enum mask, bool powerOf2 = false)
         {
             // Thanks to [stackoverflow.com/users/1612975].

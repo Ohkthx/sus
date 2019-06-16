@@ -43,7 +43,7 @@ namespace SUS.Server.Server
 
         public override void Core()
         {
-            var socketKill = new SocketKillPacket(0, false);
+            var socketKill = new SocketKillPacket(0, kill: false);
 
             var requests = 0;
             const int requestCap = 15;
@@ -157,6 +157,9 @@ namespace SUS.Server.Server
                     break;
                 case PacketTypes.UseItem:
                     clientInfo = MobileUseItem(request as UseItemPacket);
+                    break;
+                case PacketTypes.UseVendor:
+                    clientInfo = MobileUseVendor(request as UseVendorPacket);
                     break;
 
 
@@ -482,7 +485,65 @@ namespace SUS.Server.Server
         }
 
         #endregion
-    }
 
-    #endregion
+        private Packet MobileUseVendor(UseVendorPacket uvp)
+        {
+            var currentNode = World.FindNode(Gamestate.Account.Region);
+
+            NPC vendor = null;
+            if (uvp.Stage >= Packet.Stages.Two && uvp.LocalNPC != NPCTypes.None)
+                vendor = currentNode.FindNPC(uvp.LocalNPC);
+
+            Item item = null;
+            if (uvp.Stage >= Packet.Stages.Three && !uvp.Item.Default)
+                item = World.FindItem(uvp.Item.Serial);
+
+            switch (uvp.Stage)
+            {
+                case Packet.Stages.One:
+                    // Present the local vendors if there are some.
+                    uvp.LocalVendors = currentNode.LocalNPCs(true);
+                    if (uvp.LocalVendors.Count <= 1 && uvp.LocalVendors[0] == NPCTypes.None)
+                        return new ErrorPacket("There are no vendors in this area.");
+                    break;
+
+                case Packet.Stages.Two:
+                    if (vendor == null) break;
+
+                    // Get the items that are part of the desired service.
+                    uvp.Items = vendor.ServiceableItems(Gamestate.Account);
+                    if (uvp.Items == null || uvp.Items.Count == 0)
+                        return new ErrorPacket("There are not any items that service applies to.");
+                    break;
+
+                case Packet.Stages.Three:
+                    if (vendor == null) break;
+                    if (item == null)
+                        return new ErrorPacket("That is an unknown item.");
+                    uvp.Transaction = vendor.ServiceCost(item);
+                    break;
+
+                case Packet.Stages.Four:
+                    if (vendor == null) break;
+                    if (uvp.PerformAction == UseVendorPacket.Choices.No) break;
+
+                    var price = vendor.PerformService(Gamestate.Account, item);
+                    if (price > 0)
+                        return new OkPacket($"Total cost charged was: {price}gp.");
+                    return new OkPacket("You were not changed any gold for the service.");
+
+                default:
+                    Console.WriteLine("How did we get here? @MobileUserVendor.");
+                    break;
+            }
+
+            if (uvp.Stage != Packet.Stages.One && vendor == null)
+                return new ErrorPacket("That is an unknown vendor.");
+
+            ++uvp.Stage;
+            return uvp;
+        }
+
+        #endregion
+    }
 }

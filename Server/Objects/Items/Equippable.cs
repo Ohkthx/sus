@@ -64,6 +64,14 @@ namespace SUS.Server.Objects.Items
             return true;
         }
 
+        public void Restore(int amount)
+        {
+            if (Durability + amount > DurabilityMax)
+                Durability = DurabilityMax;
+            else
+                Durability += amount;
+        }
+
         #region Getters / Setters
 
         public override string Name

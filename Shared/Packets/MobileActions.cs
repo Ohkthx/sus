@@ -185,4 +185,71 @@ namespace SUS.Shared.Packets
 
         #endregion
     }
+
+    [Serializable]
+    public class UseVendorPacket : Packet
+    {
+        public enum Choices
+        {
+            Yes,
+            No
+        }
+
+        #region Constructors
+
+        public UseVendorPacket(ulong playerId)
+            : base(PacketTypes.UseVendor, playerId)
+        {
+        }
+
+        #endregion
+
+        public static BaseItem PrintItems(Dictionary<int, BaseItem> items, bool zeroIsNone = false)
+        {
+            if (items == null)
+                throw new ArgumentNullException(nameof(items));
+
+            var optionMapping = new Dictionary<int, int>(); // <pos, cost>
+
+            if (zeroIsNone)
+                Console.WriteLine($"[{0,-2}] none");
+
+            var i = 1;
+            foreach (var (cost, item) in items)
+            {
+                optionMapping.Add(i, cost);
+                Console.WriteLine($"[{i,-2}] {cost + "gp",-8} - {item.Name}");
+                ++i;
+            }
+
+            // Get the choice from the user.
+            var choice = Utility.ReadInt(items.Count + 1, zeroIsNone);
+
+            // Return an empty item, "none" was selected.
+            if (zeroIsNone && choice == 0)
+                return new BaseItem();
+
+            if (!optionMapping.ContainsKey(choice))
+                throw new IndexOutOfRangeException("Item choice is not valid.");
+
+            return items[optionMapping[choice]];
+        }
+
+        #region Getters / Setters
+
+        public Dictionary<int, NPCTypes> LocalVendors { get; set; } =
+            new Dictionary<int, NPCTypes>(); // < Position, Type >
+
+        public Dictionary<int, BaseItem> Items { get; set; } = new Dictionary<int, BaseItem>(); // < Cost, BaseItem >
+
+        public NPCTypes LocalNPC { get; set; }
+
+        public BaseItem Item { get; set; }
+
+        public int Transaction { get; set; }
+
+        public Choices PerformAction { get; set; }
+
+        #endregion
+    }
 }

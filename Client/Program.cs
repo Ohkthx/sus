@@ -76,17 +76,22 @@ namespace SUS.Client
                 switch (req.Type)
                 {
                     case PacketTypes.Ok:
+                        if (req is OkPacket ok && ok.Message != string.Empty)
+                            Utility.ConsoleNotify(ok.Message);
                         ia?.Reset();
-                        break; // Server sent back empty information.
+                        break;
                     case PacketTypes.Error:
-                        Utility.ConsoleNotify(((ErrorPacket) req).Message);
+                        if (req is ErrorPacket err && err.Message != string.Empty)
+                            Utility.ConsoleNotify(err.Message);
                         ia?.Reset();
                         break;
                     case PacketTypes.ClientState:
                         ia = new InteractiveConsole(((AccountClientPacket) req).ClientState);
                         break;
                     case PacketTypes.SocketKill:
-                        Console.WriteLine("Socket Kill sent by server.");
+                        Utility.ConsoleNotify("Socket Kill sent by server.");
+                        if (req is SocketKillPacket skp && skp.Message != string.Empty)
+                            Utility.ConsoleNotify("Reason: " + skp.Message);
                         socketHandler.Kill();
                         break;
 
@@ -133,6 +138,10 @@ namespace SUS.Client
                         break;
                     case PacketTypes.UseItem:
                         ClientState.UseItemResponse(req as UseItemPacket);
+                        ia?.Reset();
+                        break;
+                    case PacketTypes.UseVendor:
+                        clientRequest = clientState?.UseVendorProcessor(req as UseVendorPacket);
                         ia?.Reset();
                         break;
                     case PacketTypes.Authenticate:

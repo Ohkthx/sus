@@ -18,6 +18,7 @@ namespace SUS.Shared.Packets
         MobileMove,
         MobileResurrect,
         UseItem,
+        UseVendor,
 
         SocketKill
     }
@@ -25,14 +26,25 @@ namespace SUS.Shared.Packets
     [Serializable]
     public abstract class Packet : IPacket
     {
-        private ulong m_PlayerId; // Author / Owner of the packet.
-        private PacketTypes m_Type; // Type of the packet.
+        public enum Stages
+        {
+            One,
+            Two,
+            Three,
+            Four,
+            Five
+        }
+
+        private ulong _playerId; // Author / Owner of the packet.
+        private Stages _stage;
+        private PacketTypes _type; // Type of the packet.
 
         // Creates an instance of a Request based on supplied Type and Object.
         protected Packet(PacketTypes type, ulong playerId)
         {
             Type = type;
             PlayerId = playerId;
+            Stage = Stages.One;
         }
 
         // Converts the object into a byte array to be passed over the network.
@@ -45,19 +57,29 @@ namespace SUS.Shared.Packets
 
         public PacketTypes Type
         {
-            get => m_Type;
+            get => _type;
             private set
             {
-                if (value != Type) m_Type = value;
+                if (value != Type) _type = value;
             }
         }
 
         public ulong PlayerId
         {
-            get => m_PlayerId;
+            get => _playerId;
             private set
             {
-                if (value != PlayerId) m_PlayerId = value;
+                if (value != PlayerId) _playerId = value;
+            }
+        }
+
+        public Stages Stage
+        {
+            get => _stage;
+            set
+            {
+                if (!Enum.IsDefined(typeof(Stages), value)) return;
+                _stage = value;
             }
         }
 
@@ -67,15 +89,35 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class OkPacket : Packet
     {
-        public OkPacket() : base(PacketTypes.Ok, 0)
+        private string _message = string.Empty;
+
+        public OkPacket() : this(string.Empty)
         {
+        }
+
+        public OkPacket(string message) : base(PacketTypes.Ok, 0)
+        {
+            Message = message;
+        }
+
+        public string Message
+        {
+            get => _message;
+            private set
+            {
+                if (string.IsNullOrEmpty(value)) return;
+
+                if (Message == string.Empty)
+                    _message = value;
+                else if (Message != value) _message = value;
+            }
         }
     }
 
     [Serializable]
     public class ErrorPacket : Packet
     {
-        private string m_Error = string.Empty;
+        private string _error = string.Empty;
 
         public ErrorPacket(string message) : base(PacketTypes.Error, 0)
         {
@@ -86,14 +128,14 @@ namespace SUS.Shared.Packets
 
         public string Message
         {
-            get => m_Error;
+            get => _error;
             private set
             {
                 if (string.IsNullOrEmpty(value)) return;
 
                 if (Message == string.Empty)
-                    m_Error = value;
-                else if (Message != value) m_Error = value;
+                    _error = value;
+                else if (Message != value) _error = value;
             }
         }
 

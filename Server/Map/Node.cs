@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using SUS.Server.Objects.Mobiles;
 using SUS.Shared;
 
 namespace SUS.Server.Map
 {
     public abstract class Node
     {
+        private readonly ConcurrentDictionary<NPCTypes, NPC> _localNPCs = new ConcurrentDictionary<NPCTypes, NPC>();
         private string _description = string.Empty;
         private string _name;
 
@@ -19,8 +23,6 @@ namespace SUS.Server.Map
         }
 
         #endregion
-
-        public bool IsSpawnable { get; protected set; } = false;
 
         /// <summary>
         ///     Validates that the location is not invalid and not a combination of locations.
@@ -102,6 +104,8 @@ namespace SUS.Server.Map
             }
         }
 
+        public bool IsSpawnable { get; protected set; } = false;
+
         #endregion
 
         #region Updates
@@ -146,6 +150,32 @@ namespace SUS.Server.Map
 
             // Location never found through string parsing.
             return Shared.Regions.None;
+        }
+
+        public NPC FindNPC(NPCTypes type)
+        {
+            return _localNPCs.TryGetValue(type, out var npc) ? npc : null;
+        }
+
+        protected bool AddNPC(NPC npc)
+        {
+            return _localNPCs.TryAdd(npc.NPCType, npc);
+        }
+
+        public Dictionary<int, NPCTypes> LocalNPCs(bool includeNone = false)
+        {
+            var npcs = new Dictionary<int, NPCTypes>();
+            if (includeNone)
+                npcs[0] = NPCTypes.None;
+
+            var i = 0;
+            foreach (var (key, _) in _localNPCs)
+            {
+                ++i;
+                npcs[i] = key;
+            }
+
+            return npcs;
         }
 
         #endregion

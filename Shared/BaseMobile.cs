@@ -32,6 +32,15 @@ namespace SUS.Shared
         SouthWest = South | West
     }
 
+    public enum NPCTypes
+    {
+        None = 0,
+        Armorsmith = 1,
+        Weaponsmith = 2,
+        Tailor = 4,
+        Repairer = 8
+    }
+
     #endregion
 
     [Serializable]

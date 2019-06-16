@@ -5,7 +5,7 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class AccountAuthenticatePacket : Packet
     {
-        private string m_Name;
+        private string _name;
 
         #region Constructors
 
@@ -21,12 +21,12 @@ namespace SUS.Shared.Packets
 
         public string Name
         {
-            get => m_Name;
+            get => _name;
             private set
             {
                 if (value == string.Empty || value == Name) return;
 
-                m_Name = value;
+                _name = value;
             }
         }
 
@@ -36,7 +36,7 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class AccountClientPacket : Packet
     {
-        private ClientState m_ClientState;
+        private ClientState _clientState;
 
         #region Constructors
 
@@ -51,12 +51,12 @@ namespace SUS.Shared.Packets
 
         public ClientState ClientState
         {
-            get => m_ClientState;
+            get => _clientState;
             set
             {
                 if (value == null) return;
 
-                if (ClientState != value) m_ClientState = value;
+                if (ClientState != value) _clientState = value;
             }
         }
 

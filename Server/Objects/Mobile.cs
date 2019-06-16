@@ -394,7 +394,7 @@ namespace SUS.Server.Objects
 
         #region Getters / Setters - Consumables
 
-        protected Consumable Gold
+        public Consumable Gold
         {
             get
             {
@@ -953,6 +953,42 @@ namespace SUS.Server.Objects
                     return (Consumable) i;
 
             return null;
+        }
+
+        public void RemoveConsumable(Consumable c, int amount)
+        {
+            RemoveConsumable(c.ConsumableType, amount);
+        }
+
+        public void RemoveConsumable(ConsumableTypes type, int amt)
+        {
+            if (amt <= 0) return;
+
+            switch (type)
+            {
+                case ConsumableTypes.Gold:
+                    if (amt > Gold.Amount)
+                        amt = Gold.Amount;
+                    Gold -= amt;
+                    break;
+                case ConsumableTypes.Arrows:
+                    if (amt > Arrows.Amount)
+                        amt = Arrows.Amount;
+                    Arrows -= amt;
+                    break;
+                case ConsumableTypes.Bandages:
+                    if (amt > Bandages.Amount)
+                        amt = Bandages.Amount;
+                    Bandages -= amt;
+                    break;
+                case ConsumableTypes.HealthPotion:
+                    if (amt > HealthPotions.Amount)
+                        amt = HealthPotions.Amount;
+                    HealthPotions -= amt;
+                    break;
+                default:
+                    return;
+            }
         }
 
         public int ConsumableAdd(Consumable c)

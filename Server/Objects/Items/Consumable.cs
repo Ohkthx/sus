@@ -1,4 +1,6 @@
-﻿namespace SUS.Server.Objects.Items
+﻿using SUS.Shared;
+
+namespace SUS.Server.Objects.Items
 {
     public abstract class Consumable : Item
     {

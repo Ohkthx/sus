@@ -109,6 +109,9 @@ namespace SUS.Client
                     case ConsoleActions.Npcs:
                         ListMobiles(MobileTypes.Npc | MobileTypes.Creature);
                         break;
+                    case ConsoleActions.Vendors:
+                        Request = new UseVendorPacket(Client.PlayerId);
+                        break;
                     case ConsoleActions.Mobiles:
                         ListMobiles(MobileTypes.Mobile);
                         break;
@@ -414,6 +417,7 @@ namespace SUS.Client
             Attack,
             Actions,
             Use,
+            Vendors,
             Update,
             Paperdoll,
             Exit

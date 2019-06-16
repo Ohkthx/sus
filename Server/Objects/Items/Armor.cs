@@ -1,4 +1,5 @@
 ﻿using System;
+using SUS.Shared;
 
 namespace SUS.Server.Objects.Items
 {

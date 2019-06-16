@@ -5,11 +5,13 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class SocketKillPacket : Packet
     {
-        private bool m_Kill;
+        private bool _kill;
+        private string _message;
 
-        public SocketKillPacket(ulong playerId, bool kill = true)
+        public SocketKillPacket(ulong playerId, string message = "", bool kill = true)
             : base(PacketTypes.SocketKill, playerId)
         {
+            Message = message;
             Kill = kill;
         }
 
@@ -17,10 +19,22 @@ namespace SUS.Shared.Packets
 
         public bool Kill
         {
-            get => m_Kill;
+            get => _kill;
             private set
             {
-                if (value != Kill) m_Kill = value;
+                if (value != Kill) _kill = value;
+            }
+        }
+
+        public string Message
+        {
+            get => string.IsNullOrWhiteSpace(_message) ? string.Empty : _message;
+            private set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    value = string.Empty;
+
+                _message = value;
             }
         }
 

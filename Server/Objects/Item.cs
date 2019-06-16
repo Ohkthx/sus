@@ -1,38 +1,12 @@
-﻿using System;
+﻿using SUS.Shared;
 
 namespace SUS.Server.Objects
 {
-    #region Enums
-
-    [Flags]
-    public enum ItemTypes
-    {
-        None = 0x00000000,
-
-        Consumable = 0x00000001,
-
-        // Equippable
-        Armor = 0x00000002,
-        Weapon = 0x00000004,
-
-        Equippable = Armor | Weapon
-    }
-
-    public enum ConsumableTypes
-    {
-        Gold,
-        Arrows,
-        Bandages,
-        HealthPotion
-    }
-
-    #endregion
-
     public abstract class Item
     {
-        private string m_Name;
-        private IEntity m_Owner;
-        private ItemTypes m_Type;
+        private string _name;
+        private IEntity _owner;
+        private ItemTypes _type;
 
         #region Constructors
 
@@ -45,39 +19,44 @@ namespace SUS.Server.Objects
 
         #endregion
 
+        public BaseItem Base()
+        {
+            return new BaseItem(Type, Name, Serial);
+        }
+
         #region Getters / Setters
 
         public Serial Serial { get; }
 
         public IEntity Owner
         {
-            get => m_Owner;
+            get => _owner;
             set
             {
                 if (value != null)
-                    m_Owner = value;
+                    _owner = value;
             }
         }
 
         public virtual string Name
         {
-            get => m_Name ?? "Unknown";
+            get => _name ?? "Unknown";
             protected set
             {
                 if (string.IsNullOrEmpty(value))
                     value = "Unknown";
 
-                m_Name = value;
+                _name = value;
             }
         }
 
         public ItemTypes Type
         {
-            get => m_Type;
+            get => _type;
             private set
             {
                 if (value != ItemTypes.None && value != Type)
-                    m_Type = value;
+                    _type = value;
             }
         }
 
@@ -121,10 +100,10 @@ namespace SUS.Server.Objects
             return value.GetType() == GetType() && IsEqual((Item) value);
         }
 
-        private bool Equals(Item mobile)
+        private bool Equals(Item item)
         {
-            if (ReferenceEquals(null, mobile)) return false;
-            return ReferenceEquals(this, mobile) || IsEqual(mobile);
+            if (ReferenceEquals(null, item)) return false;
+            return ReferenceEquals(this, item) || IsEqual(item);
         }
 
         private bool IsEqual(Item value)

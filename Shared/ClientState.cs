@@ -209,14 +209,7 @@ namespace SUS.Shared
 
             Console.WriteLine();
 
-            int opt;
-            string input;
-            do
-            {
-                Console.Write(" Selection: ");
-                input = Console.ReadLine();
-            } while (int.TryParse(input, out opt) && (opt < 1 || opt > _items.Count));
-
+            var opt = Utility.ReadInt(_items.Count);
             pos = 0;
             foreach (var i in _items.Keys)
             {
@@ -225,6 +218,54 @@ namespace SUS.Shared
             }
 
             return null;
+        }
+
+        public Packet UseVendorProcessor(UseVendorPacket uvp)
+        {
+            switch (uvp.Stage)
+            {
+                case Packet.Stages.Two:
+                    // Print out the options,
+                    foreach (var (key, value) in uvp.LocalVendors) Console.WriteLine($"[{key}] {value}");
+                    Console.WriteLine(); // Blank line to make it pretty.
+
+                    // Get the choice from the user as to what vendor (if any) should be used.
+                    var choice = Utility.ReadInt(uvp.LocalVendors.Count, uvp.LocalVendors.ContainsKey(0));
+                    if (uvp.LocalVendors[choice] == NPCTypes.None)
+                        return null; // If the user decided on "none", then return null.
+
+                    // Assign the LocalNPC to the choice.
+                    uvp.LocalNPC = uvp.LocalVendors[choice];
+                    break;
+
+                case Packet.Stages.Three:
+                    if (uvp.Items == null || uvp.Items.Count == 0)
+                    {
+                        Utility.ConsoleNotify("Unable to use that service.");
+                        return null;
+                    }
+
+                    uvp.Item = UseVendorPacket.PrintItems(uvp.Items, true);
+                    if (uvp.Item.Default)
+                        return null;
+
+                    break;
+
+                case Packet.Stages.Four:
+                    Console.WriteLine($" Cost of transaction: {uvp.Transaction}gp. Do you wish to pay this?\n");
+                    uvp.PerformAction = Utility.ReadEnum<UseVendorPacket.Choices>();
+
+                    // Return null if the user opted out of using the vendor.
+                    if (uvp.PerformAction == UseVendorPacket.Choices.No)
+                        return null;
+                    break;
+
+                default:
+                    Console.WriteLine("Defaulting");
+                    break;
+            }
+
+            return uvp;
         }
 
         #endregion
