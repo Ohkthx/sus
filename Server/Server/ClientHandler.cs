@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net.Sockets;
 using System.Threading;
 using SUS.Server.Objects;
@@ -88,6 +89,21 @@ namespace SUS.Server.Server
                         if (req.Type == PacketTypes.SocketKill)
                             socketKill = req as SocketKillPacket; // This will lead to termination.
                     }
+                }
+                catch (NotEnoughGoldException)
+                {
+                    var errPkt = new ErrorPacket("Not enough gold.");
+                    Handler.ToClient(errPkt.ToByte());
+                }
+                catch (ItemNotFoundException inf)
+                {
+                    var errPkt = new ErrorPacket(inf.Message);
+                    Handler.ToClient(errPkt.ToByte());
+                }
+                catch (MobileNotFoundException mnf)
+                {
+                    var errPkt = new ErrorPacket(mnf.Message);
+                    Handler.ToClient(errPkt.ToByte());
                 }
                 catch (Exception e)
                 {
@@ -520,7 +536,7 @@ namespace SUS.Server.Server
                     if (vendor == null) break;
                     if (item == null)
                         return new ErrorPacket("That is an unknown item.");
-                    uvp.Transaction = vendor.ServiceCost(item);
+                    uvp.Transaction = vendor.ServicePrice(item);
                     break;
 
                 case Packet.Stages.Four:
@@ -533,8 +549,7 @@ namespace SUS.Server.Server
                     return new OkPacket("You were not changed any gold for the service.");
 
                 default:
-                    Console.WriteLine("How did we get here? @MobileUserVendor.");
-                    break;
+                    throw new InvalidEnumArgumentException("Unexpected action attempted while using a vendor.");
             }
 
             if (uvp.Stage != Packet.Stages.One && vendor == null)

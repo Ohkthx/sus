@@ -13,6 +13,7 @@ namespace SUS.Server.Map.Regions
             AddConnection(Shared.Regions.Sewers | Shared.Regions.Graveyard | Shared.Regions.Wilderness);
 
             AddNPC(new Repairer());
+            AddNPC(new Armorsmith());
         }
     }
 }

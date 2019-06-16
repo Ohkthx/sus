@@ -32,8 +32,8 @@ namespace SUS.Server.Objects.Mobiles.Spawns
             SetSkill(SkillName.Archery, 50.1, 70.0);
             SetSkill(SkillName.Swordsmanship, 50.1, 70.0);
 
-            EquipmentAdd(new CompositeBow(Weapon.Materials.Wooden));
-            ItemAdd(new ShortSword(Weapon.Materials.Iron));
+            AddEquipment(new CompositeBow(Weapon.Materials.Wooden));
+            AddItem(new ShortSword(Weapon.Materials.Iron));
         }
     }
 }

@@ -24,6 +24,19 @@ namespace SUS.Server.Objects.Mobiles.NPCs
 
         #endregion
 
+        #region Constructors
+
+        public Repairer() : this(3)
+        {
+        }
+
+        public Repairer(int repairRate) : base(NPCTypes.Repairer, Services.Repair)
+        {
+            RepairRate = repairRate;
+        }
+
+        #endregion
+
         #region Overrides
 
         public override int Attack()
@@ -31,7 +44,7 @@ namespace SUS.Server.Objects.Mobiles.NPCs
             throw new NotImplementedException();
         }
 
-        public override int ServiceCost(Item item)
+        public override int ServicePrice(Item item)
         {
             if (!(item is IDestroyable destroyable)) return 0;
             if (destroyable.Invulnerable) return 0;
@@ -40,19 +53,19 @@ namespace SUS.Server.Objects.Mobiles.NPCs
             return (destroyable.DurabilityMax - destroyable.Durability) * RepairRate;
         }
 
-        public override Dictionary<int, BaseItem> ServiceableItems(Mobile mobile = null)
+        public override Dictionary<BaseItem, int> ServiceableItems(Mobile mobile = null)
         {
             if (mobile == null)
                 return null; // Used for error.
 
-            var items = new Dictionary<int, BaseItem>();
+            var items = new Dictionary<BaseItem, int>();
             foreach (var item in mobile.Items)
             {
                 // Ignore the item if there is no cost to service.
-                if (ServiceCost(item) == 0) continue;
+                if (ServicePrice(item) == 0) continue;
 
                 // Add the item.
-                items.Add(ServiceCost(item), item.Base());
+                items.Add(item.Base(), ServicePrice(item));
             }
 
             return items.Count == 0 ? null : items;
@@ -80,19 +93,6 @@ namespace SUS.Server.Objects.Mobiles.NPCs
             destroyable.Restore(missingDurability);
 
             return goldCost;
-        }
-
-        #endregion
-
-        #region Constructors
-
-        public Repairer() : this(3)
-        {
-        }
-
-        public Repairer(int repairRate) : base(NPCTypes.Repairer, Services.Repair)
-        {
-            RepairRate = repairRate;
         }
 
         #endregion

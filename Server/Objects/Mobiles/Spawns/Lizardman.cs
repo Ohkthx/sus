@@ -29,7 +29,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 
             SetSkill(SkillName.Wrestling, 50.1, 70.0);
 
-            ItemAdd(new ShortSword(Weapon.Materials.Iron));
+            AddItem(new ShortSword(Weapon.Materials.Iron));
         }
     }
 }

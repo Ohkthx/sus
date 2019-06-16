@@ -133,6 +133,12 @@ namespace SUS.Shared
         {
             return RandomImpl.Next();
         }
+
+        public static TEnum RandomEnum<TEnum>()
+        {
+            var val = Enum.GetValues(typeof(TEnum));
+            return (TEnum) val.GetValue(Random(val.Length));
+        }
     }
 
     /// <summary>

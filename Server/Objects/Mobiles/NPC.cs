@@ -27,9 +27,9 @@ namespace SUS.Server.Objects.Mobiles
 
         #endregion
 
-        public abstract Dictionary<int, BaseItem> ServiceableItems(Mobile mobile = null);
+        public abstract Dictionary<BaseItem, int> ServiceableItems(Mobile mobile = null);
 
-        public abstract int ServiceCost(Item item);
+        public abstract int ServicePrice(Item item);
 
         public abstract int PerformService(Mobile mobile, Item item);
 

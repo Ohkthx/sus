@@ -29,15 +29,15 @@ namespace SUS.Server.Objects.Mobiles
             Arrows += 50;
 
             // Give some basic armor and weapons.
-            EquipmentAdd(new ArmorSuit(Armor.Materials.Chainmail));
-            EquipmentAdd(new CompositeBow(Weapon.Materials.Iron));
+            AddEquipment(new ArmorSuit(Armor.Materials.Chainmail));
+            AddEquipment(new CompositeBow(Weapon.Materials.Iron));
 
-            ItemAdd(new TwoHandedSword(Weapon.Materials.Steel));
-            ItemAdd(new ShortSword(Weapon.Materials.Steel));
-            ItemAdd(new Shield());
+            AddItem(new TwoHandedSword(Weapon.Materials.Steel));
+            AddItem(new ShortSword(Weapon.Materials.Steel));
+            AddItem(new Shield());
 
             // Default Equipment
-            ItemAdd(new ArmorSuit(Armor.Materials.Cloth));
+            AddItem(new ArmorSuit(Armor.Materials.Cloth));
 
             // Skills
             Skills[SkillName.Archery].Value = 83.0;

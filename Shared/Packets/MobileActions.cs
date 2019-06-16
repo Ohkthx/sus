@@ -204,20 +204,20 @@ namespace SUS.Shared.Packets
 
         #endregion
 
-        public static BaseItem PrintItems(Dictionary<int, BaseItem> items, bool zeroIsNone = false)
+        public static BaseItem PrintItems(Dictionary<BaseItem, int> items, bool zeroIsNone = false)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
 
-            var optionMapping = new Dictionary<int, int>(); // <pos, cost>
+            var optionMapping = new Dictionary<int, BaseItem>(); // <pos, item>
 
             if (zeroIsNone)
                 Console.WriteLine($"[{0,-2}] none");
 
             var i = 1;
-            foreach (var (cost, item) in items)
+            foreach (var (item, cost) in items)
             {
-                optionMapping.Add(i, cost);
+                optionMapping.Add(i, item);
                 Console.WriteLine($"[{i,-2}] {cost + "gp",-8} - {item.Name}");
                 ++i;
             }
@@ -232,7 +232,7 @@ namespace SUS.Shared.Packets
             if (!optionMapping.ContainsKey(choice))
                 throw new IndexOutOfRangeException("Item choice is not valid.");
 
-            return items[optionMapping[choice]];
+            return optionMapping[choice];
         }
 
         #region Getters / Setters
@@ -240,7 +240,7 @@ namespace SUS.Shared.Packets
         public Dictionary<int, NPCTypes> LocalVendors { get; set; } =
             new Dictionary<int, NPCTypes>(); // < Position, Type >
 
-        public Dictionary<int, BaseItem> Items { get; set; } = new Dictionary<int, BaseItem>(); // < Cost, BaseItem >
+        public Dictionary<BaseItem, int> Items { get; set; } = new Dictionary<BaseItem, int>(); // < Cost, BaseItem >
 
         public NPCTypes LocalNPC { get; set; }
 

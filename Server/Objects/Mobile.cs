@@ -330,7 +330,7 @@ namespace SUS.Server.Objects
                 var items = new List<Item>();
                 foreach (var item in _items.Values)
                     if (item == null || item.Owner == null || item.Owner.Serial != Serial)
-                        ItemRemove(item);
+                        RemoveItem(item);
                     else
                         items.Add(item);
 
@@ -402,7 +402,7 @@ namespace SUS.Server.Objects
                 if ((g = FindConsumable(ConsumableTypes.Gold) as Gold) != null) return g;
 
                 g = new Gold();
-                ItemAdd(g);
+                AddItem(g);
 
                 return g;
             }
@@ -424,7 +424,7 @@ namespace SUS.Server.Objects
                 if ((p = FindConsumable(ConsumableTypes.HealthPotion) as Potion) != null) return p;
 
                 p = new Potion();
-                ItemAdd(p);
+                AddItem(p);
 
                 return p;
             }
@@ -446,7 +446,7 @@ namespace SUS.Server.Objects
                 if ((b = FindConsumable(ConsumableTypes.Bandages) as Bandage) != null) return b;
 
                 b = new Bandage();
-                ItemAdd(b);
+                AddItem(b);
 
                 return b;
             }
@@ -468,7 +468,7 @@ namespace SUS.Server.Objects
                 if ((a = FindConsumable(ConsumableTypes.Arrows) as Arrow) != null) return a;
 
                 a = new Arrow();
-                ItemAdd(a);
+                AddItem(a);
 
                 return a;
             }
@@ -872,14 +872,14 @@ namespace SUS.Server.Objects
             return null;
         }
 
-        protected void EquipmentAdd(Equippable item)
+        protected void AddEquipment(Equippable item)
         {
             if (item == null
                 || !item.IsEquippable)
                 return;
 
             item.Owner = this;
-            if (ItemAdd(item)) Equip(item);
+            if (AddItem(item)) Equip(item);
         }
 
         public void Equip(Equippable item)
@@ -920,7 +920,7 @@ namespace SUS.Server.Objects
             _equipped.Remove(item);
         }
 
-        protected bool ItemAdd(Item item)
+        public bool AddItem(Item item)
         {
             if (item == null) return false;
 
@@ -930,7 +930,7 @@ namespace SUS.Server.Objects
             return true;
         }
 
-        private void ItemRemove(Item item)
+        private void RemoveItem(Item item)
         {
             if (!Items.Contains(item)) return;
 
@@ -939,10 +939,10 @@ namespace SUS.Server.Objects
 
         private void InitConsumables(int gold = 0, int potions = 0, int bandages = 0, int arrows = 0)
         {
-            ItemAdd(new Gold(gold));
-            ItemAdd(new Potion(potions));
-            ItemAdd(new Bandage(bandages));
-            ItemAdd(new Arrow(arrows));
+            AddItem(new Gold(gold));
+            AddItem(new Potion(potions));
+            AddItem(new Bandage(bandages));
+            AddItem(new Arrow(arrows));
         }
 
         private Consumable FindConsumable(ConsumableTypes type)
