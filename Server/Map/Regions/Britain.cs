@@ -14,6 +14,7 @@ namespace SUS.Server.Map.Regions
 
             AddNPC(new Repairer());
             AddNPC(new Armorsmith());
+            AddNPC(new Weaponsmith());
         }
     }
 }

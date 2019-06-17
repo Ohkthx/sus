@@ -23,8 +23,6 @@ namespace SUS.Server.Objects
 
         Lizardman = 0x00000100,
         Ettin = 0x00000200,
-
-        Graveyard = Skeleton | Zombie | Ghoul | Wraith
     }
 
     public class Spawner : ISpawner
