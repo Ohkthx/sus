@@ -10,7 +10,7 @@ namespace SUS.Server.Map.Regions
         {
             Description = "A vast and open world!";
 
-            NPCs = Spawnables.Graveyard | Spawnables.Orc | Spawnables.Titan | Spawnables.Cyclops;
+            NPCs = SpawnTypes.Skeleton | SpawnTypes.Ghoul | SpawnTypes.Zombie | SpawnTypes.Wraith | SpawnTypes.Orc | SpawnTypes.Titan | SpawnTypes.Cyclops;
             AddSpawner(20, 20, 16, 5);
             AddSpawner(50, 125, 60, 10);
             AddSpawner(120, 60, 60, 10);

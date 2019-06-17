@@ -4,7 +4,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Ettin : BaseCreature
     {
-        public Ettin()
+        public Ettin() : base(SpawnTypes.Ettin)
         {
             AiType = Ai.Types.Melee;
             Name = "an ettin";

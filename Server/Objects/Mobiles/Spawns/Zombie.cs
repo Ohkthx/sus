@@ -4,7 +4,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Zombie : BaseCreature
     {
-        public Zombie()
+        public Zombie() : base(SpawnTypes.Zombie)
         {
             AiType = Ai.Types.Melee;
             Name = "a zombie";

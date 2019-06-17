@@ -18,9 +18,10 @@ namespace SUS.Server.Objects.Mobiles
 
         #region Constructors
 
-        protected BaseCreature()
+        protected BaseCreature(SpawnTypes spawnType)
             : base(MobileTypes.Creature)
         {
+            SpawnType = spawnType;
             StatCap = int.MaxValue;
         }
 
@@ -46,6 +47,8 @@ namespace SUS.Server.Objects.Mobiles
         }
 
         #region Getters / Setters - Basic
+
+        public SpawnTypes SpawnType { get; }
 
         public ISpawner Spawner
         {

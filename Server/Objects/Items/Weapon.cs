@@ -3,10 +3,27 @@ using SUS.Shared;
 
 namespace SUS.Server.Objects.Items
 {
+    public enum WeaponTypes
+    {
+        None,
+
+        ShortBow,
+        CompositeBow,
+
+        Dagger,
+        Kryss,
+
+        Mace,
+        Maul,
+
+        ShortSword,
+        TwoHandedSword
+    }
+
     public abstract class TwoHanded : Weapon
     {
-        protected TwoHanded(Materials material, string damage)
-            : base(ItemLayers.TwoHanded, material, damage)
+        protected TwoHanded(WeaponTypes type, Materials material, string damage)
+            : base(type, ItemLayers.TwoHanded, material, damage)
         {
             Weight = Weights.Heavy;
             DurabilityMax = 80;
@@ -16,8 +33,8 @@ namespace SUS.Server.Objects.Items
 
     public abstract class OneHanded : Weapon
     {
-        protected OneHanded(Materials material, string damage)
-            : base(ItemLayers.MainHand, material, damage)
+        protected OneHanded(WeaponTypes type, Materials material, string damage)
+            : base(type, ItemLayers.MainHand, material, damage)
         {
             Weight = Weights.Light;
             DurabilityMax = 60;
@@ -45,12 +62,14 @@ namespace SUS.Server.Objects.Items
 
         #region Constructors
 
-        protected Weapon(ItemLayers layer, Materials material, string damage, int range = 1)
+        protected Weapon(WeaponTypes type, ItemLayers layer, Materials material, string damage, int range = 1)
             : base(ItemTypes.Weapon, layer, 0)
         {
-            if (material == Materials.None) material = Materials.Wooden;
+            WeaponType = type;
 
+            if (material == Materials.None) material = Materials.Wooden;
             Material = material;
+
             Range = range;
             Weight = Weights.Medium;
 
@@ -81,6 +100,8 @@ namespace SUS.Server.Objects.Items
                 _damage = value;
             }
         }
+
+        public WeaponTypes WeaponType { get; }
 
         protected Materials Material
         {

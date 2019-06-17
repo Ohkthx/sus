@@ -3,7 +3,7 @@
     public class Dagger : OneHanded
     {
         public Dagger(Materials material)
-            : base(material, "1d6")
+            : base(WeaponTypes.Dagger, material, "1d6")
         {
             Name = "Dagger";
             RequiredSkill = SkillName.Fencing;
@@ -15,7 +15,7 @@
     public class Kryss : OneHanded
     {
         public Kryss(Materials material)
-            : base(material, "1d8")
+            : base(WeaponTypes.Kryss, material, "1d8")
         {
             Name = "Kryss";
             RequiredSkill = SkillName.Fencing;

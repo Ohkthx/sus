@@ -13,7 +13,7 @@ namespace SUS.Server.Map
         private static readonly ConcurrentBag<Zone> UnlockableAreas =
             new ConcurrentBag<Zone>();
 
-        public Spawnables NPCs = Spawnables.None;
+        public SpawnTypes NPCs = SpawnTypes.None;
 
         #region Constructors
 
@@ -27,7 +27,7 @@ namespace SUS.Server.Map
 
         protected void AddSpawner(int x, int y, int range, int limit)
         {
-            if (NPCs == Spawnables.None)
+            if (NPCs == SpawnTypes.None)
                 return;
 
             var spawner = new Spawner(Region, NPCs, x, y, range, limit, MaxX, MaxY);

@@ -10,7 +10,7 @@ namespace SUS.Server.Map.Regions
         {
             Description = "Ew! Sticky!";
 
-            NPCs = Spawnables.Skeleton | Spawnables.Zombie | Spawnables.Ghoul;
+            NPCs = SpawnTypes.Skeleton | SpawnTypes.Zombie | SpawnTypes.Ghoul;
             AddSpawner(15, 17, 15, 15);
 
             AddConnection(Shared.Regions.Britain);

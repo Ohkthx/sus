@@ -6,7 +6,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Orc : BaseCreature
     {
-        public Orc()
+        public Orc() : base(SpawnTypes.Orc)
         {
             AiType = Ai.Types.Archer;
             Name = "an orc";

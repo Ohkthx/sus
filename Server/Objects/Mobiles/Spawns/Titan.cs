@@ -4,7 +4,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Titan : BaseCreature
     {
-        public Titan()
+        public Titan() : base(SpawnTypes.Titan)
         {
             AiType = Ai.Types.Mage;
             Name = "a titan";

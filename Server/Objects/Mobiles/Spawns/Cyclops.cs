@@ -4,7 +4,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Cyclops : BaseCreature
     {
-        public Cyclops()
+        public Cyclops() : base(SpawnTypes.Cyclops)
         {
             AiType = Ai.Types.Melee;
             Name = "a cyclops";

@@ -6,7 +6,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Lizardman : BaseCreature
     {
-        public Lizardman()
+        public Lizardman() : base(SpawnTypes.Lizardman)
         {
             AiType = Ai.Types.Melee;
             Name = "a lizardman";

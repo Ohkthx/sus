@@ -3,7 +3,7 @@
     public class ShortSword : OneHanded
     {
         public ShortSword(Materials material)
-            : base(material, "1d6")
+            : base(WeaponTypes.ShortSword, material, "1d6")
         {
             Name = "Short Sword";
             RequiredSkill = SkillName.Swordsmanship;
@@ -15,7 +15,7 @@
     public class TwoHandedSword : TwoHanded
     {
         public TwoHandedSword(Materials material)
-            : base(material, "2d6")
+            : base(WeaponTypes.TwoHandedSword, material, "2d6")
         {
             Name = "Two-Handed Sword";
             RequiredSkill = SkillName.Swordsmanship;

@@ -4,7 +4,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Ghoul : BaseCreature
     {
-        public Ghoul()
+        public Ghoul() : base(SpawnTypes.Ghoul)
         {
             AiType = Ai.Types.Melee;
             Name = "a ghoul";

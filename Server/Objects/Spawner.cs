@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
 using SUS.Server.Objects.Mobiles;
-using SUS.Server.Objects.Mobiles.Spawns;
 using SUS.Shared;
 
 namespace SUS.Server.Objects
 {
     [Flags]
-    public enum Spawnables
+    public enum SpawnTypes
     {
         None = 0x00000000,
 
@@ -18,35 +17,12 @@ namespace SUS.Server.Objects
         Ghoul = 0x00000004,
         Wraith = 0x00000008,
 
-        Unused1 = 0x00000010,
-
-        Orc = 0x00000020,
-        Cyclops = 0x00000040,
-        Titan = 0x00000080,
+        Orc = 0x00000010,
+        Cyclops = 0x00000020,
+        Titan = 0x00000040,
 
         Lizardman = 0x00000100,
         Ettin = 0x00000200,
-        Unused4 = 0x00000400,
-        Unused5 = 0x00000800,
-        Unused6 = 0x00001000,
-        Unused7 = 0x00002000,
-        Unused8 = 0x00004000,
-        Unused9 = 0x00008000,
-        Unused10 = 0x00010000,
-        Unused11 = 0x00020000,
-        Unused12 = 0x00040000,
-        Unused13 = 0x00080000,
-        Unused14 = 0x00100000,
-        Unused15 = 0x00200000,
-        Unused16 = 0x00400000,
-        Unused17 = 0x00800000,
-        Unused18 = 0x01000000,
-        Unused19 = 0x02000000,
-        Unused20 = 0x04000000,
-        Unused21 = 0x08000000,
-        Unused22 = 0x10000000,
-        Unused23 = 0x20000000,
-        Unused24 = 0x40000000,
 
         Graveyard = Skeleton | Zombie | Ghoul | Wraith
     }
@@ -61,11 +37,11 @@ namespace SUS.Server.Objects
         private Guid _id;
         private Point2D _location; // Location of the Spawner on the map.
         private HashSet<Mobile> _spawned;
-        private Spawnables _spawns; // Types of spawns that are acceptable.
+        private SpawnTypes _spawns; // Types of spawns that are acceptable.
 
         #region Constructors
 
-        public Spawner(Regions loc, Spawnables spawns, int baseX, int baseY, int range, int limit, int mapX, int mapY)
+        public Spawner(Regions loc, SpawnTypes spawns, int baseX, int baseY, int range, int limit, int mapX, int mapY)
         {
             Region = loc;
             Spawns = spawns;
@@ -110,7 +86,7 @@ namespace SUS.Server.Objects
 
         private Regions Region { get; }
 
-        private Spawnables Spawns
+        private SpawnTypes Spawns
         {
             get => _spawns;
             set
@@ -134,46 +110,31 @@ namespace SUS.Server.Objects
 
             if (Spawned.Count >= _limit) return;
 
-            var spawns = Utility.EnumToIEnumerable<Spawnables>(_spawns, true);
+            var spawns = Utility.EnumToIEnumerable<SpawnTypes>(_spawns, true);
             if (spawns == null || !spawns.Any())
                 return;
 
             var amount = Utility.RandomMinMax(0, 2);
-            for (var i = 0; i < amount; i++)
+            while (--amount > 0)
             {
-                var pos = Utility.RandomMinMax(0, spawns.Count() - 1);
-                var mob = spawnOffType(spawns.ElementAt(pos));
-                if (mob == null) continue;
+                BaseCreature mob;
+                try
+                {
+                    var pos = Utility.RandomMinMax(0, spawns.Count() - 1);
+                    mob = Factory.GetSpawn(spawns.ElementAt(pos));
+                    if (mob == null)
+                        throw new InvalidFactoryException(
+                            $"Region: {Enum.GetName(typeof(Regions), Region)} {HomeLocation}, Spawn: {Enum.GetName(typeof(SpawnTypes), spawns.ElementAt(pos))}");
+                }
+                catch (InvalidFactoryException ise)
+                {
+                    Utility.ConsoleNotify(ise.Message);
+                    ++amount;
+                    continue;
+                }
 
                 mob.Spawned(this, Region, ValidCoordinate(HomeLocation.X, HomeLocation.Y, HomeRange));
                 Spawned.Add(mob); // Add it to the tracked spawned.
-            }
-        }
-
-        private BaseCreature spawnOffType(Spawnables spawn)
-        {
-            switch (spawn)
-            {
-                case Spawnables.Skeleton:
-                    return new Skeleton();
-                case Spawnables.Zombie:
-                    return new Zombie();
-                case Spawnables.Ghoul:
-                    return new Ghoul();
-                case Spawnables.Wraith:
-                    return new Wraith();
-                case Spawnables.Lizardman:
-                    return new Lizardman();
-                case Spawnables.Ettin:
-                    return new Ettin();
-                case Spawnables.Orc:
-                    return new Orc();
-                case Spawnables.Cyclops:
-                    return new Cyclops();
-                case Spawnables.Titan:
-                    return new Titan();
-                default:
-                    return null;
             }
         }
 

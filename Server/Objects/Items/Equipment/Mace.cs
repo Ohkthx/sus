@@ -3,7 +3,7 @@
     public class Mace : OneHanded
     {
         public Mace(Materials material)
-            : base(material, "1d6")
+            : base(WeaponTypes.Mace, material, "1d6")
         {
             Name = "Mace";
             RequiredSkill = SkillName.Macefighting;
@@ -15,7 +15,7 @@
     public class Maul : TwoHanded
     {
         public Maul(Materials material)
-            : base(material, "2d6")
+            : base(WeaponTypes.Maul, material, "2d6")
         {
             Name = "Maul";
             RequiredSkill = SkillName.Macefighting;

@@ -3,7 +3,7 @@
     public class Unarmed : Weapon
     {
         public Unarmed()
-            : base(ItemLayers.MainHand, Materials.None, "1d4")
+            : base(WeaponTypes.None, ItemLayers.MainHand, Materials.None, "1d4")
         {
             Name = "unarmed";
             RequiredSkill = SkillName.Wrestling;

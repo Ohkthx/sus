@@ -4,7 +4,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Skeleton : BaseCreature
     {
-        public Skeleton()
+        public Skeleton() : base(SpawnTypes.Skeleton)
         {
             AiType = Ai.Types.Melee;
             Name = "a skeleton";

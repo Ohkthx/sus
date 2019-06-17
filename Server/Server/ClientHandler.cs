@@ -525,7 +525,6 @@ namespace SUS.Server.Server
 
                 case Packet.Stages.Two:
                     if (vendor == null) break;
-
                     // Get the items that are part of the desired service.
                     uvp.Items = vendor.ServiceableItems(Gamestate.Account);
                     if (uvp.Items == null || uvp.Items.Count == 0)

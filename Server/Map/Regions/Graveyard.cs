@@ -10,7 +10,7 @@ namespace SUS.Server.Map.Regions
         {
             Description = "Full of bones and bruises.";
 
-            NPCs = Spawnables.Graveyard;
+            NPCs = SpawnTypes.Zombie | SpawnTypes.Ghoul | SpawnTypes.Wraith | SpawnTypes.Skeleton;
             AddSpawner(22, 30, 21, 15);
 
             AddConnection(Shared.Regions.Britain | Shared.Regions.Wilderness);

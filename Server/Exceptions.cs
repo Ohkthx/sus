@@ -26,4 +26,11 @@ namespace SUS.Server
         {
         }
     }
+
+    public class InvalidFactoryException : Exception
+    {
+        public InvalidFactoryException(string message) : base($"[Factory] {message}")
+        {
+        }
+    }
 }

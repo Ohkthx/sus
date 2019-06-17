@@ -4,7 +4,7 @@ namespace SUS.Server.Objects.Mobiles.Spawns
 {
     public class Wraith : BaseCreature
     {
-        public Wraith()
+        public Wraith() : base(SpawnTypes.Wraith)
         {
             AiType = Ai.Types.Mage;
             Name = "a wraith";
