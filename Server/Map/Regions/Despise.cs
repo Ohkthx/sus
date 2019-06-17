@@ -10,8 +10,8 @@ namespace SUS.Server.Map.Regions
         {
             Description = "The stench of other humanoids lurk about!";
 
-            NPCs = SpawnTypes.Lizardman | SpawnTypes.Ettin;
-            AddSpawner(MaxX / 2, MaxY / 2, 20, 10);
+            AddSpawner(0, MaxY, 10, 5, SpawnTypes.Ettin);
+            AddSpawner(MaxX/2, MaxY/2, 15, 10, SpawnTypes.Lizardman);
 
             AddConnection(Shared.Regions.Wilderness);
         }

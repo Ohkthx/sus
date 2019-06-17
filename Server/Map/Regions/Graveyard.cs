@@ -10,8 +10,8 @@ namespace SUS.Server.Map.Regions
         {
             Description = "Full of bones and bruises.";
 
-            NPCs = SpawnTypes.Zombie | SpawnTypes.Ghoul | SpawnTypes.Wraith | SpawnTypes.Skeleton;
-            AddSpawner(22, 30, 21, 15);
+            AddSpawner(22, 30, 21, 15, SpawnTypes.Zombie | SpawnTypes.Ghoul | SpawnTypes.Skeleton);
+            AddSpawner(MaxX/2, MaxY/2, MaxX/2, 5, SpawnTypes.Wraith);
 
             AddConnection(Shared.Regions.Britain | Shared.Regions.Wilderness);
         }

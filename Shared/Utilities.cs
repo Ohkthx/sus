@@ -352,6 +352,10 @@ namespace SUS.Shared
             {
                 Kill();
             }
+            catch (Exception)
+            {
+                Kill();
+            }
         }
 
         private void SendCallback(IAsyncResult ar)

@@ -10,10 +10,10 @@ namespace SUS.Server.Map.Regions
         {
             Description = "A vast and open world!";
 
-            NPCs = SpawnTypes.Skeleton | SpawnTypes.Ghoul | SpawnTypes.Zombie | SpawnTypes.Wraith | SpawnTypes.Orc | SpawnTypes.Titan | SpawnTypes.Cyclops;
-            AddSpawner(20, 20, 16, 5);
-            AddSpawner(50, 125, 60, 10);
-            AddSpawner(120, 60, 60, 10);
+            AddSpawner(20, 20, 16, 5, SpawnTypes.Ettin | SpawnTypes.Orc);
+            AddSpawner(50, 125, 60, 10, SpawnTypes.Lizardman);
+            AddSpawner(120, 60, 60, 10, SpawnTypes.Ettin | SpawnTypes.Orc);
+            AddSpawner(MaxX/2, MaxY/2, MaxX/2, 5, SpawnTypes.Cyclops | SpawnTypes.Titan);
 
             AddConnection(Shared.Regions.Britain | Shared.Regions.Graveyard | Shared.Regions.Despise);
 

@@ -13,8 +13,6 @@ namespace SUS.Server.Map
         private static readonly ConcurrentBag<Zone> UnlockableAreas =
             new ConcurrentBag<Zone>();
 
-        public SpawnTypes NPCs = SpawnTypes.None;
-
         #region Constructors
 
         protected Spawnable(RegionTypes types, Shared.Regions region, int width, int length) : base(types, region)
@@ -25,12 +23,12 @@ namespace SUS.Server.Map
 
         #endregion
 
-        protected void AddSpawner(int x, int y, int range, int limit)
+        protected void AddSpawner(int x, int y, int range, int limit, SpawnTypes spawns)
         {
-            if (NPCs == SpawnTypes.None)
+            if (spawns == SpawnTypes.None)
                 return;
 
-            var spawner = new Spawner(Region, NPCs, x, y, range, limit, MaxX, MaxY);
+            var spawner = new Spawner(Region, spawns, x, y, range, limit, MaxX, MaxY);
             Spawners.TryAdd(spawner.ID, spawner);
             Utility.ConsoleNotify($"Spawner created @{spawner.HomeLocation.ToString()} in {Region.ToString()}");
         }
