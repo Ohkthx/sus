@@ -94,26 +94,35 @@ namespace SUS.Server.Objects
 
         public void Delete()
         {
-            if (!IsDeleted || IsPlayer) return;
+            if (!IsDeleted || IsPlayer)
+                return;
 
-            foreach (var i in Items) World.RemoveItem(i);
+            foreach (var i in Items)
+                World.RemoveItem(i);
 
             World.RemoveMobile(this);
         }
 
-        public void MoveInDirection(MobileDirections direction, int xMax, int yMax)
+        public void AddRegionAccess(Regions region)
         {
-            if (direction == MobileDirections.None || direction == MobileDirections.Nearby) return;
+            AccessibleRegions |= region;
+        }
+
+        public void MoveInDirection(Directions direction, int xMax, int yMax)
+        {
+            if (direction == Directions.None || direction == Directions.Nearby)
+                return;
 
 
             // Gets a pseudo-random distance between our vision (default: 15) and 30 * Speed (default: 2 - 3)
             var distance = Utility.RandomMinMax(Vision, Vision * Speed / 2);
 
             // Factor in our current direction.
-            while (direction > MobileDirections.None)
-                foreach (MobileDirections dir in Enum.GetValues(typeof(MobileDirections)))
+            while (direction > Directions.None)
+            {
+                foreach (Directions dir in Enum.GetValues(typeof(Directions)))
                 {
-                    if (dir == MobileDirections.None || (dir & (dir - 1)) != 0)
+                    if (dir == Directions.None || (dir & (dir - 1)) != 0)
                         continue; // Current iteration is either 'None' or it is a combination of directions.
 
                     if ((direction & dir) == dir)
@@ -121,19 +130,19 @@ namespace SUS.Server.Objects
                         // We have found a direction that is within our current direction.
                         switch (dir)
                         {
-                            case MobileDirections.North:
+                            case Directions.North:
                                 // Protect ourselves from extending beyond the coordinates we are allowed to.
                                 _location.Y = Location.Y + distance > yMax ? yMax : Location.Y + distance;
                                 break;
-                            case MobileDirections.South:
+                            case Directions.South:
                                 // Protection from negative coordinate.
                                 _location.Y = Location.Y - distance < 0 ? 0 : Location.Y - distance;
                                 break;
-                            case MobileDirections.East:
+                            case Directions.East:
                                 // Protect ourselves from extending beyond the coordinates we are allowed to.
                                 _location.X = Location.X + distance > xMax ? xMax : Location.X + distance;
                                 break;
-                            case MobileDirections.West:
+                            case Directions.West:
                                 // Protection from negative coordinate.
                                 _location.X = Location.X - distance < 0 ? 0 : Location.X - distance;
                                 break;
@@ -142,6 +151,7 @@ namespace SUS.Server.Objects
                         direction &= ~dir; // Removes our value from direction.
                     }
                 }
+            }
         }
 
         public BaseMobile Base()
@@ -195,7 +205,8 @@ namespace SUS.Server.Objects
 
         public static bool operator ==(Mobile m1, Mobile m2)
         {
-            if (ReferenceEquals(m1, m2)) return true;
+            if (ReferenceEquals(m1, m2))
+                return true;
 
             return !ReferenceEquals(null, m1) && m1.Equals(m2);
         }
@@ -207,22 +218,21 @@ namespace SUS.Server.Objects
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value)) return false;
+            if (ReferenceEquals(null, value))
+                return false;
 
-            if (ReferenceEquals(this, value)) return true;
+            if (ReferenceEquals(this, value))
+                return true;
 
-            if (value.GetType() != GetType()) return false;
-
-            return IsEqual((Mobile) value);
+            return value.GetType() == GetType() && IsEqual((Mobile) value);
         }
 
         private bool Equals(Mobile mobile)
         {
-            if (ReferenceEquals(null, mobile)) return false;
+            if (ReferenceEquals(null, mobile))
+                return false;
 
-            if (ReferenceEquals(this, mobile)) return true;
-
-            return IsEqual(mobile);
+            return ReferenceEquals(this, mobile) || IsEqual(mobile);
         }
 
         private bool IsEqual(Mobile value)
@@ -236,7 +246,8 @@ namespace SUS.Server.Objects
 
         public int CompareTo(IEntity other)
         {
-            if (other == null) return -1;
+            if (other == null)
+                return -1;
 
             return Serial.CompareTo(other.Serial);
         }
@@ -248,7 +259,8 @@ namespace SUS.Server.Objects
 
         public int CompareTo(object other)
         {
-            if (other == null || other is IEntity) return CompareTo((IEntity) other);
+            if (other == null || other is IEntity)
+                return CompareTo((IEntity) other);
 
             return -1;
         }
@@ -266,7 +278,8 @@ namespace SUS.Server.Objects
             get => _currentTarget;
             set
             {
-                if (value == Target) return;
+                if (value == Target)
+                    return;
 
                 _currentTarget = value;
             }
@@ -277,7 +290,8 @@ namespace SUS.Server.Objects
             get => _location;
             set
             {
-                if (value != Location) _location = value;
+                if (value != Location)
+                    _location = value;
             }
         }
 
@@ -288,7 +302,8 @@ namespace SUS.Server.Objects
             get => _name ?? "Unknown";
             protected set
             {
-                if (string.IsNullOrEmpty(value)) value = "Unknown";
+                if (string.IsNullOrEmpty(value))
+                    value = "Unknown";
 
                 _name = value;
             }
@@ -311,11 +326,14 @@ namespace SUS.Server.Objects
             {
                 if (value < 0)
                     _speed = 0;
-                else if (value == Speed) return;
+                else if (value == Speed)
+                    return;
 
                 _speed = value;
             }
         }
+
+        public Regions AccessibleRegions { get; protected set; }
 
         #endregion
 
@@ -325,14 +343,17 @@ namespace SUS.Server.Objects
         {
             get
             {
-                if (_items == null) _items = new Dictionary<Serial, Item>();
+                if (_items == null)
+                    _items = new Dictionary<Serial, Item>();
 
                 var items = new List<Item>();
                 foreach (var item in _items.Values)
+                {
                     if (item == null || item.Owner == null || item.Owner.Serial != Serial)
                         RemoveItem(item);
                     else
                         items.Add(item);
+                }
 
                 return items;
             }
@@ -399,7 +420,8 @@ namespace SUS.Server.Objects
             get
             {
                 Gold g;
-                if ((g = FindConsumable(ConsumableTypes.Gold) as Gold) != null) return g;
+                if ((g = FindConsumable(ConsumableTypes.Gold) as Gold) != null)
+                    return g;
 
                 g = new Gold();
                 AddItem(g);
@@ -408,11 +430,13 @@ namespace SUS.Server.Objects
             }
             set
             {
-                if (value == null) return;
+                if (value == null)
+                    return;
 
-                if (!(value is Gold)) return;
+                if (!(value is Gold gold))
+                    return;
 
-                _items[Gold.Serial] = (Gold) value;
+                _items[Gold.Serial] = gold;
             }
         }
 
@@ -421,7 +445,8 @@ namespace SUS.Server.Objects
             get
             {
                 Potion p;
-                if ((p = FindConsumable(ConsumableTypes.HealthPotion) as Potion) != null) return p;
+                if ((p = FindConsumable(ConsumableTypes.HealthPotion) as Potion) != null)
+                    return p;
 
                 p = new Potion();
                 AddItem(p);
@@ -430,11 +455,13 @@ namespace SUS.Server.Objects
             }
             set
             {
-                if (value == null) return;
+                if (value == null)
+                    return;
 
-                if (!(value is Potion)) return;
+                if (!(value is Potion potion))
+                    return;
 
-                _items[HealthPotions.Serial] = (Potion) value;
+                _items[HealthPotions.Serial] = potion;
             }
         }
 
@@ -443,7 +470,8 @@ namespace SUS.Server.Objects
             get
             {
                 Bandage b;
-                if ((b = FindConsumable(ConsumableTypes.Bandages) as Bandage) != null) return b;
+                if ((b = FindConsumable(ConsumableTypes.Bandages) as Bandage) != null)
+                    return b;
 
                 b = new Bandage();
                 AddItem(b);
@@ -452,11 +480,13 @@ namespace SUS.Server.Objects
             }
             set
             {
-                if (value == null) return;
+                if (value == null)
+                    return;
 
-                if (!(value is Bandage)) return;
+                if (!(value is Bandage bandage))
+                    return;
 
-                _items[Bandages.Serial] = (Bandage) value;
+                _items[Bandages.Serial] = bandage;
             }
         }
 
@@ -465,7 +495,8 @@ namespace SUS.Server.Objects
             get
             {
                 Arrow a;
-                if ((a = FindConsumable(ConsumableTypes.Arrows) as Arrow) != null) return a;
+                if ((a = FindConsumable(ConsumableTypes.Arrows) as Arrow) != null)
+                    return a;
 
                 a = new Arrow();
                 AddItem(a);
@@ -474,11 +505,13 @@ namespace SUS.Server.Objects
             }
             set
             {
-                if (value == null) return;
+                if (value == null)
+                    return;
 
-                if (!(value is Arrow)) return;
+                if (!(value is Arrow arrow))
+                    return;
 
-                _items[Arrows.Serial] = (Arrow) value;
+                _items[Arrows.Serial] = arrow;
             }
         }
 
@@ -504,13 +537,16 @@ namespace SUS.Server.Objects
             {
                 if (value < 1)
                     value = 1;
-                else if (value > 65000) value = 65000;
+                else if (value > 65000)
+                    value = 65000;
 
-                if (_str == value) return;
+                if (_str == value)
+                    return;
 
                 _str = value;
 
-                if (Hits > HitsMax) Hits = HitsMax;
+                if (Hits > HitsMax)
+                    Hits = HitsMax;
             }
         }
 
@@ -522,7 +558,8 @@ namespace SUS.Server.Objects
 
                 if (value < 1)
                     value = 1;
-                else if (value > 65000) value = 65000;
+                else if (value > 65000)
+                    value = 65000;
 
                 return value;
             }
@@ -536,13 +573,16 @@ namespace SUS.Server.Objects
             {
                 if (value < 1)
                     value = 1;
-                else if (value > 65000) value = 65000;
+                else if (value > 65000)
+                    value = 65000;
 
-                if (_dex == value) return;
+                if (_dex == value)
+                    return;
 
                 _dex = value;
 
-                if (Stamina > StaminaMax) Stamina = StaminaMax;
+                if (Stamina > StaminaMax)
+                    Stamina = StaminaMax;
             }
         }
 
@@ -554,7 +594,8 @@ namespace SUS.Server.Objects
 
                 if (value < 1)
                     value = 1;
-                else if (value > 65000) value = 65000;
+                else if (value > 65000)
+                    value = 65000;
 
                 return value;
             }
@@ -568,13 +609,16 @@ namespace SUS.Server.Objects
             {
                 if (value < 1)
                     value = 1;
-                else if (value > 65000) value = 65000;
+                else if (value > 65000)
+                    value = 65000;
 
-                if (_int == value) return;
+                if (_int == value)
+                    return;
 
                 _int = value;
 
-                if (Mana > ManaMax) Mana = ManaMax;
+                if (Mana > ManaMax)
+                    Mana = ManaMax;
             }
         }
 
@@ -586,7 +630,8 @@ namespace SUS.Server.Objects
 
                 if (value < 1)
                     value = 1;
-                else if (value > 65000) value = 65000;
+                else if (value > 65000)
+                    value = 65000;
 
                 return value;
             }
@@ -602,7 +647,8 @@ namespace SUS.Server.Objects
                 else if (_hits < HitsMax && !_hitsRegenerator.Running)
                     _hitsRegenerator.Restart();
 
-                if (!_hitsRegenerator.Running) return _hits;
+                if (!_hitsRegenerator.Running)
+                    return _hits;
 
                 // If we are currently regenerating health, retrieve our health ticks.
                 RecoverStat(SecondaryStatCode.Hits, _hitsRegenerator.RetrieveTicks());
@@ -634,7 +680,8 @@ namespace SUS.Server.Objects
                     _staminaRegenerator.Restart();
 
                 // Stamina regenerator is not running, return current stamina.
-                if (!_staminaRegenerator.Running) return _stamina;
+                if (!_staminaRegenerator.Running)
+                    return _stamina;
 
                 // Attempt to get the banked stamina ticks and apply it.
                 RecoverStat(SecondaryStatCode.Stamina, _staminaRegenerator.RetrieveTicks());
@@ -647,7 +694,8 @@ namespace SUS.Server.Objects
             {
                 if (value < 0)
                     value = 0;
-                else if (value >= StaminaMax) value = StaminaMax;
+                else if (value >= StaminaMax)
+                    value = StaminaMax;
 
                 _stamina = value;
             }
@@ -665,7 +713,8 @@ namespace SUS.Server.Objects
                     _manaRegenerator.Restart();
 
                 // Max health and not running the mana regenerator.
-                if (!_manaRegenerator.Running) return _mana;
+                if (!_manaRegenerator.Running)
+                    return _mana;
 
                 // Try to pull the most recent ticks and apply it to our current mana.
                 RecoverStat(SecondaryStatCode.Mana, _manaRegenerator.RetrieveTicks());
@@ -678,7 +727,8 @@ namespace SUS.Server.Objects
             {
                 if (value < 0)
                     value = 0;
-                else if (value >= ManaMax) value = ManaMax;
+                else if (value >= ManaMax)
+                    value = ManaMax;
 
                 _mana = value;
             }
@@ -748,8 +798,10 @@ namespace SUS.Server.Objects
             {
                 var rating = 0;
                 foreach (var item in Equipment)
+                {
                     if (item.Value.IsWeapon)
                         rating += item.Value.Rating;
+                }
 
                 return rating;
             }
@@ -785,7 +837,8 @@ namespace SUS.Server.Objects
             get => _resistances;
             set
             {
-                if (value == Resistances) return;
+                if (value == Resistances)
+                    return;
 
                 _resistances = value;
             }
@@ -809,7 +862,8 @@ namespace SUS.Server.Objects
         {
             get
             {
-                if (_skills != null) return _skills;
+                if (_skills != null)
+                    return _skills;
 
                 _skills = new Dictionary<SkillName, Skill>();
                 InitSkills();
@@ -818,7 +872,8 @@ namespace SUS.Server.Objects
             }
             private set
             {
-                if (value == null) return;
+                if (value == null)
+                    return;
 
                 _skills = value;
             }
@@ -829,7 +884,8 @@ namespace SUS.Server.Objects
             get
             {
                 var value = 0.0;
-                foreach (var kp in Skills) value += kp.Value.Value;
+                foreach (var kp in Skills)
+                    value += kp.Value.Value;
 
                 return value;
             }
@@ -837,10 +893,12 @@ namespace SUS.Server.Objects
 
         public string SkillIncrease(SkillName skill)
         {
-            if (IsPlayer && SkillTotal >= 720.0) return string.Empty;
+            if (IsPlayer && SkillTotal >= 720.0)
+                return string.Empty;
 
             var increase = Skills[skill].Increase();
-            if (increase <= 0) return string.Empty;
+            if (increase <= 0)
+                return string.Empty;
 
             var s = Skills[skill];
             return $"{s.Name} increased by {increase:F1}.";
@@ -850,10 +908,12 @@ namespace SUS.Server.Objects
         {
             if (Skills == null)
                 Skills = new Dictionary<SkillName, Skill>();
-            else if (Skills.Count > 0) return;
+            else if (Skills.Count > 0)
+                return;
 
             // Iterate each of the existing skills and add it to the dictionary.
-            foreach (SkillName skill in Enum.GetValues(typeof(SkillName))) Skills.Add(skill, new Skill(skill));
+            foreach (SkillName skill in Enum.GetValues(typeof(SkillName)))
+                Skills.Add(skill, new Skill(skill));
         }
 
         #endregion
@@ -864,9 +924,11 @@ namespace SUS.Server.Objects
         {
             foreach (var i in Items)
             {
-                if (!(i is Equippable equipmentItem)) continue;
+                if (!(i is Equippable equipmentItem))
+                    continue;
 
-                if (equipmentItem.Layer == layer && equipmentItem.Weight == weight) return equipmentItem;
+                if (equipmentItem.Layer == layer && equipmentItem.Weight == weight)
+                    return equipmentItem;
             }
 
             return null;
@@ -879,12 +941,14 @@ namespace SUS.Server.Objects
                 return;
 
             item.Owner = this;
-            if (AddItem(item)) Equip(item);
+            if (AddItem(item))
+                Equip(item);
         }
 
         public void Equip(Equippable item)
         {
-            if (item == null || !item.IsEquippable) return;
+            if (item == null || !item.IsEquippable)
+                return;
 
             // Equip Armor (excluding shields, those are handled with weaponry.
             if (item.IsArmor && item.Layer == ItemLayers.Armor)
@@ -904,7 +968,8 @@ namespace SUS.Server.Objects
 
             if (_equipped.ContainsKey(ItemLayers.TwoHanded))
                 _equipped.Remove(ItemLayers.TwoHanded);
-            else if (_equipped.ContainsKey(ItemLayers.Bow)) _equipped.Remove(ItemLayers.Bow);
+            else if (_equipped.ContainsKey(ItemLayers.Bow))
+                _equipped.Remove(ItemLayers.Bow);
 
             _equipped[item.Layer] = item;
         }
@@ -922,17 +987,20 @@ namespace SUS.Server.Objects
 
         public bool AddItem(Item item)
         {
-            if (item == null) return false;
+            if (item == null)
+                return false;
 
             item.Owner = this;
-            if (!Items.Contains(item)) _items[item.Serial] = item;
+            if (!Items.Contains(item))
+                _items[item.Serial] = item;
 
             return true;
         }
 
         private void RemoveItem(Item item)
         {
-            if (!Items.Contains(item)) return;
+            if (!Items.Contains(item))
+                return;
 
             _items?.Remove(item.Serial);
         }
@@ -948,9 +1016,11 @@ namespace SUS.Server.Objects
         private Consumable FindConsumable(ConsumableTypes type)
         {
             foreach (var i in Items)
+            {
                 if (i.Type == ItemTypes.Consumable
                     && ((Consumable) i).ConsumableType == type)
                     return (Consumable) i;
+            }
 
             return null;
         }
@@ -962,28 +1032,33 @@ namespace SUS.Server.Objects
 
         public void RemoveConsumable(ConsumableTypes type, int amt)
         {
-            if (amt <= 0) return;
+            if (amt <= 0)
+                return;
 
             switch (type)
             {
                 case ConsumableTypes.Gold:
                     if (amt > Gold.Amount)
                         amt = Gold.Amount;
+
                     Gold -= amt;
                     break;
                 case ConsumableTypes.Arrows:
                     if (amt > Arrows.Amount)
                         amt = Arrows.Amount;
+
                     Arrows -= amt;
                     break;
                 case ConsumableTypes.Bandages:
                     if (amt > Bandages.Amount)
                         amt = Bandages.Amount;
+
                     Bandages -= amt;
                     break;
                 case ConsumableTypes.HealthPotion:
                     if (amt > HealthPotions.Amount)
                         amt = HealthPotions.Amount;
+
                     HealthPotions -= amt;
                     break;
                 default:
@@ -998,7 +1073,8 @@ namespace SUS.Server.Objects
 
         private int ConsumableAdd(ConsumableTypes type, int amt)
         {
-            if (amt <= 0) return 0;
+            if (amt <= 0)
+                return 0;
 
             int tValue;
             int tMax;
@@ -1050,7 +1126,8 @@ namespace SUS.Server.Objects
                 damage -= 3;
 
             // Do not allow negative damage that would otherwise heal.
-            if (damage <= 0) return 0;
+            if (damage <= 0)
+                return 0;
 
             var originalHp = Hits;
             if (damage > Hits)
@@ -1068,8 +1145,12 @@ namespace SUS.Server.Objects
             // Anonymous function that determines how much to apply of the maximum amount.
             int AmountChanged(int min, int max)
             {
-                if (amount <= 0) return 0;
-                if (min + amount > max) return max - min;
+                if (amount <= 0)
+                    return 0;
+
+                if (min + amount > max)
+                    return max - min;
+
                 return amount;
             }
 
@@ -1113,22 +1194,28 @@ namespace SUS.Server.Objects
 
         public int ApplyResistance(DamageTypes damageType, int damage)
         {
-            if (Resistances == DamageTypes.None) return damage;
+            if (Resistances == DamageTypes.None)
+                return damage;
 
-            if (damageType == DamageTypes.None) damageType = DamageTypes.Bludgeoning;
+            if (damageType == DamageTypes.None)
+                damageType = DamageTypes.Bludgeoning;
 
             var armorResists = 0;
             while (damageType != DamageTypes.None)
+            {
                 foreach (DamageTypes dt in Enum.GetValues(typeof(DamageTypes)))
                 {
                     // Ignore values that are either 'None' or not part of the damageType.
-                    if (dt == DamageTypes.None || (damageType & dt) != dt) continue;
+                    if (dt == DamageTypes.None || (damageType & dt) != dt)
+                        continue;
 
                     // Compare the value to the Resistances.
-                    if ((Resistances & dt) == dt) ++armorResists;
+                    if ((Resistances & dt) == dt)
+                        ++armorResists;
 
                     damageType &= ~dt; // Remove the value.
                 }
+            }
 
             var dmg = (int) (damage * (1 - 0.1 * armorResists));
 

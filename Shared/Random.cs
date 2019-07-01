@@ -39,13 +39,13 @@ namespace SUS.Shared
     public class CspRandom
     {
         private const int BufferSize = sizeof(double);
-        private readonly byte[] m_Buffer = new byte[BufferSize];
-        private readonly RNGCryptoServiceProvider m_CspRng = new RNGCryptoServiceProvider();
+        private readonly byte[] _buffer = new byte[BufferSize];
+        private readonly RNGCryptoServiceProvider _cspRng = new RNGCryptoServiceProvider();
 
         public int Next()
         {
-            m_CspRng.GetBytes(m_Buffer);
-            return BitConverter.ToInt32(m_Buffer, 0) & 0x7fffffff;
+            _cspRng.GetBytes(_buffer);
+            return BitConverter.ToInt32(_buffer, 0) & 0x7fffffff;
         }
 
         public int Next(int values)
@@ -60,6 +60,7 @@ namespace SUS.Shared
         {
             if (min <= 0 || max <= 0)
                 return 0;
+
             if (min >= max)
                 return max;
 
@@ -68,8 +69,8 @@ namespace SUS.Shared
 
         public double NextDouble()
         {
-            m_CspRng.GetBytes(m_Buffer);
-            var ul = BitConverter.ToUInt64(m_Buffer, 0) / (1 << 11);
+            _cspRng.GetBytes(_buffer);
+            var ul = BitConverter.ToUInt64(_buffer, 0) / (1 << 11);
             return ul / 9.00719925474099E+15D;
         }
     }
@@ -79,9 +80,9 @@ namespace SUS.Shared
         //private static readonly string ndmRegex = @"^([0-9]*)d([0-9]+|%)$";
         private const string NdmRegex = @"^(\-?[0-9]+)(?:(d(\-?[0-9]+))?)(?:((\+|\-)[0-9]+)?)";
 
-        private int m_Amount;
-        private int m_Faces;
-        private int m_Modifier;
+        private int _amount;
+        private int _faces;
+        private int _modifier;
 
         #region Constructors
 
@@ -102,6 +103,7 @@ namespace SUS.Shared
             var val = Utility.RandomMinMax(Dice, Dice * Faces);
             if (val + Modifier <= 0)
                 return 1; // Prevention from the modifier being overly negative.
+
             return val + Modifier; // Otherwise, just return the positive value.
         }
 
@@ -158,6 +160,7 @@ namespace SUS.Shared
                 // Going to attempt to parse a 'NdM' based string. Gets the amount of dice first.
                 if (amt <= 0)
                     amt = 1; // We attempted to parse a negative or 0, minimum is 1.
+
                 Dice = amt;
 
                 if (int.TryParse(tokens[1], out var faces))
@@ -165,6 +168,7 @@ namespace SUS.Shared
                     // Parses the face value of the dice.
                     if (faces <= 0)
                         faces = 1; // Our face value can not be negative or 0, set it to 1.
+
                     Faces = faces;
                 }
                 else
@@ -200,7 +204,8 @@ namespace SUS.Shared
                     break;
             }
 
-            if (!int.TryParse(number, out var mod)) return 0; // Parses the modifier.
+            if (!int.TryParse(number, out var mod))
+                return 0; // Parses the modifier.
 
             if (positive)
                 return mod; // If it is positive, return.
@@ -212,7 +217,7 @@ namespace SUS.Shared
 
         private int Dice
         {
-            get => m_Amount;
+            get => _amount;
             set
             {
                 if (value <= 0)
@@ -220,13 +225,13 @@ namespace SUS.Shared
                 else if (value == Dice)
                     return;
 
-                m_Amount = value;
+                _amount = value;
             }
         }
 
         private int Faces
         {
-            get => m_Faces;
+            get => _faces;
             set
             {
                 if (value <= 0)
@@ -234,19 +239,19 @@ namespace SUS.Shared
                 else if (value == Faces)
                     return;
 
-                m_Faces = value;
+                _faces = value;
             }
         }
 
         private int Modifier
         {
-            get => m_Modifier;
+            get => _modifier;
             set
             {
                 if (value == Modifier)
                     return;
 
-                m_Modifier = value;
+                _modifier = value;
             }
         }
 

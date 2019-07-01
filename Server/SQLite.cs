@@ -14,16 +14,19 @@ namespace SUS.Server
 
         public SqlWrapper()
         {
-            if (string.IsNullOrEmpty(_source)) _source = $"Data Source={Database};Version=3;";
+            if (string.IsNullOrEmpty(_source))
+                _source = $"Data Source={Database};Version=3;";
 
             if (_queries == null)
             {
                 _queries = new List<string>();
-                if (_queries.Count == 0) QueryInit();
+                if (_queries.Count == 0)
+                    QueryInit();
             }
 
             // Setup the database if it doesn't exist.
-            if (!File.Exists(Database)) setupDatabase();
+            if (!File.Exists(Database))
+                setupDatabase();
         }
 
         private void setupDatabase()
@@ -74,7 +77,8 @@ namespace SUS.Server
 
             // Get our query string, return if it is a bad string.
             var queryString = QueryGet(index);
-            if (string.IsNullOrEmpty(queryString)) return null;
+            if (string.IsNullOrEmpty(queryString))
+                return null;
 
             // Passed the initial checks, create the HashSet.
             var items = new HashSet<T>();
@@ -113,7 +117,8 @@ namespace SUS.Server
 
             // Get our query string, return if it is a bad string.
             var queryString = QueryGet(index);
-            if (string.IsNullOrEmpty(queryString)) return default;
+            if (string.IsNullOrEmpty(queryString))
+                return default;
 
             // Begin out query.
             using (var dbConnection = new SQLiteConnection(_source))
@@ -140,11 +145,13 @@ namespace SUS.Server
         public void Insert(int index, object toInsert)
         {
             // Validate we have a database, if not create it and prepare for processing.
-            if (!File.Exists(Database)) setupDatabase();
+            if (!File.Exists(Database))
+                setupDatabase();
 
             // Get our query string, return if it is a bad string.
             var queryString = QueryGet(index);
-            if (string.IsNullOrEmpty(queryString)) return;
+            if (string.IsNullOrEmpty(queryString))
+                return;
 
             // Begin out query.
             using (var dbConnection = new SQLiteConnection(_source))
@@ -155,7 +162,8 @@ namespace SUS.Server
                 fmd.CommandType = CommandType.Text;
 
                 // Verify the object is compatible and meets the minimum requirements to be inserted and selected.
-                if (!(toInsert is ISQLCompatible obj)) return;
+                if (!(toInsert is ISQLCompatible obj))
+                    return;
 
                 // Get our information to store and assign it back to the SQLiteCommand.
                 obj.ToInsert(fmd);
@@ -171,7 +179,8 @@ namespace SUS.Server
         private static string QueryGet(int index)
         {
             // If it is an invalid number (OOB on the List) then return early.
-            if (index + 1 > _queries.Count || index < 0) return "";
+            if (index + 1 > _queries.Count || index < 0)
+                return "";
 
             return _queries[index];
         }

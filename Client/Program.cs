@@ -20,17 +20,43 @@ namespace SUS.Client
         /// <param name="args"></param>
         private static void StartUp(string[] args)
         {
-            if (args == null) throw new ArgumentNullException(nameof(args));
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
 
             foreach (var arg in args)
             {
-                if (arg.ToLower() != "-debug") continue;
+                if (arg.ToLower() != "-debug")
+                    continue;
 
                 Console.WriteLine("Found debug..");
                 _debug = true;
             }
 
-            AsynchronousClient.StartClient(); // Starts the Client.
+            try
+            {
+                var toServer = AsynchronousClient.StartClient();
+                if (toServer == null)
+                    throw new InvalidSocketHandlerException("Unable to initiate the connection to the server.");
+
+                // Connect and loop until error or exit the session.
+                ServerConnect(toServer);
+
+                Utility.ConsoleNotify("Ending session with server.");
+
+                // Release the socket.  
+                toServer.Shutdown(SocketShutdown.Both);
+                toServer.Close();
+            }
+            catch (InvalidSocketHandlerException she)
+            {
+                Utility.ConsoleNotify(she.Message);
+            }
+            catch (Exception e)
+            {
+                Utility.ConsoleNotify($"An unknown error occurred: \n{e}");
+            }
+
+            Utility.ConsoleNotify("The session has ended.");
             Console.Read();
         }
 
@@ -38,8 +64,8 @@ namespace SUS.Client
         ///     Begins the exchange of information, authentication, and further processing of
         ///     all input to and from the server.
         /// </summary>
-        /// <param name="server">Socket to communicate to the Server.</param>
-        public static void ServerConnect(ref Socket server)
+        /// <param name="toServer">Socket to communicate to the Server.</param>
+        public static void ServerConnect(Socket toServer)
         {
             ulong id;
             do
@@ -52,125 +78,58 @@ namespace SUS.Client
             Console.Write("Select a Username: ");
             var username = Console.ReadLine();
 
-            // The Socket to communicate over to the server.
-            var socketHandler = new SocketHandler(server, SocketHandler.Types.Server, _debug);
+            try
+            {
+                // The Socket to communicate over to the server.
+                InteractiveConsole.SetHandler(new SocketHandler(toServer, SocketHandler.Types.Server, _debug));
 
-            // Send the authentication to the server.
-            socketHandler.ToServer(new AccountAuthenticatePacket(id, username).ToByte());
+                // Send the authentication to the server.
+                InteractiveConsole.ToServer(new AccountAuthenticatePacket(id, username));
 
-            ServerHandler(socketHandler);
+                // Handles the client's connection to the server with packet parsing.
+                ServerHandler();
+            }
+            catch (InvalidSocketHandlerException she)
+            {
+                Utility.ConsoleNotify(she.Message);
+            }
+            catch (InvalidPacketException ipe)
+            {
+                Utility.ConsoleNotify($"Received a bad packet: {ipe.Message}");
+            }
+            catch (Exception e)
+            {
+                Utility.ConsoleNotify($"Unknown error occurred: \n{e}");
+            }
         }
 
-        private static void ServerHandler(SocketHandler socketHandler)
+        private static void ServerHandler()
         {
-            ClientState clientState = null; // Gamestate of this client.
-            InteractiveConsole ia = null; // Interactive console tracks user actions and sends data.
-
             // While we are receiving information from the server, continue to decipher and process it.
-            for (object obj; (obj = socketHandler.FromClient()) != null;)
+            for (Packet serverPacket; (serverPacket = InteractiveConsole.FromServer()) != null;)
             {
-                Packet clientRequest = null; // Client REQuest. Used by functions not called in interactive console. 
-                if (!(obj is Packet req))
-                    continue;
-
-                switch (req.Type)
+                try
                 {
-                    case PacketTypes.Ok:
-                        if (req is OkPacket ok && ok.Message != string.Empty)
-                            Utility.ConsoleNotify(ok.Message);
-                        ia?.Reset();
-                        break;
-                    case PacketTypes.Error:
-                        if (req is ErrorPacket err && err.Message != string.Empty)
-                            Utility.ConsoleNotify(err.Message);
-                        ia?.Reset();
-                        break;
-                    case PacketTypes.ClientState:
-                        ia = new InteractiveConsole(((AccountClientPacket) req).ClientState);
-                        break;
-                    case PacketTypes.SocketKill:
-                        Utility.ConsoleNotify("Socket Kill sent by server.");
-                        if (req is SocketKillPacket skp && skp.Message != string.Empty)
-                            Utility.ConsoleNotify("Reason: " + skp.Message);
-                        socketHandler.Kill();
-                        break;
+                    var clientRequest = InteractiveConsole.PacketParser(serverPacket);
+                    if (clientRequest != null)
+                    {
+                        InteractiveConsole.ToServer(clientRequest);
+                        continue;
+                    }
 
+                    // Activates the interactive console to grab the next action desired to be performed.
+                    clientRequest = InteractiveConsole.Core();
+                    if (clientRequest == null)
+                        continue;
 
-                    case PacketTypes.GetLocalMobiles:
-                        if (clientState != null)
-                            clientState.LocalMobiles = ((GetMobilesPacket) req).Mobiles;
-                        break;
-                    case PacketTypes.GetMobile:
-                        clientState?.ParseGetMobilePacket(req as GetMobilePacket);
-                        ia?.Reset();
-                        break;
-                    case PacketTypes.GetNode:
-                        if (ia != null)
-                        {
-                            clientState.CurrentRegion = ((GetNodePacket) req).NewRegion;
-                            ia.Reset();
-                        }
-
-                        break;
-                    case PacketTypes.MobileCombat:
-                        clientState?.MobileActionHandler(req as CombatMobilePacket);
-                        ia?.Reset();
-                        break;
-                    case PacketTypes.MobileMove:
-                        if (clientState != null)
-                            if (req is MoveMobilePacket mmp)
-                            {
-                                clientState.CurrentRegion = mmp.NewRegion; // Reassign our region.
-                                if (mmp.DiscoveredRegion != Regions.None)
-                                {
-                                    // If the client discovered a new location, add it to our potential locations.
-                                    clientState.AddUnlockedRegion(mmp.NewRegion.Connections);
-                                    Console.WriteLine($"Discovered: {mmp.DiscoveredRegion}!");
-                                }
-                            }
-
-                        ia?.Reset();
-                        break;
-                    case PacketTypes.MobileResurrect:
-                        clientRequest =
-                            clientState?.Resurrect(req as ResurrectMobilePacket); // If we require a new current node,
-                        ia?.Reset(); //  the request will be made and sent early.
-                        break;
-                    case PacketTypes.UseItem:
-                        ClientState.UseItemResponse(req as UseItemPacket);
-                        ia?.Reset();
-                        break;
-                    case PacketTypes.UseVendor:
-                        clientRequest = clientState?.UseVendorProcessor(req as UseVendorPacket);
-                        ia?.Reset();
-                        break;
-                    case PacketTypes.Authenticate:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    InteractiveConsole.ToServer(clientRequest);
+                    if (clientRequest is SocketKillPacket)
+                        Environment.Exit(0); // Kill the application after informing the server.
                 }
-
-                if (clientRequest != null)
+                catch (Exception e)
                 {
-                    // If clientRequest was assigned early, send it and loop again.
-                    socketHandler.ToServer(clientRequest.ToByte());
-                    continue;
+                    Utility.ConsoleNotify("[Client Error] " + e.Message);
                 }
-
-                if (ia == null) continue; // Get an action to perform and send it to the server.
-
-                clientState =
-                    ia.Core(); // Activates the interactive console to grab the next action desired to be performed.
-
-                if (ia.Request != null)
-                    clientRequest = ia.Request;
-
-                // Check clientRequest again for material to send to the server.
-                if (clientRequest == null) continue;
-
-                socketHandler.ToServer(clientRequest.ToByte());
-                if (clientRequest.Type == PacketTypes.SocketKill)
-                    Environment.Exit(0); // Kill the application after informing the server.
             }
         }
     }

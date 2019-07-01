@@ -1,10 +1,9 @@
-﻿using System.Data.SQLite;
-using SUS.Server.Objects.Mobiles;
+﻿using SUS.Server.Objects.Mobiles;
 using SUS.Shared;
 
 namespace SUS.Server
 {
-    public class Gamestate : ISQLCompatible
+    public class Gamestate
     {
         private Player _account;
         private ulong _playerId;
@@ -23,24 +22,16 @@ namespace SUS.Server
 
         public ClientState ToClientState()
         {
-            var node = World.FindNode(Account.Region);
-            var clientState = new ClientState(PlayerId, Account.Base(), node.GetBase(), UnlockedRegions);
+            if (!World.FindRegion(Account.Region, out var region))
+                throw new UnknownRegionException(Account.Serial,
+                    "Error occurred while converting GameState -> ClientState.");
+
+            var clientState = new ClientState(PlayerId, Account.Base(), region.GetBase(), AccessibleRegions);
 
             return clientState;
         }
 
-        private byte[] ToByte()
-        {
-            return Network.Serialize(this);
-        }
-
         #region Overrides
-
-        public void ToInsert(SQLiteCommand cmd)
-        {
-            cmd.Parameters.Add(new SQLiteParameter("@p1", PlayerId));
-            cmd.Parameters.Add(new SQLiteParameter("@p2", ToByte()));
-        }
 
         public override int GetHashCode()
         {
@@ -56,7 +47,8 @@ namespace SUS.Server
 
         public static bool operator ==(Gamestate gs1, Gamestate gs2)
         {
-            if (ReferenceEquals(gs1, gs2)) return true;
+            if (ReferenceEquals(gs1, gs2))
+                return true;
 
             return !ReferenceEquals(null, gs1) && gs1.Equals(gs2);
         }
@@ -68,16 +60,19 @@ namespace SUS.Server
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value)) return false;
+            if (ReferenceEquals(null, value))
+                return false;
 
-            if (ReferenceEquals(this, value)) return true;
+            if (ReferenceEquals(this, value))
+                return true;
 
             return value.GetType() == GetType() && IsEqual((Gamestate) value);
         }
 
         private bool Equals(Gamestate gamestate)
         {
-            if (ReferenceEquals(null, gamestate)) return false;
+            if (ReferenceEquals(null, gamestate))
+                return false;
 
             return ReferenceEquals(this, gamestate) || IsEqual(gamestate);
         }
@@ -100,7 +95,8 @@ namespace SUS.Server
             get => _playerId;
             private set
             {
-                if (value == PlayerId) return;
+                if (value == PlayerId)
+                    return;
 
                 _playerId = value;
             }
@@ -111,16 +107,17 @@ namespace SUS.Server
             get => _account;
             private set
             {
-                if (value == null || !value.IsPlayer) return;
+                if (value == null || !value.IsPlayer)
+                    return;
 
                 _account = value;
             }
         }
 
-        public Regions UnlockedRegions
+        public Regions AccessibleRegions
         {
-            get => _account.UnlockedRegions;
-            private set => _account.AddUnlockedRegion(value);
+            get => _account.AccessibleRegions;
+            private set => _account.AddRegionAccess(value);
         }
 
         #endregion

@@ -64,10 +64,10 @@ namespace SUS.Server.Objects.Mobiles.NPCs
         public override int ServicePrice(Item item)
         {
             if (item == null)
-                throw new ItemNotFoundException("That item no longer exists.");
+                throw new UnknownItemException("That item no longer exists.");
 
             if (!Inventory.ContainsKey(item.Serial))
-                throw new ItemNotFoundException($"{item.Name} is no longer available.");
+                throw new UnknownItemException($"{item.Name} is no longer available.");
 
             return Inventory[item.Serial].Rating * PriceModifier;
         }
@@ -77,7 +77,8 @@ namespace SUS.Server.Objects.Mobiles.NPCs
             Restock();
 
             var armorSuits = new Dictionary<BaseItem, int>();
-            foreach (var (_, item) in Inventory) armorSuits.Add(item.Base(), item.Rating * PriceModifier);
+            foreach (var (_, item) in Inventory)
+                armorSuits.Add(item.Base(), item.Rating * PriceModifier);
 
             return armorSuits;
         }
@@ -85,11 +86,14 @@ namespace SUS.Server.Objects.Mobiles.NPCs
         public override int PerformService(Mobile mobile, Item item)
         {
             if (mobile == null)
-                throw new MobileNotFoundException("An unknown mobile attempted to use the Armorsmith.");
+                throw new UnknownMobileException("An unknown mobile attempted to use the Armorsmith.");
+
             if (item == null || !(item is Armor armor))
-                throw new ItemNotFoundException("That item no longer exists.");
+                throw new UnknownItemException("That item no longer exists.");
+
             if (!Inventory.ContainsKey(armor.Serial))
-                throw new ItemNotFoundException("The vendor no longer has that item.");
+                throw new UnknownItemException("The vendor no longer has that item.");
+
             if (mobile.Gold.Amount < armor.Rating * PriceModifier)
                 throw new NotEnoughGoldException();
 

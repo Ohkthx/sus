@@ -3,7 +3,7 @@ using SUS.Shared;
 
 namespace SUS.Server.Server
 {
-    public class ConsoleHandler : Handler
+    public class ConsoleHandler : IHandler
     {
         #region Constructors
 
@@ -20,9 +20,13 @@ namespace SUS.Server.Server
 
         #endregion
 
+        public void Close()
+        {
+        }
+
         #region Processor
 
-        public override void Core()
+        public void Core()
         {
         }
 

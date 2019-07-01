@@ -4,85 +4,35 @@ using System.Collections.Generic;
 namespace SUS.Shared.Packets
 {
     [Serializable]
-    public class GetMobilesPacket : Packet
+    public class GetInfoPacket : Packet
     {
-        private HashSet<BaseMobile> _mobiles;
-        private Regions _region;
-
-        #region Constructors
-
-        public GetMobilesPacket(Regions region, ulong playerId)
-            : base(PacketTypes.GetLocalMobiles, playerId)
-        {
-            Region = region;
-        }
-
-        #endregion
-
-        #region Getters / Setters
-
-        public Regions Region
-        {
-            get => _region;
-            private set => _region = value;
-        }
-
-        public HashSet<BaseMobile> Mobiles
-        {
-            get => _mobiles ?? (_mobiles = new HashSet<BaseMobile>());
-            set
-            {
-                if (value == null) return;
-
-                _mobiles = value;
-            }
-        }
-
-        #endregion
-    }
-
-    [Serializable]
-    public class GetMobilePacket : Packet
-    {
-        [Flags]
         public enum RequestReason
         {
-            None = 0,
-            Paperdoll = 1,
-            Location = 2,
-            IsDead = 4,
-            Items = 8,
-            Equipment = 16
+            Paperdoll,
+            Location,
+            Equipment,
+            Items,
+            Vendors,
+            Npcs
         }
 
-        private Dictionary<int, string> _equipment;
-        private bool _isAlive = true;
-        private Dictionary<int, string> _items;
-
-        // Requested information to return.
-        private string _paperdoll;
+        private string _info;
+        private List<string> _infoList;
 
         private RequestReason _reason;
-        private Regions _region;
 
         #region Constructors
 
-        public GetMobilePacket(RequestReason reason, ulong playerId)
-            : base(PacketTypes.GetMobile, playerId)
+        public GetInfoPacket(RequestReason reason)
         {
             Reason = reason;
         }
 
         #endregion
 
-        public void AddItem(int serial, string name)
+        public void AddInfo(string name)
         {
-            Items.Add(serial, name);
-        }
-
-        public void AddEquipment(int serial, string name)
-        {
-            Equipment.Add(serial, name);
+            InfoList.Add(name);
         }
 
         #region Getters / Setters
@@ -92,46 +42,26 @@ namespace SUS.Shared.Packets
             get => _reason;
             private set
             {
-                if (value == RequestReason.None || value == Reason) return;
+                if (value == Reason)
+                    return;
 
                 _reason = value;
             }
         }
 
-        public string Paperdoll
+        public string Info
         {
-            get => _paperdoll ?? (_paperdoll = string.Empty);
+            get => _info ?? (_info = string.Empty);
             set
             {
-                if (string.IsNullOrEmpty(value)) return;
+                if (string.IsNullOrEmpty(value))
+                    return;
 
-                _paperdoll = value;
+                _info = value;
             }
         }
 
-        public Regions Region
-        {
-            get => _region;
-            set
-            {
-                if (value == Regions.None || value == Region) return;
-
-                _region = value;
-            }
-        }
-
-        public bool IsAlive
-        {
-            get => _isAlive;
-            set
-            {
-                if (value != IsAlive) _isAlive = value;
-            }
-        }
-
-        public Dictionary<int, string> Items => _items ?? (_items = new Dictionary<int, string>());
-
-        public Dictionary<int, string> Equipment => _equipment ?? (_equipment = new Dictionary<int, string>());
+        public List<string> InfoList => _infoList ?? (_infoList = new List<string>());
 
         #endregion
     }
@@ -141,8 +71,7 @@ namespace SUS.Shared.Packets
     {
         #region Constructors
 
-        public GetNodePacket(Regions region, ulong playerId)
-            : base(PacketTypes.GetNode, playerId)
+        public GetNodePacket(Regions region)
         {
             Region = region;
         }

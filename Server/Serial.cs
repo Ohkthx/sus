@@ -15,7 +15,7 @@ namespace SUS.Server
         {
             get
             {
-                while (World.FindMobile(LastMobile = LastMobile + 1) != null)
+                while (World.FindMobile(LastMobile += 1, out _))
                 {
                 }
 
@@ -27,7 +27,7 @@ namespace SUS.Server
         {
             get
             {
-                while (World.FindItem(LastItem = LastItem + 1) != null)
+                while (World.FindItem(LastItem += 1, out _))
                 {
                 }
 
@@ -75,9 +75,10 @@ namespace SUS.Server
 
         public override bool Equals(object o)
         {
-            if (!(o is Serial)) return false;
+            if (!(o is Serial serial))
+                return false;
 
-            return ((Serial) o).Value == Value;
+            return serial.Value == Value;
         }
 
         public static bool operator ==(Serial l, Serial r)

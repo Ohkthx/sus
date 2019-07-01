@@ -23,6 +23,9 @@ namespace SUS.Server.Objects.Mobiles
         {
             SpawnType = spawnType;
             StatCap = int.MaxValue;
+
+            // Give access to all regions by default.
+            AddRegionAccess((Regions) ~0);
         }
 
         #endregion
@@ -148,7 +151,8 @@ namespace SUS.Server.Objects.Mobiles
         {
             get
             {
-                if (_hitsMax <= 0) return Str;
+                if (_hitsMax <= 0)
+                    return Str;
 
                 return _hitsMax > 1000000 ? 1000000 : _hitsMax;
             }
@@ -236,7 +240,8 @@ namespace SUS.Server.Objects.Mobiles
 
         public override int Attack()
         {
-            if (Weapon is Unarmed) return Utility.RandomMinMax(_damageMin, _damageMax);
+            if (Weapon is Unarmed)
+                return Utility.RandomMinMax(_damageMin, _damageMax);
 
             return Weapon.Damage + ProficiencyModifier;
         }

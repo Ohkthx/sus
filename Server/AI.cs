@@ -27,6 +27,7 @@ namespace SUS.Server
                     var distance = 0;
                     if (creature.Target != null && creature.Target.Location.IsValid)
                         distance = Point2D.Distance(creature, creature.Target);
+
                     Attack(creature, distance);
                     break;
             }
@@ -36,8 +37,10 @@ namespace SUS.Server
         {
             var weapons = new List<Weapon>();
             foreach (var i in creature.Items)
+            {
                 if (i.IsEquippable && ((Equippable) i).IsWeapon)
                     weapons.Add(i as Weapon);
+            }
 
             var weapon = creature.Weapon;
             foreach (var w in weapons)
@@ -54,7 +57,8 @@ namespace SUS.Server
                     weapon = w;
             }
 
-            if (!(weapon is Unarmed) && weapon != creature.Weapon) creature.Equip(weapon);
+            if (!(weapon is Unarmed) && weapon != creature.Weapon)
+                creature.Equip(weapon);
         }
     }
 }

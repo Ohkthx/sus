@@ -84,7 +84,9 @@ namespace SUS.Server.Objects
 
         public static bool operator ==(Item i1, Item i2)
         {
-            if (ReferenceEquals(i1, i2)) return true;
+            if (ReferenceEquals(i1, i2))
+                return true;
+
             return !ReferenceEquals(null, i1) && i1.Equals(i2);
         }
 
@@ -95,14 +97,20 @@ namespace SUS.Server.Objects
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value)) return false;
-            if (ReferenceEquals(this, value)) return true;
+            if (ReferenceEquals(null, value))
+                return false;
+
+            if (ReferenceEquals(this, value))
+                return true;
+
             return value.GetType() == GetType() && IsEqual((Item) value);
         }
 
         private bool Equals(Item item)
         {
-            if (ReferenceEquals(null, item)) return false;
+            if (ReferenceEquals(null, item))
+                return false;
+
             return ReferenceEquals(this, item) || IsEqual(item);
         }
 

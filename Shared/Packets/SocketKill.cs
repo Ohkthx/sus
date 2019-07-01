@@ -8,8 +8,7 @@ namespace SUS.Shared.Packets
         private bool _kill;
         private string _message;
 
-        public SocketKillPacket(ulong playerId, string message = "", bool kill = true)
-            : base(PacketTypes.SocketKill, playerId)
+        public SocketKillPacket(string message = "", bool kill = true)
         {
             Message = message;
             Kill = kill;
@@ -22,7 +21,8 @@ namespace SUS.Shared.Packets
             get => _kill;
             private set
             {
-                if (value != Kill) _kill = value;
+                if (value != Kill)
+                    _kill = value;
             }
         }
 

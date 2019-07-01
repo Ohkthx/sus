@@ -67,7 +67,9 @@ namespace SUS.Server.Objects.Mobiles
             paperdoll += "  |\n  +-[ Equipment ]\n";
             foreach (var equippable in Equipment.Values)
             {
-                if (equippable.IsWeapon && equippable.IsStarter) continue;
+                if (equippable.IsWeapon && equippable.IsStarter)
+                    continue;
+
                 paperdoll +=
                     $"  | +-- {"[" + equippable.Rating + "]",-4} {equippable.Name} {(!equippable.Invulnerable ? $"[Durability: {equippable.Durability} / {equippable.DurabilityMax}]" : string.Empty)}\n";
             }
@@ -89,11 +91,6 @@ namespace SUS.Server.Objects.Mobiles
             IsLoggedIn = true;
         }
 
-        public void AddUnlockedRegion(Regions region)
-        {
-            UnlockedRegions |= region;
-        }
-
         #region Getters / Setters
 
         public int CR => (int) SkillTotal / 36;
@@ -103,11 +100,10 @@ namespace SUS.Server.Objects.Mobiles
             get => _playerId;
             set
             {
-                if (value != PlayerID) _playerId = value;
+                if (value != PlayerID)
+                    _playerId = value;
             }
         }
-
-        public Regions UnlockedRegions { get; protected set; }
 
         protected override DamageTypes Resistances
         {

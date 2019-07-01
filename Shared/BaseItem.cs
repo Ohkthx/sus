@@ -46,7 +46,7 @@ namespace SUS.Shared
 
         #endregion
 
-        #region Getters / Settersa
+        #region Getters / Setters
 
         public string Name => _name ?? "Unknown";
 
@@ -88,7 +88,9 @@ namespace SUS.Shared
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value)) return false;
+            if (ReferenceEquals(null, value))
+                return false;
+
             return value.GetType() == GetType() && IsEqual((BaseItem) value);
         }
 

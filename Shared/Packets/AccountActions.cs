@@ -10,8 +10,8 @@ namespace SUS.Shared.Packets
         #region Constructors
 
         public AccountAuthenticatePacket(ulong playerId, string name)
-            : base(PacketTypes.Authenticate, playerId)
         {
+            PlayerId = playerId;
             Name = name;
         }
 
@@ -24,7 +24,8 @@ namespace SUS.Shared.Packets
             get => _name;
             private set
             {
-                if (value == string.Empty || value == Name) return;
+                if (value == string.Empty || value == Name)
+                    return;
 
                 _name = value;
             }
@@ -38,15 +39,6 @@ namespace SUS.Shared.Packets
     {
         private ClientState _clientState;
 
-        #region Constructors
-
-        public AccountClientPacket(ulong playerId)
-            : base(PacketTypes.ClientState, playerId)
-        {
-        }
-
-        #endregion
-
         #region Getters / Setters
 
         public ClientState ClientState
@@ -54,9 +46,11 @@ namespace SUS.Shared.Packets
             get => _clientState;
             set
             {
-                if (value == null) return;
+                if (value == null)
+                    return;
 
-                if (ClientState != value) _clientState = value;
+                if (ClientState != value)
+                    _clientState = value;
             }
         }
 

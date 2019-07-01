@@ -46,9 +46,14 @@ namespace SUS.Server.Objects.Mobiles.NPCs
 
         public override int ServicePrice(Item item)
         {
-            if (!(item is IDestroyable destroyable)) return 0;
-            if (destroyable.Invulnerable) return 0;
-            if (destroyable.Durability == destroyable.DurabilityMax) return 0;
+            if (!(item is IDestroyable destroyable))
+                return 0;
+
+            if (destroyable.Invulnerable)
+                return 0;
+
+            if (destroyable.Durability == destroyable.DurabilityMax)
+                return 0;
 
             return (destroyable.DurabilityMax - destroyable.Durability) * RepairRate;
         }
@@ -62,7 +67,8 @@ namespace SUS.Server.Objects.Mobiles.NPCs
             foreach (var item in mobile.Items)
             {
                 // Ignore the item if there is no cost to service.
-                if (ServicePrice(item) == 0) continue;
+                if (ServicePrice(item) == 0)
+                    continue;
 
                 // Add the item.
                 items.Add(item.Base(), ServicePrice(item));
@@ -73,11 +79,15 @@ namespace SUS.Server.Objects.Mobiles.NPCs
 
         public override int PerformService(Mobile mobile, Item item)
         {
-            if (!(item is IDestroyable destroyable)) return 0;
-            if (destroyable.Invulnerable) return 0;
+            if (!(item is IDestroyable destroyable))
+                return 0;
+
+            if (destroyable.Invulnerable)
+                return 0;
 
             var missingDurability = destroyable.DurabilityMax - destroyable.Durability;
-            if (missingDurability <= 0) return 0;
+            if (missingDurability <= 0)
+                return 0;
 
             // Amount the gold will cost.
             var goldCost = missingDurability * RepairRate;

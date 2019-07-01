@@ -15,7 +15,7 @@ namespace SUS.Shared
     }
 
     [Flags]
-    public enum MobileDirections
+    public enum Directions
     {
         None = 0,
 
@@ -97,7 +97,8 @@ namespace SUS.Shared
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value)) return false;
+            if (ReferenceEquals(null, value))
+                return false;
 
             return value.GetType() == GetType() && IsEqual((BaseMobile) value);
         }

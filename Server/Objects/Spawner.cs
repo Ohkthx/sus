@@ -10,19 +10,19 @@ namespace SUS.Server.Objects
     [Flags]
     public enum SpawnTypes
     {
-        None = 0x00000000,
+        None = 0,
 
-        Skeleton = 0x00000001,
-        Zombie = 0x00000002,
-        Ghoul = 0x00000004,
-        Wraith = 0x00000008,
+        Skeleton = 1 << 0,
+        Zombie = 1 << 1,
+        Ghoul = 1 << 2,
+        Wraith = 1 << 3,
 
-        Orc = 0x00000010,
-        Cyclops = 0x00000020,
-        Titan = 0x00000040,
+        Orc = 1 << 4,
+        Cyclops = 1 << 5,
+        Titan = 1 << 6,
 
-        Lizardman = 0x00000100,
-        Ettin = 0x00000200,
+        Lizardman = 1 << 7,
+        Ettin = 1 << 8
     }
 
     public class Spawner : ISpawner
@@ -61,44 +61,6 @@ namespace SUS.Server.Objects
 
         #endregion
 
-        #region Getters / Setters
-
-        public Guid ID
-        {
-            get
-            {
-                if (_id == Guid.Empty) _id = Guid.NewGuid();
-
-                return _id;
-            }
-        }
-
-        public Point2D HomeLocation
-        {
-            get => _location;
-            private set
-            {
-                if (value != HomeLocation) _location = value;
-            }
-        }
-
-        private Regions Region { get; }
-
-        private SpawnTypes Spawns
-        {
-            get => _spawns;
-            set
-            {
-                if (value != Spawns) _spawns = value;
-            }
-        }
-
-        private HashSet<Mobile> Spawned => _spawned ?? (_spawned = new HashSet<Mobile>());
-
-        public int HomeRange { get; }
-
-        #endregion
-
         #region Spawning
 
         private void Spawn(object source, ElapsedEventArgs e)
@@ -106,7 +68,8 @@ namespace SUS.Server.Objects
             // Clean the spawner.
             Spawned.RemoveWhere(x => x.IsDeleted);
 
-            if (Spawned.Count >= _limit) return;
+            if (Spawned.Count >= _limit)
+                return;
 
             var spawns = Utility.EnumToIEnumerable<SpawnTypes>(_spawns, true);
             if (spawns == null || !spawns.Any())
@@ -138,21 +101,64 @@ namespace SUS.Server.Objects
 
         #endregion
 
+        #region Getters / Setters
+
+        public Guid ID
+        {
+            get
+            {
+                if (_id == Guid.Empty)
+                    _id = Guid.NewGuid();
+
+                return _id;
+            }
+        }
+
+        public Point2D HomeLocation
+        {
+            get => _location;
+            private set
+            {
+                if (value != HomeLocation)
+                    _location = value;
+            }
+        }
+
+        private Regions Region { get; }
+
+        private SpawnTypes Spawns
+        {
+            get => _spawns;
+            set
+            {
+                if (value != Spawns)
+                    _spawns = value;
+            }
+        }
+
+        private HashSet<Mobile> Spawned => _spawned ?? (_spawned = new HashSet<Mobile>());
+
+        public int HomeRange { get; }
+
+        #endregion
+
         #region Coordinates
 
         public Point2D ValidCoordinate(int baseX, int baseY, int range)
         {
-            var newX = validAxis(baseX, _canvasMaxX, range);
-            var newY = validAxis(baseY, _canvasMaxY, range);
+            var newX = ValidAxis(baseX, _canvasMaxX, range);
+            var newY = ValidAxis(baseY, _canvasMaxY, range);
 
             return new Point2D(newX, newY);
         }
 
-        private int validAxis(int baseN, int maxN, int range)
+        private static int ValidAxis(int baseN, int maxN, int range)
         {
-            if (baseN < 0) baseN = 0;
+            if (baseN < 0)
+                baseN = 0;
 
-            if (baseN > maxN) baseN = maxN;
+            if (baseN > maxN)
+                baseN = maxN;
 
             int baseModified;
             do

@@ -2,12 +2,12 @@
 
 namespace SUS.Server.Map
 {
-    public abstract class Town : Node
+    public abstract class Town : Region
     {
         #region Constructors
 
-        protected Town(RegionTypes types, Shared.Regions region)
-            : base(types, region)
+        protected Town(RegionTypes types, Regions id)
+            : base(types, id)
         {
             IsSpawnable = false;
         }

@@ -111,7 +111,8 @@ namespace SUS.Server
             }
 
             var d11 = Utility.RandomMinMax(0, 10);
-            if (d11 < chance || _timer.ElapsedTime <= time) return 0.0;
+            if (d11 < chance || _timer.ElapsedTime <= time)
+                return 0.0;
 
             // chance is right, and timer is exceeded.
             _timer.Restart();
@@ -144,7 +145,8 @@ namespace SUS.Server
             get => _name ?? "Unknown";
             private set
             {
-                if (!string.IsNullOrEmpty(value)) _name = value;
+                if (!string.IsNullOrEmpty(value))
+                    _name = value;
             }
         }
 
@@ -153,7 +155,8 @@ namespace SUS.Server
             get => _type;
             set
             {
-                if (value != Type) _type = value;
+                if (value != Type)
+                    _type = value;
             }
         }
 
@@ -164,7 +167,8 @@ namespace SUS.Server
             {
                 if (value < 0.0)
                     value = 0.0;
-                else if (value > Cap) value = Cap;
+                else if (value > Cap)
+                    value = Cap;
 
                 _value = value;
             }
@@ -175,11 +179,13 @@ namespace SUS.Server
             get => _cap;
             private set
             {
-                if (value < Value) return;
+                if (value < Value)
+                    return;
 
                 if (value < 0.0)
                     value = 0.0;
-                else if (value > 200.0) value = 200.0;
+                else if (value > 200.0)
+                    value = 200.0;
 
                 _cap = value;
             }
@@ -196,9 +202,11 @@ namespace SUS.Server
 
         public static Skill operator +(Skill s, double amt)
         {
-            if (amt <= 0.0) return s;
+            if (amt <= 0.0)
+                return s;
 
-            if (s.Value >= s.Cap) return s;
+            if (s.Value >= s.Cap)
+                return s;
 
             if (s.Value + amt > s.Cap)
                 s.Value = s.Cap;
@@ -215,7 +223,8 @@ namespace SUS.Server
 
         public static Skill operator -(Skill s, double amt)
         {
-            if (amt <= 0.0) return s;
+            if (amt <= 0.0)
+                return s;
 
             if (s.Value <= 0.0)
             {

@@ -67,7 +67,9 @@ namespace SUS.Server.Objects.Items
         {
             WeaponType = type;
 
-            if (material == Materials.None) material = Materials.Wooden;
+            if (material == Materials.None)
+                material = Materials.Wooden;
+
             Material = material;
 
             Range = range;
@@ -95,7 +97,8 @@ namespace SUS.Server.Objects.Items
             get => _damage;
             set
             {
-                if (value == null) return;
+                if (value == null)
+                    return;
 
                 _damage = value;
             }
@@ -108,7 +111,8 @@ namespace SUS.Server.Objects.Items
             private get => _material;
             set
             {
-                if (value == Material) return;
+                if (value == Material)
+                    return;
 
                 _material = value;
             }
@@ -119,7 +123,8 @@ namespace SUS.Server.Objects.Items
             get => _damageType == DamageTypes.None ? DamageTypes.Bludgeoning : _damageType;
             set
             {
-                if (value == DamageTypes.None || value == DamageType) return;
+                if (value == DamageTypes.None || value == DamageType)
+                    return;
 
                 _damageType = value;
             }
@@ -130,7 +135,8 @@ namespace SUS.Server.Objects.Items
             get => _stat;
             protected set
             {
-                if (value == Stat) return;
+                if (value == Stat)
+                    return;
 
                 _stat = value;
             }
@@ -141,7 +147,8 @@ namespace SUS.Server.Objects.Items
             get => _skill;
             protected set
             {
-                if (value == RequiredSkill) return;
+                if (value == RequiredSkill)
+                    return;
 
                 _skill = value;
             }
@@ -154,7 +161,9 @@ namespace SUS.Server.Objects.Items
             {
                 if (value == Range)
                     return;
-                if (value < 1) value = 1;
+
+                if (value < 1)
+                    value = 1;
 
                 _attackRange = value;
             }

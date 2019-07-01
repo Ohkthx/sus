@@ -83,4 +83,10 @@ namespace SUS.Server
 
         void AddKill();
     }
+
+    public interface IHandler
+    {
+        void Core();
+        void Close();
+    }
 }

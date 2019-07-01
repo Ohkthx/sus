@@ -37,7 +37,7 @@ namespace SUS.Server.Objects
 
         public static Weapon GetWeapon(WeaponTypes weapon, Weapon.Materials material)
         {
-            switch(weapon)
+            switch (weapon)
             {
                 case WeaponTypes.ShortBow:
                     return new ShortBow(material);
@@ -60,7 +60,8 @@ namespace SUS.Server.Objects
                     return new TwoHandedSword(material);
 
                 default:
-                    throw new InvalidFactoryException($"Weapon: {Enum.GetName(typeof(WeaponTypes), weapon)}, Material: {Enum.GetName(typeof(Weapon.Materials), material)}");
+                    throw new InvalidFactoryException(
+                        $"Weapon: {Enum.GetName(typeof(WeaponTypes), weapon)}, Material: {Enum.GetName(typeof(Weapon.Materials), material)}");
             }
         }
     }

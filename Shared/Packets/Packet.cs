@@ -2,27 +2,6 @@
 
 namespace SUS.Shared.Packets
 {
-    public enum PacketTypes
-    {
-        Ok,
-        Error,
-
-        Authenticate,
-        ClientState,
-
-        GetLocalMobiles,
-        GetMobile,
-        GetNode,
-
-        MobileCombat,
-        MobileMove,
-        MobileResurrect,
-        UseItem,
-        UseVendor,
-
-        SocketKill
-    }
-
     [Serializable]
     public abstract class Packet : IPacket
     {
@@ -35,50 +14,40 @@ namespace SUS.Shared.Packets
             Five
         }
 
-        private ulong _playerId; // Author / Owner of the packet.
         private Stages _stage;
-        private PacketTypes _type; // Type of the packet.
 
         // Creates an instance of a Request based on supplied Type and Object.
-        protected Packet(PacketTypes type, ulong playerId)
+        protected Packet()
         {
-            Type = type;
-            PlayerId = playerId;
             Stage = Stages.One;
         }
 
         // Converts the object into a byte array to be passed over the network.
         public byte[] ToByte()
         {
+            Clean();
             return Network.Serialize(this);
+        }
+
+        /// <summary>
+        ///     By default, nothing needs to be cleaned.
+        /// </summary>
+        protected virtual void Clean()
+        {
         }
 
         #region Getters / Setters
 
-        public PacketTypes Type
-        {
-            get => _type;
-            private set
-            {
-                if (value != Type) _type = value;
-            }
-        }
-
-        public ulong PlayerId
-        {
-            get => _playerId;
-            private set
-            {
-                if (value != PlayerId) _playerId = value;
-            }
-        }
+        public ulong PlayerId { get; set; }
 
         public Stages Stage
         {
             get => _stage;
             set
             {
-                if (!Enum.IsDefined(typeof(Stages), value)) return;
+                if (!Enum.IsDefined(typeof(Stages), value))
+                    throw new ArgumentOutOfRangeException(nameof(value), "Attempted to adjust packet stage.");
+
                 _stage = value;
             }
         }
@@ -95,7 +64,7 @@ namespace SUS.Shared.Packets
         {
         }
 
-        public OkPacket(string message) : base(PacketTypes.Ok, 0)
+        public OkPacket(string message)
         {
             Message = message;
         }
@@ -105,11 +74,13 @@ namespace SUS.Shared.Packets
             get => _message;
             private set
             {
-                if (string.IsNullOrEmpty(value)) return;
+                if (string.IsNullOrEmpty(value))
+                    return;
 
                 if (Message == string.Empty)
                     _message = value;
-                else if (Message != value) _message = value;
+                else if (Message != value)
+                    _message = value;
             }
         }
     }
@@ -119,7 +90,7 @@ namespace SUS.Shared.Packets
     {
         private string _error = string.Empty;
 
-        public ErrorPacket(string message) : base(PacketTypes.Error, 0)
+        public ErrorPacket(string message)
         {
             Message = message;
         }
@@ -131,11 +102,13 @@ namespace SUS.Shared.Packets
             get => _error;
             private set
             {
-                if (string.IsNullOrEmpty(value)) return;
+                if (string.IsNullOrEmpty(value))
+                    return;
 
                 if (Message == string.Empty)
                     _error = value;
-                else if (Message != value) _error = value;
+                else if (Message != value)
+                    _error = value;
             }
         }
 

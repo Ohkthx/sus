@@ -16,20 +16,30 @@ namespace SUS.Shared
     /// </summary>
     public static class Utility
     {
+        private static int _badLogAttempts; // Counts the bad attempts made.
         private static readonly object NotifyLock = new object();
 
+        /// <summary>
+        ///     Get an integer from the console in regards to a list of options.
+        /// </summary>
+        /// <param name="maxSize">Size of the list.</param>
+        /// <param name="zeroIsNone">If '0' in the list is a "None" option.</param>
+        /// <returns>Integer selected.</returns>
         public static int ReadInt(int maxSize, bool zeroIsNone = false)
         {
+            // Edits the maxsize in regards if zero is set as "none"
             maxSize = zeroIsNone ? maxSize - 1 : maxSize;
 
             int opt;
             do
             {
                 Console.Write(" Selection: ");
-                if (!int.TryParse(Console.ReadLine(), out opt)) continue;
+                if (!int.TryParse(Console.ReadLine(), out opt))
+                    continue;
 
                 if (zeroIsNone && opt >= 0 && opt <= maxSize)
                     break;
+
                 if (opt > 0 && opt <= maxSize)
                     break;
             } while (true);
@@ -37,6 +47,11 @@ namespace SUS.Shared
             return opt;
         }
 
+        /// <summary>
+        ///     Attempt to convert user input to a desired Enum.
+        /// </summary>
+        /// <typeparam name="TEnum">Type of the enum.</typeparam>
+        /// <returns>Enum selected.</returns>
         public static TEnum ReadEnum<TEnum>()
             where TEnum : struct
         {
@@ -49,10 +64,18 @@ namespace SUS.Shared
             return opt;
         }
 
-        public static IEnumerable<T> EnumToIEnumerable<T>(Enum mask, bool powerOf2 = false)
+        /// <summary>
+        ///     Take an enum with a mask (bits set) and converts it to an IEnumerable.
+        /// </summary>
+        /// <typeparam name="TEnum">Type of the enum.</typeparam>
+        /// <param name="mask">Set flags.</param>
+        /// <param name="powerOf2">Does the Enum respect bit flagging?</param>
+        /// <returns>IEnumerable that can be iterated.</returns>
+        public static IEnumerable<TEnum> EnumToIEnumerable<TEnum>(Enum mask, bool powerOf2 = false)
         {
             // Thanks to [stackoverflow.com/users/1612975].
-            if (!typeof(T).IsEnum) return new List<T>();
+            if (!typeof(TEnum).IsEnum)
+                return new List<TEnum>();
 
             // Anonymous function that determines if it needs to validate if it is a power of two, if so- it does.
             bool PowerCheck(int v)
@@ -60,13 +83,17 @@ namespace SUS.Shared
                 return !powerOf2 || (v & (v - 1)) == 0;
             }
 
-            return Enum.GetValues(typeof(T))
+            return Enum.GetValues(typeof(TEnum))
                 .Cast<Enum>()
                 .Where(x => mask.HasFlag(x) && PowerCheck(Convert.ToInt32(x)))
-                .Cast<T>()
+                .Cast<TEnum>()
                 .Skip(1);
         }
 
+        /// <summary>
+        ///     Fancy printing of messages to a console for notification.
+        /// </summary>
+        /// <param name="msg">Message to be printed.</param>
         public static void ConsoleNotify(string msg)
         {
             lock (NotifyLock)
@@ -77,6 +104,123 @@ namespace SUS.Shared
                 Console.ForegroundColor = cc; // Reset the color to the default.
             }
         }
+
+        /// <summary>
+        ///     Writes a single string to a log on the Desktop.
+        /// </summary>
+        /// <param name="logFilename">File to write to or be named.</param>
+        /// <param name="logData">Information to place in the log.</param>
+        public static void LogWrite(string logFilename, string logData)
+        {
+            // Prevents log spamming if a repeated error is occuring. 
+            if (_badLogAttempts > 5)
+                return;
+
+            // If the filename or log information is invalid, do not bother logging.
+            if (string.IsNullOrWhiteSpace(logFilename))
+            {
+                ++_badLogAttempts;
+                throw new ArgumentException("File name to save the log is invalid.");
+            }
+
+            if (string.IsNullOrWhiteSpace(logData))
+            {
+                ++_badLogAttempts;
+                throw new ArgumentException("Log is invalid or empty.");
+            }
+
+
+            try
+            {
+                // Creates the 'Desktop' Directory if it does not exist, returns the location.
+                var desktopLocation = Environment.GetFolderPath(Environment.SpecialFolder.Desktop,
+                    Environment.SpecialFolderOption.Create);
+
+                // Concatenate "combat.log" to the the Desktop location.
+                var fn = Path.Combine(desktopLocation, logFilename);
+                using (var sw = File.AppendText(fn))
+                {
+                    // Appends to the file if it exists, otherwise it will be created and written to.
+                    sw.WriteLine($"[{DateTime.Now}]\n{logData}\n"); // Timestamp and log it.
+                }
+
+                // For every log attempt that succeeded, we decrease the bad attempt counter.
+                if (_badLogAttempts > 0)
+                    --_badLogAttempts;
+            }
+            catch (PlatformNotSupportedException)
+            {
+                ++_badLogAttempts;
+                ConsoleNotify($"Could not log to '{logFilename}' due to the platform not being supported.");
+            }
+            catch (Exception e)
+            {
+                ++_badLogAttempts;
+                ConsoleNotify($"An unknown error occurred while logging information to '{logFilename}': \n{e}");
+            }
+        }
+
+        /// <summary>
+        ///     Writes a list of strings to a log on the Desktop.
+        /// </summary>
+        /// <param name="logFilename">File to write to our be named.</param>
+        /// <param name="logData">List of data that needs to be placed into the log.</param>
+        public static void LogWrite(string logFilename, List<string> logData)
+        {
+            // Prevents log spamming if a repeated error is occuring. 
+            if (_badLogAttempts > 5)
+                return;
+
+            // If the filename or log information is invalid, do not bother logging.
+            if (string.IsNullOrWhiteSpace(logFilename))
+            {
+                ++_badLogAttempts;
+                throw new ArgumentException("File name to save the log is invalid.");
+            }
+
+            if (logData == null || logData.Count == 0)
+            {
+                ++_badLogAttempts;
+                throw new ArgumentException("Log is invalid or empty.");
+            }
+
+
+            try
+            {
+                // Creates the 'Desktop' Directory if it does not exist, returns the location.
+                var desktopLocation = Environment.GetFolderPath(Environment.SpecialFolder.Desktop,
+                    Environment.SpecialFolderOption.Create);
+
+                // Concatenate "combat.log" to the the Desktop location.
+                var fn = Path.Combine(desktopLocation, logFilename);
+                using (var sw = File.AppendText(fn))
+                {
+                    // Appends to the file if it exists, otherwise it will be created and written to.
+                    sw.WriteLine($"[{DateTime.Now}]"); // Timestamp the log.
+                    foreach (var str in logData)
+                        sw.WriteLine(str); // Write the server responses to the log.
+
+                    sw.WriteLine(); // Blank line for the next log.
+                }
+
+                // For every log attempt that succeeded, we decrease the bad attempt counter.
+                if (_badLogAttempts > 0)
+                    --_badLogAttempts;
+            }
+            catch (PlatformNotSupportedException)
+            {
+                ++_badLogAttempts;
+                ConsoleNotify($"Could not log to '{logFilename}' due to the platform not being supported.");
+            }
+
+            catch (Exception e)
+            {
+                ++_badLogAttempts;
+                ConsoleNotify($"An unknown error occurred while logging information to '{logFilename}': \n{e}");
+            }
+        }
+
+        #region RNG
 
         public static double RandomMinMax(double min, double max)
         {
@@ -112,9 +256,11 @@ namespace SUS.Shared
 
         public static int Random(int from, int count)
         {
-            if (count == 0) return from;
+            if (count == 0)
+                return from;
 
-            if (count > 0) return from + RandomImpl.Next(count);
+            if (count > 0)
+                return from + RandomImpl.Next(count);
 
             return from - RandomImpl.Next(-count);
         }
@@ -139,6 +285,8 @@ namespace SUS.Shared
             var val = Enum.GetValues(typeof(TEnum));
             return (TEnum) val.GetValue(Random(val.Length));
         }
+
+        #endregion
     }
 
     /// <summary>
@@ -195,41 +343,44 @@ namespace SUS.Shared
         public const int BufferSize = 1024;
 
         // Receive buffer.  
-        public readonly byte[] buffer = new byte[BufferSize];
+        public readonly byte[] Buffer = new byte[BufferSize];
 
         // Check if we have got the read size.
-        private bool m_HaveSize;
+        private bool _haveSize;
 
         // Stores the extracted object size.
         public long ObjectSize = -1;
 
+        // Client socket.  
+        public Socket Socket;
+
         // Received data total.
         public byte[] Value;
-
-        // Client  socket.  
-        public Socket workSocket;
 
         // Extracts the size of the object.
         public bool ExtractSize(byte[] array, int size)
         {
             // Return early if it's already been performed. This should be called before attempting this.
-            if (m_HaveSize) return true;
+            if (_haveSize)
+                return true;
 
-            if (ObjectSize >= 0) return true;
+            if (ObjectSize >= 0)
+                return true;
 
-            if (size < HeaderSize) return true;
+            if (size < HeaderSize)
+                return true;
 
             // Attempt to get first sizeof(long) bytes from buffer.
             ObjectSize = BitConverter.ToInt64(array, 0);
 
             // Reassign new buffer with trimmed header.
             var tBuffer = new byte[size - HeaderSize];
-            Array.Copy(buffer, HeaderSize, tBuffer, 0, size - HeaderSize);
+            Array.Copy(Buffer, HeaderSize, tBuffer, 0, size - HeaderSize);
 
             // Add to our current value.
             Add(tBuffer, tBuffer.Length);
 
-            m_HaveSize = true;
+            _haveSize = true;
             return false;
         }
 
@@ -237,7 +388,8 @@ namespace SUS.Shared
         public void Add(byte[] array, int size)
         {
             var iLength = 0;
-            if (Value != null && Value.Length > 0) iLength = Value.Length;
+            if (Value != null && Value.Length > 0)
+                iLength = Value.Length;
 
             var newValue = new byte[size + iLength];
 
@@ -262,29 +414,29 @@ namespace SUS.Shared
             Client = 2
         }
 
-        private readonly bool m_Debug;
-        private readonly ManualResetEvent m_ReadDone = new ManualResetEvent(false);
-        private readonly ManualResetEvent m_SendDone = new ManualResetEvent(false);
-        private readonly Socket m_Socket;
-        private readonly Types m_Type;
-        private object m_Response;
+        private readonly bool _debug;
+        private readonly ManualResetEvent _readDone = new ManualResetEvent(false);
+        private readonly ManualResetEvent _sendDone = new ManualResetEvent(false);
+        private readonly Socket _socket;
+        private readonly Types _type;
+        private IPacket _response;
 
         /// <summary>
         ///     Creates an instance of a SocketHandler with the information provided.
         /// </summary>
         public SocketHandler(Socket socket, Types type, bool debug = false)
         {
-            m_Type = type;
-            m_Socket = socket;
-            m_Debug = debug;
+            _type = type;
+            _socket = socket;
+            _debug = debug;
         }
 
-        private void ServerReadCallback(IAsyncResult ar)
+        private void ReadCallback(IAsyncResult ar)
         {
             // Retrieve the state object and the handler socket  
             // from the asynchronous state object.  
             var state = (StateObject) ar.AsyncState;
-            var handler = state.workSocket;
+            var handler = state.Socket;
 
             // Read data from the client socket.
             int bytesRead;
@@ -294,67 +446,30 @@ namespace SUS.Shared
             }
             catch (SocketException)
             {
-                Kill();
+                Kill(true);
                 return;
             }
 
-            if (bytesRead > 0)
+            if (bytesRead <= 0)
+                return;
+
+            // Extract our ObjectSize if we haven't already.
+            if (state.ExtractSize(state.Buffer, bytesRead))
+                state.Add(state.Buffer, bytesRead);
+
+            if (state.Value.Length == state.ObjectSize)
             {
-                // Extract our ObjectSize if we haven't already.
-                if (state.ExtractSize(state.buffer, bytesRead)) state.Add(state.buffer, bytesRead);
+                if (_debug)
+                    Console.WriteLine(
+                        $" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), _type)}.");
 
-                if (state.Value.Length == state.ObjectSize)
-                {
-                    if (m_Debug)
-                        Console.WriteLine(
-                            $" => {state.Value.Length + sizeof(long)} bytes read from {Enum.GetName(typeof(Types), m_Type)}.");
-
-                    m_Response = Network.Deserialize(state.Value);
-                    m_ReadDone.Set();
-                }
-                else
-                {
-                    // Not all data received. Get more.  
-                    handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, ServerReadCallback, state);
-                }
+                _response = Network.Deserialize(state.Value) as IPacket;
+                _readDone.Set();
             }
-        }
-
-        private void ServerSendCallback(IAsyncResult ar)
-        {
-            try
+            else
             {
-                // Retrieve the socket from the state object.  
-                var handler = (Socket) ar.AsyncState;
-
-                // Complete sending the data to the remote device.  
-                var bytesSent = handler.EndSend(ar);
-
-                if (m_Debug) Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), m_Type)}.");
-
-                m_SendDone.Set();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-        }
-
-        private void Send(byte[] data)
-        {
-            // Begin sending the data to the remote device.
-            try
-            {
-                m_Socket.BeginSend(data, 0, data.Length, 0,
-                    SendCallback, m_Socket);
-            }
-            catch (SocketException)
-            {
-                Kill();
-            }
-            catch (Exception)
-            {
-                Kill();
+                // Not all data received. Get more.  
+                handler.BeginReceive(state.Buffer, 0, StateObject.BufferSize, 0, ReadCallback, state);
             }
         }
 
@@ -368,9 +483,10 @@ namespace SUS.Shared
                 // Complete sending the data to the remote device.  
                 var bytesSent = handler.EndSend(ar);
 
-                if (m_Debug) Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), m_Type)}.");
+                if (_debug)
+                    Console.WriteLine($" <= {bytesSent} bytes sent to {Enum.GetName(typeof(Types), _type)}.");
 
-                m_SendDone.Set();
+                _sendDone.Set();
             }
             catch (Exception e)
             {
@@ -378,49 +494,63 @@ namespace SUS.Shared
             }
         }
 
-        public void ToServer(byte[] data)
-        {
-            Send(data);
-            m_SendDone.WaitOne();
-            m_SendDone.Reset();
-        }
-
-        public object FromClient()
+        /// <summary>
+        ///     Read information from the socket.
+        /// </summary>
+        /// <returns>Packet received from the remote socket.</returns>
+        public IPacket Receive()
         {
             var state = new StateObject
             {
-                workSocket = m_Socket
+                Socket = _socket
             };
-            m_Socket.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                ServerReadCallback, state);
+            _socket.BeginReceive(state.Buffer, 0, StateObject.BufferSize, 0,
+                ReadCallback, state);
             //this.Receive();
-            m_ReadDone.WaitOne();
+            _readDone.WaitOne();
 
-            var obj = m_Response;
-            m_Response = null;
+            var obj = _response;
+            _response = null;
 
-            m_ReadDone.Reset();
+            _readDone.Reset();
 
             return obj;
         }
 
-        public void ToClient(byte[] data)
+        /// <summary>
+        ///     Send information over the socket to the destination.
+        /// </summary>
+        /// <param name="packet">Information to be setn.</param>
+        public void Send(IPacket packet)
         {
-            // Begin sending the data to the remote device.  
-            m_Socket.BeginSend(data, 0, data.Length, 0,
-                ServerSendCallback, m_Socket);
-            m_SendDone.WaitOne();
+            var data = packet.ToByte();
 
-            m_SendDone.Reset();
+            try
+            {
+                // Begin sending the data to the remote device.  
+                _socket.BeginSend(data, 0, data.Length, 0, SendCallback, _socket);
+                _sendDone.WaitOne();
+
+                _sendDone.Reset();
+            }
+            catch (SocketException se)
+            {
+                var n = Assembly.GetExecutingAssembly().GetName().Name;
+                var t = $"Error occurred in '{n}' while sending data.\n{se.Message}";
+                Utility.LogWrite("err.txt", t);
+            }
         }
 
-        public void Kill()
+        /// <summary>
+        ///     Shuts the socket down. Can send a kill packet to the remote connection.
+        /// </summary>
+        /// <param name="sendKill">Inform the remote end if it should terminate.</param>
+        public void Kill(bool sendKill = false)
         {
-            Send(new SocketKillPacket(0).ToByte());
-            m_SendDone.WaitOne();
-            //socket.Shutdown(SocketShutdown.Both);
-            //socket.Close();
-            m_SendDone.Reset();
+            if (sendKill)
+                Send(new SocketKillPacket());
+
+            _socket.Close();
         }
     }
 
@@ -428,7 +558,8 @@ namespace SUS.Shared
     {
         public override Type BindToType(string assemblyName, string typeName)
         {
-            if (assemblyName == null) throw new ArgumentNullException(nameof(assemblyName));
+            if (assemblyName == null)
+                throw new ArgumentNullException(nameof(assemblyName));
 
             var currentAssembly = Assembly.GetExecutingAssembly().FullName;
 

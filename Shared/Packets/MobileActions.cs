@@ -1,37 +1,41 @@
 ﻿using System;
 using System.Collections.Generic;
+using SUS.Shared.Actions;
 
 namespace SUS.Shared.Packets
 {
     [Serializable]
-    public class CombatMobilePacket : Packet
+    public class CombatPacket : Packet
     {
+        private int _mobileCount;
+        private Dictionary<int, BaseMobile> _mobiles; // Local mobiles that exist in the area.
+        private Regions _region; // Local region.
         private string _result; // Result of the combat.
         private List<int> _targets; // List of Targets
         private List<string> _updates; // Updates on all.
-
-        #region Constructors
-
-        public CombatMobilePacket(ulong playerId)
-            : base(PacketTypes.MobileCombat, playerId)
-        {
-        }
-
-        #endregion
 
         public bool IsAlive { get; set; } // Determines if the Initiator (Player) died.
 
         public void AddTarget(BaseMobile tag)
         {
-            if (!Targets.Contains(tag.Serial)) Targets.Add(tag.Serial);
+            if (!Targets.Contains(tag.Serial))
+                Targets.Add(tag.Serial);
         }
 
         public void AddUpdate(List<string> info)
         {
-            if (info == null) return;
+            if (info == null)
+                return;
 
             Updates.AddRange(info);
         }
+
+        public void AddMobile(BaseMobile mobile, int position = -1)
+        {
+            var pos = position < 0 ? ++_mobileCount : position;
+            Mobiles.Add(pos, mobile);
+        }
+
 
         #region Getters / Setters
 
@@ -39,12 +43,31 @@ namespace SUS.Shared.Packets
 
         public List<string> Updates => _updates ?? (_updates = new List<string>());
 
+        public Regions Region
+        {
+            get => _region;
+            private set => _region = value;
+        }
+
+        public Dictionary<int, BaseMobile> Mobiles
+        {
+            get => _mobiles ?? (_mobiles = new Dictionary<int, BaseMobile>());
+            set
+            {
+                if (value == null)
+                    return;
+
+                _mobiles = value;
+            }
+        }
+
         public string Result
         {
             get => _result;
             set
             {
-                if (string.IsNullOrEmpty(value)) return;
+                if (string.IsNullOrEmpty(value))
+                    return;
 
                 _result = value;
             }
@@ -59,35 +82,40 @@ namespace SUS.Shared.Packets
     ///     will have an updated "ConnectedRegions" to reflect this.
     /// </summary>
     [Serializable]
-    public class MoveMobilePacket : Packet
+    public class MovePacket : Packet
     {
-        private MobileDirections _direction;
+        private Directions _direction;
         private BaseRegion _newRegion;
         private Regions _region;
 
         #region Constructors
 
-        public MoveMobilePacket(Regions region, ulong playerId, MobileDirections direction = MobileDirections.None,
-            Regions discoveredRegion = Regions.None)
-            : base(PacketTypes.MobileMove, playerId)
+        public MovePacket(int mobileId, Regions region, Directions direction = Directions.None)
         {
+            Action = new Move(mobileId, region, direction);
             Region = region;
             Direction = direction;
-            DiscoveredRegion = discoveredRegion;
         }
 
         #endregion
 
+        public Move Action { get; }
+
+        public void AddDiscovery(Regions discovery)
+        {
+            DiscoveredRegions |= discovery;
+        }
+
         #region Getters / Setters
 
-        public Regions DiscoveredRegion { get; set; }
+        public Regions DiscoveredRegions { get; private set; }
 
-        public MobileDirections Direction
+        public Directions Direction
         {
             get => _direction;
             private set
             {
-                if (value == MobileDirections.None || value == Direction)
+                if (value == Directions.None || value == Direction)
                     return; // Prevent assigning a bad value or reassigning.
 
                 _direction = value;
@@ -99,7 +127,8 @@ namespace SUS.Shared.Packets
             get => _region;
             private set
             {
-                if (Region != value) _region = value;
+                if (Region != value)
+                    _region = value;
             }
         }
 
@@ -108,7 +137,8 @@ namespace SUS.Shared.Packets
             get => _newRegion;
             set
             {
-                if (NewRegion != value) _newRegion = value;
+                if (NewRegion != value)
+                    _newRegion = value;
             }
         }
 
@@ -116,19 +146,10 @@ namespace SUS.Shared.Packets
     }
 
     [Serializable]
-    public class ResurrectMobilePacket : Packet
+    public class ResurrectPacket : Packet
     {
         private Regions _region; // Region to be sent to.
         private bool _success;
-
-        #region Constructors
-
-        public ResurrectMobilePacket(ulong playerId)
-            : base(PacketTypes.MobileResurrect, playerId)
-        {
-        }
-
-        #endregion
 
         #region Getters / Setters
 
@@ -137,7 +158,8 @@ namespace SUS.Shared.Packets
             get => _region;
             set
             {
-                if (Region != value) _region = value;
+                if (Region != value)
+                    _region = value;
             }
         }
 
@@ -146,7 +168,8 @@ namespace SUS.Shared.Packets
             get => _success;
             set
             {
-                if (value != IsSuccessful) _success = value;
+                if (value != IsSuccessful)
+                    _success = value;
             }
         }
 
@@ -156,28 +179,27 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class UseItemPacket : Packet
     {
+        private Dictionary<int, string> _items;
         private string _response = string.Empty;
 
-        #region Constructor
-
-        public UseItemPacket(int serial, ulong playerId)
-            : base(PacketTypes.UseItem, playerId)
+        public void AddItem(int serial, string name)
         {
-            Item = serial;
+            Items.Add(serial, name);
         }
 
-        #endregion
-
-        public int Item { get; }
-
         #region Getters / Setters
+
+        public int Item { get; set; }
+
+        public Dictionary<int, string> Items => _items ?? (_items = new Dictionary<int, string>());
 
         public string Response
         {
             get => _response;
             set
             {
-                if (string.IsNullOrEmpty(value)) return;
+                if (string.IsNullOrEmpty(value))
+                    return;
 
                 _response = value;
             }
@@ -194,15 +216,6 @@ namespace SUS.Shared.Packets
             Yes,
             No
         }
-
-        #region Constructors
-
-        public UseVendorPacket(ulong playerId)
-            : base(PacketTypes.UseVendor, playerId)
-        {
-        }
-
-        #endregion
 
         public static BaseItem PrintItems(Dictionary<BaseItem, int> items, bool zeroIsNone = false)
         {

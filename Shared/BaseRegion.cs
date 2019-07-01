@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace SUS.Shared
 {
@@ -16,49 +17,33 @@ namespace SUS.Shared
     [Flags]
     public enum Regions
     {
-        None = 0x00000000,
-        Moongate = 0x00000001,
+        None = 0,
+        Moongate = 1 << 0,
 
-        Unused1 = 0x00000002,
+        Wilderness = 1 << 1,
 
-        Britain = 0x00000004,
-        BuccaneersDen = 0x00000008,
-        Cove = 0x00000010,
-        Minoc = 0x00000020,
-        SkaraBrae = 0x00000040,
-        Trinsic = 0x00000080,
-        Vesper = 0x00000100,
-        Yew = 0x00000200,
+        Britain = 1 << 2,
+        BuccaneersDen = 1 << 3,
+        Cove = 1 << 4,
+        Minoc = 1 << 5,
+        SkaraBrae = 1 << 6,
+        Trinsic = 1 << 7,
+        Vesper = 1 << 8,
+        Yew = 1 << 9,
 
-        Unused2 = 0x00000400,
+        Destard = 1 << 10,
+        Despise = 1 << 11,
+        Covetous = 1 << 12,
+        Shame = 1 << 13,
+        Wind = 1 << 14,
+        Wrong = 1 << 15,
 
-        Destard = 0x00000800,
-        Despise = 0x00001000,
-        Covetous = 0x00002000,
-        Shame = 0x00004000,
-        Wind = 0x00008000,
-        Wrong = 0x00010000,
+        SolenHive = 1 << 16,
+        OrcCaves = 1 << 17,
 
-        Unused3 = 0x00020000,
-        Unused4 = 0x00040000,
-
-        SolenHive = 0x00080000,
-        OrcCaves = 0x00100000,
-
-        Unused5 = 0x00200000,
-        Unused6 = 0x00400000,
-        Unused7 = 0x00800000,
-
-        Graveyard = 0x01000000,
-        Sewers = 0x02000000,
-        Swamp = 0x04000000,
-        Wilderness = 0x08000000,
-
-        Unused8 = 0x10000000,
-        Unused9 = 0x20000000,
-        Unused10 = 0x40000000,
-
-        Basic = Britain | Graveyard | Sewers | Wilderness
+        Graveyard = 1 << 18,
+        Sewers = 1 << 19,
+        Swamp = 1 << 20
     }
 
     #endregion
@@ -72,25 +57,35 @@ namespace SUS.Shared
 
         public BaseRegion(RegionTypes type, Regions region, Regions connections, bool navigable)
         {
+            if (!IsValidRegionId(region))
+                throw new InvalidEnumArgumentException(nameof(region), (int) region, typeof(Regions));
+
             Type = type;
-            Location = region;
+            Id = region;
             Connections = connections;
             Navigable = navigable;
         }
 
         #endregion
 
-        #region Getters / Settersa
+        /// <summary>
+        ///     Checks if the Region is valid and not a combination of regions.
+        /// </summary>
+        /// <param name="region">Region to check against.</param>
+        public static bool IsValidRegionId(Regions region)
+        {
+            return region != Regions.None && (region & (region - 1)) == 0;
+        }
 
-        private string Name => Enum.GetName(typeof(Regions), Location);
+        #region Getters / Setters
+
+        private string Name => Enum.GetName(typeof(Regions), Id);
 
         private RegionTypes Type { get; }
 
-        public Regions Location { get; }
+        public Regions Id { get; }
 
         public Regions Connections { get; }
-
-        public bool IsValid => Location != Regions.None && (Location & (Location - 1)) == 0;
 
         #endregion
 
@@ -106,7 +101,7 @@ namespace SUS.Shared
             unchecked
             {
                 var hash = 13;
-                hash = hash * 7 + Location.GetHashCode();
+                hash = hash * 7 + Id.GetHashCode();
                 hash = hash * 7 + Type.GetHashCode();
                 return hash;
             }
@@ -124,7 +119,8 @@ namespace SUS.Shared
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value)) return false;
+            if (ReferenceEquals(null, value))
+                return false;
 
             return value.GetType() == GetType() && IsEqual((BaseRegion) value);
         }
@@ -137,7 +133,7 @@ namespace SUS.Shared
         private bool IsEqual(BaseRegion value)
         {
             return Type == value.Type
-                   && Location == value.Location;
+                   && Id == value.Id;
         }
 
         #endregion

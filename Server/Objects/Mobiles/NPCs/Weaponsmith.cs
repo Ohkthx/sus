@@ -23,7 +23,6 @@ namespace SUS.Server.Objects.Mobiles.NPCs
 
                     if (type == WeaponTypes.None)
                         type = Utility.RandomEnum<WeaponTypes>();
-
                 } while (mat == Weapon.Materials.None || type == WeaponTypes.None);
 
                 try
@@ -80,10 +79,10 @@ namespace SUS.Server.Objects.Mobiles.NPCs
         public override int ServicePrice(Item item)
         {
             if (item == null)
-                throw new ItemNotFoundException("That item no longer exists.");
+                throw new UnknownItemException("That item no longer exists.");
 
             if (!Inventory.ContainsKey(item.Serial))
-                throw new ItemNotFoundException($"{item.Name} is no longer available.");
+                throw new UnknownItemException($"{item.Name} is no longer available.");
 
             return Inventory[item.Serial].Rating * PriceModifier;
         }
@@ -93,7 +92,8 @@ namespace SUS.Server.Objects.Mobiles.NPCs
             Restock();
 
             var weapons = new Dictionary<BaseItem, int>();
-            foreach (var (_, item) in Inventory) weapons.Add(item.Base(), item.Rating * PriceModifier);
+            foreach (var (_, item) in Inventory)
+                weapons.Add(item.Base(), item.Rating * PriceModifier);
 
             return weapons;
         }
@@ -101,11 +101,14 @@ namespace SUS.Server.Objects.Mobiles.NPCs
         public override int PerformService(Mobile mobile, Item item)
         {
             if (mobile == null)
-                throw new MobileNotFoundException("An unknown mobile attempted to use the Weaponsmith.");
+                throw new UnknownMobileException("An unknown mobile attempted to use the Weaponsmith.");
+
             if (item == null || !(item is Weapon weapon))
-                throw new ItemNotFoundException("That item no longer exists.");
+                throw new UnknownItemException("That item no longer exists.");
+
             if (!Inventory.ContainsKey(weapon.Serial))
-                throw new ItemNotFoundException("The vendor no longer has that item.");
+                throw new UnknownItemException("The vendor no longer has that item.");
+
             if (mobile.Gold.Amount < weapon.Rating * PriceModifier)
                 throw new NotEnoughGoldException();
 

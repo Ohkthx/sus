@@ -8,11 +8,12 @@ using SUS.Server.Objects.Items;
 using SUS.Server.Objects.Items.Consumables;
 using SUS.Server.Objects.Mobiles;
 using SUS.Shared;
+using SUS.Shared.Actions;
 using SUS.Shared.Packets;
 
 namespace SUS.Server.Server
 {
-    public class ClientHandler : Handler
+    public class ClientHandler : IHandler
     {
         private Gamestate _gamestate;
 
@@ -21,6 +22,93 @@ namespace SUS.Server.Server
         public ClientHandler(Socket socket)
         {
             Handler = new SocketHandler(socket, SocketHandler.Types.Client, true);
+        }
+
+        #endregion
+
+        public void Close()
+        {
+            Handler.Kill();
+        }
+
+        #region Information Requests 
+
+        /// <summary>
+        ///     Requests a mobile from the server, if it is found then it is returned.
+        /// </summary>
+        /// <returns>Either an Error Request or a Request containing the mobile.</returns>
+        private Packet GetInfo(GetInfoPacket getInfo)
+        {
+            switch (getInfo.Reason)
+            {
+                case GetInfoPacket.RequestReason.Paperdoll:
+                    getInfo.Info = Gamestate.Account.ToString();
+                    break;
+                case GetInfoPacket.RequestReason.Location:
+                    var point2d = Gamestate.Account.Location.IsValid
+                        ? Gamestate.Account.Location.ToString()
+                        : string.Empty;
+                    getInfo.Info = $"{Enum.GetName(typeof(Regions), Gamestate.Account.Region)} {point2d}";
+                    break;
+                case GetInfoPacket.RequestReason.Equipment:
+                    foreach (var e in Gamestate.Account.Equipment.Values)
+                    {
+                        // Prevent starter gear being sent as "equipped"
+                        if (e.IsStarter)
+                            continue;
+
+                        getInfo.AddInfo(e.ToString());
+                    }
+
+                    break;
+                case GetInfoPacket.RequestReason.Items:
+                    foreach (var i in Gamestate.Account.Items)
+                    {
+                        if (i is Equippable e && e.IsStarter)
+                            continue;
+
+                        getInfo.AddInfo(i.ToString());
+                    }
+
+                    break;
+                case GetInfoPacket.RequestReason.Vendors:
+                case GetInfoPacket.RequestReason.Npcs:
+                    if (!World.FindRegion(Gamestate.Account.Region, out var region))
+                    {
+                        var loc = Enum.GetName(typeof(Regions), Gamestate.Account.Region);
+                        return new ErrorPacket($"You are somehow in an unknown location: '{loc}'");
+                    }
+
+                    switch (getInfo.Reason)
+                    {
+                        case GetInfoPacket.RequestReason.Vendors:
+                            foreach (var (_, type) in region.GetLocalNpcs())
+                            {
+                                var n = Enum.GetName(typeof(NPCTypes), type);
+                                getInfo.AddInfo(n);
+                            }
+
+                            break;
+                        case GetInfoPacket.RequestReason.Npcs:
+                            var mobiles =
+                                World.FindNearbyMobiles(Gamestate.Account, region.Id, Gamestate.Account.Vision);
+                            foreach (var m in mobiles)
+                                getInfo.AddInfo(m.Name);
+
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(getInfo.Reason));
+                    }
+
+                    break;
+                default:
+                    var err = $"Unknown request for information: {getInfo.Reason}";
+                    Utility.ConsoleNotify(err);
+                    Utility.LogWrite("err.txt", err);
+                    return new ErrorPacket("You attempted to request unknown information.");
+            }
+
+            return getInfo;
         }
 
         #endregion
@@ -34,7 +122,8 @@ namespace SUS.Server.Server
             get => _gamestate;
             set
             {
-                if (value != null) _gamestate = value;
+                if (value != null)
+                    _gamestate = value;
             }
         }
 
@@ -42,9 +131,9 @@ namespace SUS.Server.Server
 
         #region Processor
 
-        public override void Core()
+        public void Core()
         {
-            var socketKill = new SocketKillPacket(0, kill: false);
+            var socketKill = new SocketKillPacket(kill: false);
 
             var requests = 0;
             const int requestCap = 15;
@@ -52,9 +141,9 @@ namespace SUS.Server.Server
             timer.Start();
 
 
-            while (socketKill != null && socketKill.Kill == false)
+            while (socketKill.Kill == false)
             {
-                var obj = Handler.FromClient();
+                var clientResponse = Handler.Receive();
 
                 #region Check Timeout
 
@@ -65,10 +154,9 @@ namespace SUS.Server.Server
                 }
                 else if (!timer.Completed && requests >= requestCap)
                 {
-                    Handler.ToClient(
+                    Handler.Send(
                         new ErrorPacket(
-                                $"Server: You have exceeded {requestCap} requests in {timer.Limit / 1000} seconds and now on cooldown.")
-                            .ToByte());
+                            $"Server: You have exceeded {requestCap} requests in {timer.Limit / 1000} seconds and now on cooldown."));
                     Thread.Sleep(timer.Limit * 3);
                     timer.Restart();
                     requests = 0;
@@ -83,33 +171,47 @@ namespace SUS.Server.Server
 
                 try
                 {
-                    if (obj is Packet req)
+                    if (clientResponse is Packet packet)
                     {
-                        Parser(req); // If it is not a SocketKill, process it first.
-                        if (req.Type == PacketTypes.SocketKill)
-                            socketKill = req as SocketKillPacket; // This will lead to termination.
+                        var toClient = Parser(packet); // If it is not a SocketKill, process it first.
+                        if (toClient != null)
+                        {
+                            ++toClient.Stage;
+                            Handler.Send(toClient);
+                        }
+
+                        if (packet is SocketKillPacket skp)
+                            socketKill = skp; // This will lead to termination.
                     }
                 }
                 catch (NotEnoughGoldException)
                 {
                     var errPkt = new ErrorPacket("Not enough gold.");
-                    Handler.ToClient(errPkt.ToByte());
+                    Handler.Send(errPkt);
                 }
-                catch (ItemNotFoundException inf)
+                catch (UnknownItemException inf)
                 {
                     var errPkt = new ErrorPacket(inf.Message);
-                    Handler.ToClient(errPkt.ToByte());
+                    Handler.Send(errPkt);
                 }
-                catch (MobileNotFoundException mnf)
+                catch (UnknownMobileException mnf)
                 {
                     var errPkt = new ErrorPacket(mnf.Message);
-                    Handler.ToClient(errPkt.ToByte());
+                    Handler.Send(errPkt);
+                }
+                catch (UnknownRegionException lnf)
+                {
+                    if (World.FindMobile(lnf.MobileId, out _))
+                        World.MoveMobile(new Move(lnf.MobileId, World.StartingZone), out _, true);
+
+                    var errPkt = new ErrorPacket(lnf.Message);
+                    Handler.Send(errPkt);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine($"Caught an exception: {e.Message}");
-                    var skp = new SocketKillPacket(0); // Create a new packet.
-                    Handler.ToClient(skp.ToByte()); // Send it to our client for a clean connection.
+                    var skp = new SocketKillPacket(); // Create a new packet.
+                    Handler.Send(skp); // Send it to our client for a clean connection.
                     socketKill = skp; // Assign our local to break the loop.
                 }
             }
@@ -119,73 +221,43 @@ namespace SUS.Server.Server
         ///     Processes and handles requests made by the client for server/gamestate information.
         ///     Responsible for also gathering and returning requested information to the client.
         /// </summary>
-        private void Parser(IPacket request)
+        private Packet Parser(IPacket request)
         {
-            if (request.PlayerId == 0 && request.Type != PacketTypes.SocketKill)
-            {
-                Utility.ConsoleNotify(" [ERR] Player ID: 0 && !SocketKill.");
-                return;
-            }
-
-            if (request.Type == PacketTypes.Authenticate)
-            {
-                var toClient = ProcAuthenticate(request as AccountAuthenticatePacket);
-                Handler.ToClient(toClient.ToByte());
-                return;
-            }
+            if (request is AccountAuthenticatePacket accpkt)
+                return ProcAuthenticate(accpkt);
 
             Gamestate = World.FindGamestate(request.PlayerId);
             if (_gamestate == null)
+                return new ErrorPacket($"Server: Bad Player ID provided: [ {request.PlayerId} ].");
+
+            switch (request)
             {
-                Handler.ToClient(new ErrorPacket($"Server: Bad Player ID provided: [ {request.PlayerId} ].").ToByte());
-                return;
-            }
-
-            Packet clientInfo;
-
-            switch (request.Type)
-            {
-                case PacketTypes.SocketKill:
-                    Logout(request as SocketKillPacket);
-                    clientInfo = null;
-                    break;
+                case SocketKillPacket pkt:
+                    Logout(pkt);
+                    return pkt;
 
 
-                case PacketTypes.GetLocalMobiles:
-                    clientInfo = GetLocalMobiles(request as GetMobilesPacket);
-                    break;
-                case PacketTypes.GetMobile:
-                    clientInfo = GetMobileInfo(request as GetMobilePacket);
-                    break;
-                case PacketTypes.GetNode:
-                    clientInfo = GetNode(request as GetNodePacket);
-                    break;
+                case GetInfoPacket pkt:
+                    return GetInfo(pkt);
 
 
-                case PacketTypes.MobileCombat:
-                    clientInfo = MobileActionHandler(request as CombatMobilePacket);
-                    break;
-                case PacketTypes.MobileMove:
-                    clientInfo = MobileMove(request as MoveMobilePacket);
-                    break;
-                case PacketTypes.MobileResurrect:
-                    clientInfo = MobileResurrect(request as ResurrectMobilePacket);
-                    break;
-                case PacketTypes.UseItem:
-                    clientInfo = MobileUseItem(request as UseItemPacket);
-                    break;
-                case PacketTypes.UseVendor:
-                    clientInfo = MobileUseVendor(request as UseVendorPacket);
-                    break;
+                case CombatPacket pkt:
+                    return MobileActionHandler(pkt);
+                case MovePacket pkt:
+                    return MobileMove(pkt);
+                case ResurrectPacket pkt:
+                    return MobileResurrect(pkt);
+
+
+                case UseItemPacket pkt:
+                    return UseItem(pkt);
+                case UseVendorPacket pkt:
+                    return UseVendor(pkt);
 
 
                 default:
-                    // Perhaps use "error" RequestType here.
-                    clientInfo = new ErrorPacket("Server: Bad request received.");
-                    break;
+                    return new ErrorPacket("Server: Bad request received.");
             }
-
-            if (clientInfo != null) Handler.ToClient(clientInfo.ToByte());
         }
 
         #endregion
@@ -199,9 +271,10 @@ namespace SUS.Server.Server
             var gamestate = World.FindGamestate(auth.PlayerId);
 
             // Send our response if no player is found, else send the client their GameState.
-            if (gamestate == null) return NewPlayer(auth.PlayerId, auth.Name);
+            if (gamestate == null)
+                return NewPlayer(auth.PlayerId, auth.Name);
 
-            var gsp = new AccountClientPacket(auth.PlayerId) {ClientState = gamestate.ToClientState()};
+            var gsp = new AccountClientPacket {ClientState = gamestate.ToClientState()};
             return gsp;
         }
 
@@ -212,18 +285,19 @@ namespace SUS.Server.Server
         private static Packet NewPlayer(ulong playerId, string name)
         {
             var szRegion = World.StartingZone;
-            var region = World.FindNode(szRegion); // Assign the Starting Zone Node to the GameState.
-            if (region == null) return new ErrorPacket("Server: Invalid location to move to.");
+            if (!World.FindRegion(szRegion, out var region))
+                return new ErrorPacket("Server: Invalid location to move to.");
 
             var player = new Player(name, 45, 45, 10, szRegion, region.StartingLocation());
             // Assign the Starting Zone Location to the player.
             player.Login(); // Log the player in.
-            player.AddUnlockedRegion(Regions.Basic); // Give the player the basic zones.
+            // Give the player the basic zones.
+            player.AddRegionAccess(Regions.Britain | Regions.Wilderness | Regions.Sewers);
 
             // Client has sent a player, create a proper gamestate and send it to the client.
             var gamestate = new Gamestate(playerId, player);
 
-            var gsp = new AccountClientPacket(playerId) {ClientState = gamestate.ToClientState()};
+            var gsp = new AccountClientPacket {ClientState = gamestate.ToClientState()};
             return gsp;
         }
 
@@ -233,86 +307,14 @@ namespace SUS.Server.Server
         /// <param name="sk">Socket Kill containing the User ID.</param>
         private static void Logout(IPacket sk)
         {
-            if (sk.PlayerId == 0) return; // No User ID? Just return.
+            if (sk.PlayerId == 0)
+                return; // No User ID? Just return.
 
             var gs = World.FindGamestate(sk.PlayerId);
-            if (gs == null) return; // No mobile by that User ID? Just return.
+            if (gs == null)
+                return; // No mobile by that User ID? Just return.
 
             gs.Account.Logout();
-        }
-
-        #endregion
-
-        #region Information Requests 
-
-        private Packet GetLocalMobiles(GetMobilesPacket gmp)
-        {
-            var lm = World.FindNearbyMobiles(gmp.Region, Gamestate.Account, Gamestate.Account.Vision);
-            gmp.Mobiles = lm;
-            return gmp;
-        }
-
-        /// <summary>
-        ///     Requests a mobile from the server, if it is found then it is returned.
-        /// </summary>
-        /// <returns>Either an Error Request or a Request containing the mobile.</returns>
-        private Packet GetMobileInfo(GetMobilePacket gmp)
-        {
-            var reason = gmp.Reason;
-
-            while (reason != GetMobilePacket.RequestReason.None)
-                foreach (GetMobilePacket.RequestReason r in Enum.GetValues(typeof(GetMobilePacket.RequestReason)))
-                {
-                    if (r == GetMobilePacket.RequestReason.None || (r & (r - 1)) != 0) continue;
-
-                    switch (gmp.Reason & r)
-                    {
-                        case GetMobilePacket.RequestReason.Paperdoll:
-                            gmp.Paperdoll = Gamestate.Account.ToString();
-                            break;
-                        case GetMobilePacket.RequestReason.Location:
-                            gmp.Region = Gamestate.Account.Region;
-                            break;
-                        case GetMobilePacket.RequestReason.IsDead:
-                            gmp.IsAlive = Gamestate.Account.Alive;
-                            break;
-                        case GetMobilePacket.RequestReason.Items:
-                            foreach (var i in Gamestate.Account.Items)
-                            {
-                                // Ensure that we do not send starter gear to the client.
-                                if (i is Equippable equippable && equippable.IsStarter) continue;
-                                gmp.AddItem(i.Serial, i.ToString());
-                            }
-
-                            break;
-                        case GetMobilePacket.RequestReason.Equipment:
-                            foreach (var e in Gamestate.Account.Equipment.Values)
-                            {
-                                // Prevent starter gear being sent as "equipped"
-                                if (e.IsStarter) continue;
-                                gmp.AddEquipment(e.Serial, e.ToString());
-                            }
-
-                            break;
-                    }
-
-                    reason &= ~r;
-                }
-
-            return gmp;
-        }
-
-        /// <summary>
-        ///     Returns a Node to the client.
-        /// </summary>
-        /// <returns>Packaged Node.</returns>
-        private static Packet GetNode(GetNodePacket gnp)
-        {
-            var n = World.FindNode(gnp.Region); // Fetch a new or updated node.
-            if (n == null) return new ErrorPacket("Server: Bad node requested.");
-
-            gnp.NewRegion = n.GetBase();
-            return gnp;
         }
 
         #endregion
@@ -322,31 +324,48 @@ namespace SUS.Server.Server
         /// <summary>
         ///     Handles actions that a mobile wants to perform. (received from client)
         /// </summary>
-        private Packet MobileActionHandler(CombatMobilePacket mobileAction)
+        private Packet MobileActionHandler(CombatPacket combatPacket)
         {
-            var req = MobileActionHandlerAttack(mobileAction);
-            return req ?? mobileAction;
+            var req = MobileActionHandlerAttack(combatPacket);
+            return req ?? combatPacket;
         }
 
         /// <summary>
         ///     Performs the lookup and combating of mobiles.
         /// </summary>
         /// <returns>Packaged Error if occurred, otherwise should normally return null.</returns>
-        private Packet MobileActionHandlerAttack(CombatMobilePacket cmp)
+        private Packet MobileActionHandlerAttack(CombatPacket combatPacket)
         {
             Mobile attacker = Gamestate.Account;
-            if (!attacker.Alive) return new ErrorPacket("Server: You are dead and need to resurrect.");
+            if (!attacker.Alive)
+                return new ErrorPacket("Server: You are dead and need to resurrect.");
+
+            if (!World.FindRegion(Gamestate.Account.Region, out var currentNode))
+                throw new UnknownRegionException(attacker.Serial,
+                    "You have somehow wandered that where you do not belong.");
+
+            if (combatPacket.Stage == Packet.Stages.One)
+            {
+                var localMobiles = World.FindNearbyMobiles(Gamestate.Account, currentNode.Id,
+                    Gamestate.Account.Vision);
+                foreach (var m in localMobiles)
+                    combatPacket.AddMobile(m);
+
+                return combatPacket;
+            }
+
+            if (combatPacket.Stage >= Packet.Stages.Two && combatPacket.Targets.Count == 0)
+                return new ErrorPacket("Server: No targets provided for attacking.");
 
             attacker.Target = null; // Reset the target.
             var mobiles = new List<Mobile>(); // This will hold all good mobiles.
-            if (cmp.Targets.Count == 0) return new ErrorPacket("Server: No targets provided for attacking.");
+
 
             // Iterate each of the affected, adding it to our list of Local Mobiles.
-            foreach (Serial serial in cmp.Targets)
+            foreach (Serial serial in combatPacket.Targets)
             {
                 // Lookup the affected mobile.
-                var target = World.FindMobile(serial);
-                if (target == null || !target.Alive)
+                if (!World.FindMobile(serial, out var target) || !target.Alive)
                     return new ErrorPacket("Server: That target has moved or died recently.");
 
                 if (attacker.Region != target.Region)
@@ -368,14 +387,16 @@ namespace SUS.Server.Server
             // Iterate our mobiles and perform combat.
             foreach (var m in mobiles)
             {
-                if (!attacker.Alive) break;
+                if (!attacker.Alive)
+                    break;
 
                 var target = m;
 
                 // Combat the two objects.
-                cmp.AddUpdate(CombatStage.Combat(attacker, target));
-                cmp.IsAlive = attacker.Alive;
-                cmp.Result += $"{attacker.Name} attacked {target.Name}. "; // TODO: Move this to MobileModifier.
+                combatPacket.AddUpdate(CombatStage.Combat(attacker, target));
+                combatPacket.IsAlive = attacker.Alive;
+                combatPacket.Result +=
+                    $"{attacker.Name} attacked {target.Name}. "; // TODO: Move this to MobileModifier.
             }
 
             return null;
@@ -384,57 +405,80 @@ namespace SUS.Server.Server
         /// <summary>
         ///     Moves a Mobile from one Node to another Node.
         /// </summary>
-        /// <param name="mm">Node / Mobile pair to move.</param>
+        /// <param name="movePacket">Node / Mobile pair to move.</param>
         /// <returns>Packed "OK" server response.</returns>
-        private Packet MobileMove(MoveMobilePacket mm)
+        private Packet MobileMove(MovePacket movePacket)
         {
-            var originalUnlocks = Gamestate.UnlockedRegions; // Original unlocks for comparison.
+            var originalUnlocks = Gamestate.AccessibleRegions; // Original unlocks for comparison.
 
-            var loc = World.MoveMobile(mm.Region, Gamestate.Account, mm.Direction);
-            if (loc == null) return new ErrorPacket("Server: Invalid location to move to.");
+            if (!World.MoveMobile(movePacket.Action, out var loc))
+                return new ErrorPacket("Server: Did not move.");
 
-            mm.NewRegion = loc.GetBase();
+            movePacket.NewRegion = loc.GetBase();
 
-            if (originalUnlocks != Gamestate.Account.UnlockedRegions)
+            if (originalUnlocks != Gamestate.Account.AccessibleRegions)
                 // Extract the new locations.
-                mm.DiscoveredRegion = originalUnlocks ^ Gamestate.Account.UnlockedRegions;
+                movePacket.AddDiscovery(originalUnlocks ^ Gamestate.Account.AccessibleRegions);
 
-            return mm;
+            return movePacket;
         }
 
         /// <summary>
         ///     Brings a Mobile back to life and returns it to the client.
         /// </summary>
         /// <returns>Packaged Mobile.</returns>
-        private Packet MobileResurrect(ResurrectMobilePacket res)
+        private Packet MobileResurrect(ResurrectPacket res)
         {
-            // Sends the mobile to the StartingZone, resurrects, and processes it as if an admin performed the action.
-            World.Resurrect(World.StartingZone, Gamestate.Account);
+            // Sends the mobile to the StartingZone, resurrects, and processes it as if an admin performed the action.a
+            if (!World.Resurrect(Gamestate.Account, World.StartingZone))
+                return new ErrorPacket("Unable to resurrect.");
+
             res.IsSuccessful = true;
             res.Region = World.StartingZone;
+
             return res;
         }
 
-        private Packet MobileUseItem(UseItemPacket uip)
+        private Packet UseItem(UseItemPacket useItem)
         {
-            if (!Gamestate.Account.Alive) return new ErrorPacket("Server: You are dead.");
+            if (!Gamestate.Account.Alive)
+                return new ErrorPacket("Server: You are dead.");
 
-            var i = World.FindItem(uip.Item);
-            if (i == null) return new ErrorPacket("Server: That item has been removed or deleted.");
-
-            if (i.Owner == null || i.Owner.Serial != Gamestate.Account.Serial)
-                return new ErrorPacket("Server: You no longer have that item.");
-
-            switch (i.Type)
+            switch (useItem.Stage)
             {
-                case ItemTypes.Consumable:
-                    return UseConsumable(uip, i as Consumable);
-                case ItemTypes.Equippable:
-                case ItemTypes.Armor:
-                case ItemTypes.Weapon:
-                    return EquipItem(uip, i as Equippable);
+                case Packet.Stages.One:
+                    foreach (var item in Gamestate.Account.Items)
+                    {
+                        // Ensure that we do not send starter gear to the client.
+                        if (item is Equippable equippable && equippable.IsStarter)
+                            continue;
+
+                        useItem.AddItem(item.Serial, item.ToString());
+                    }
+
+                    return useItem;
+                case Packet.Stages.Two:
+
+                    if (!World.FindItem(useItem.Item, out var i))
+                        return new ErrorPacket("Server: That item has been removed or deleted.");
+
+                    if (i.Owner == null || i.Owner.Serial != Gamestate.Account.Serial)
+                        return new ErrorPacket("Server: You no longer have that item.");
+
+                    switch (i.Type)
+                    {
+                        case ItemTypes.Consumable:
+                            return UseConsumable(useItem, i as Consumable);
+                        case ItemTypes.Equippable:
+                        case ItemTypes.Armor:
+                        case ItemTypes.Weapon:
+                            return EquipItem(useItem, i as Equippable);
+                        default:
+                            return new ErrorPacket("Server: You no longer have that item.");
+                    }
+
                 default:
-                    return new ErrorPacket("Server: You no longer have that item.");
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -444,7 +488,8 @@ namespace SUS.Server.Server
         {
             Mobile mobile = Gamestate.Account;
 
-            if (item.Amount <= 0) return new ErrorPacket("Server: Do you not have anymore of those.");
+            if (item.Amount <= 0)
+                return new ErrorPacket("Server: Do you not have anymore of those.");
 
             switch (item.ConsumableType)
             {
@@ -460,10 +505,12 @@ namespace SUS.Server.Server
                         --mobile.Bandages;
                         effect = Bandage.GetEffect(mobile.HitsMax, mobile.Skills[SkillName.Healing].Value);
                         var increase = mobile.SkillIncrease(SkillName.Healing);
-                        if (increase != string.Empty) uip.Response += $"{increase}\n";
+                        if (increase != string.Empty)
+                            uip.Response += $"{increase}\n";
 
                         increase = mobile.StatIncrease(StatCode.Dexterity);
-                        if (increase != string.Empty) uip.Response += $"{increase}\n";
+                        if (increase != string.Empty)
+                            uip.Response += $"{increase}\n";
                     }
                     else
                     {
@@ -502,60 +549,71 @@ namespace SUS.Server.Server
 
         #endregion
 
-        private Packet MobileUseVendor(UseVendorPacket uvp)
+        private Packet UseVendor(UseVendorPacket useVendor)
         {
-            var currentNode = World.FindNode(Gamestate.Account.Region);
+            if (!World.FindRegion(Gamestate.Account.Region, out var currentRegion))
+                throw new UnknownRegionException(Gamestate.Account.Serial,
+                    $"Attempted to access {Gamestate.Account.Region} while using a vendor.");
 
             NPC vendor = null;
-            if (uvp.Stage >= Packet.Stages.Two && uvp.LocalNPC != NPCTypes.None)
-                vendor = currentNode.FindNPC(uvp.LocalNPC);
+            if (useVendor.Stage >= Packet.Stages.Two && useVendor.LocalNPC != NPCTypes.None)
+                vendor = currentRegion.FindNpc(useVendor.LocalNPC);
 
             Item item = null;
-            if (uvp.Stage >= Packet.Stages.Three && !uvp.Item.Default)
-                item = World.FindItem(uvp.Item.Serial);
+            if (useVendor.Stage >= Packet.Stages.Three && !useVendor.Item.Default)
+                if (!World.FindItem(useVendor.Item.Serial, out item))
+                    return new ErrorPacket("That is an unknown item.");
 
-            switch (uvp.Stage)
+
+            switch (useVendor.Stage)
             {
                 case Packet.Stages.One:
                     // Present the local vendors if there are some.
-                    uvp.LocalVendors = currentNode.LocalNPCs(true);
-                    if (uvp.LocalVendors.Count <= 1 && uvp.LocalVendors[0] == NPCTypes.None)
+                    useVendor.LocalVendors = currentRegion.GetLocalNpcs(true);
+                    if (useVendor.LocalVendors.Count <= 1 && useVendor.LocalVendors[0] == NPCTypes.None)
                         return new ErrorPacket("There are no vendors in this area.");
+
                     break;
 
                 case Packet.Stages.Two:
-                    if (vendor == null) break;
+                    if (vendor == null)
+                        break;
+
                     // Get the items that are part of the desired service.
-                    uvp.Items = vendor.ServiceableItems(Gamestate.Account);
-                    if (uvp.Items == null || uvp.Items.Count == 0)
+                    useVendor.Items = vendor.ServiceableItems(Gamestate.Account);
+                    if (useVendor.Items == null || useVendor.Items.Count == 0)
                         return new ErrorPacket("There are not any items that service applies to.");
+
                     break;
 
                 case Packet.Stages.Three:
-                    if (vendor == null) break;
-                    if (item == null)
-                        return new ErrorPacket("That is an unknown item.");
-                    uvp.Transaction = vendor.ServicePrice(item);
+                    if (vendor == null)
+                        break;
+
+                    useVendor.Transaction = vendor.ServicePrice(item);
                     break;
 
                 case Packet.Stages.Four:
-                    if (vendor == null) break;
-                    if (uvp.PerformAction == UseVendorPacket.Choices.No) break;
+                    if (vendor == null)
+                        break;
+
+                    if (useVendor.PerformAction == UseVendorPacket.Choices.No)
+                        break;
 
                     var price = vendor.PerformService(Gamestate.Account, item);
                     if (price > 0)
                         return new OkPacket($"Total cost charged was: {price}gp.");
+
                     return new OkPacket("You were not changed any gold for the service.");
 
                 default:
                     throw new InvalidEnumArgumentException("Unexpected action attempted while using a vendor.");
             }
 
-            if (uvp.Stage != Packet.Stages.One && vendor == null)
+            if (useVendor.Stage != Packet.Stages.One && vendor == null)
                 return new ErrorPacket("That is an unknown vendor.");
 
-            ++uvp.Stage;
-            return uvp;
+            return useVendor;
         }
 
         #endregion

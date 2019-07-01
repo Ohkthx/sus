@@ -17,38 +17,27 @@ namespace SUS.Client
         /// <summary>
         ///     Sets the Client up to begin interacting with the server.
         /// </summary>
-        public static void StartClient()
+        public static Socket StartClient()
         {
             // Connect to a remote device.  
-            try
-            {
-                // Establish the remote endpoint for the socket.  
-                var ipHostInfo = Dns.GetHostEntry("localhost");
-                var ipAddress = ipHostInfo.AddressList[0];
-                var remoteEp = new IPEndPoint(ipAddress, Port);
+            // Establish the remote endpoint for the socket.  
+            var ipHostInfo = Dns.GetHostEntry("localhost");
+            var ipAddress = ipHostInfo.AddressList[0];
+            var remoteEp = new IPEndPoint(ipAddress, Port);
 
-                // Create a TCP/IP socket.  
-                var client = new Socket(ipAddress.AddressFamily,
-                    SocketType.Stream, ProtocolType.Tcp);
+            // Create a TCP/IP socket.  
+            var client = new Socket(ipAddress.AddressFamily,
+                SocketType.Stream, ProtocolType.Tcp);
 
-                Console.WriteLine("[ Client Started ]");
+            Console.WriteLine("[ Client Started ]");
 
-                // Connect to the remote endpoint.  
-                client.BeginConnect(remoteEp,
-                    ConnectCallback, client);
-                ConnectDone.WaitOne();
+            // Connect to the remote endpoint.  
+            client.BeginConnect(remoteEp,
+                ConnectCallback, client);
+            ConnectDone.WaitOne();
 
-                // CORE of the server. Handles actions made by client and information from the Server.
-                Program.ServerConnect(ref client);
-
-                // Release the socket.  
-                client.Shutdown(SocketShutdown.Both);
-                client.Close();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
+            // CORE of the server. Handles actions made by client and information from the Server.
+            return client;
         }
 
         private static void ConnectCallback(IAsyncResult ar)

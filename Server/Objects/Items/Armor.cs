@@ -42,7 +42,8 @@ namespace SUS.Server.Objects.Items
             get => _material;
             set
             {
-                if (value == Material) return;
+                if (value == Material)
+                    return;
 
                 _material = value;
             }
@@ -55,7 +56,8 @@ namespace SUS.Server.Objects.Items
             get => _armorRating;
             set
             {
-                if (value != ArmorRating) _armorRating = value;
+                if (value != ArmorRating)
+                    _armorRating = value;
             }
         }
 
@@ -64,7 +66,8 @@ namespace SUS.Server.Objects.Items
             get => _resistances;
             protected set
             {
-                if (value == Resistances) return;
+                if (value == Resistances)
+                    return;
 
                 _resistances = value;
             }

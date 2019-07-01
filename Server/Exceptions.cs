@@ -2,16 +2,16 @@
 
 namespace SUS.Server
 {
-    public class ItemNotFoundException : Exception
+    public class UnknownItemException : Exception
     {
-        public ItemNotFoundException(string message) : base(message)
+        public UnknownItemException(string message) : base(message)
         {
         }
     }
 
-    public class MobileNotFoundException : Exception
+    public class UnknownMobileException : Exception
     {
-        public MobileNotFoundException(string message) : base(message)
+        public UnknownMobileException(string message) : base(message)
         {
         }
     }
@@ -25,6 +25,17 @@ namespace SUS.Server
         private NotEnoughGoldException(string message) : base(message)
         {
         }
+    }
+
+    public class UnknownRegionException : Exception
+    {
+        public UnknownRegionException(int mobileId, string message)
+            : base(message)
+        {
+            MobileId = mobileId;
+        }
+
+        public int MobileId { get; }
     }
 
     public class InvalidFactoryException : Exception

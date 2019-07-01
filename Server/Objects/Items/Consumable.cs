@@ -26,7 +26,8 @@ namespace SUS.Server.Objects.Items
         {
             get
             {
-                if (ConsumableType == ConsumableTypes.Gold || Amount <= 1) return base.Name;
+                if (ConsumableType == ConsumableTypes.Gold || Amount <= 1)
+                    return base.Name;
 
                 // Make the name plural.
                 return base.Name + "s";
@@ -42,7 +43,8 @@ namespace SUS.Server.Objects.Items
             {
                 if (value < 0)
                     value = 0;
-                else if (value > Maximum) value = Maximum;
+                else if (value > Maximum)
+                    value = Maximum;
 
                 _amount = value;
             }
@@ -53,7 +55,8 @@ namespace SUS.Server.Objects.Items
             get => _amountMaximum;
             private set
             {
-                if (value < 1) value = 1;
+                if (value < 1)
+                    value = 1;
 
                 _amountMaximum = value;
             }
@@ -82,7 +85,9 @@ namespace SUS.Server.Objects.Items
         {
             if (amt <= 0)
                 return c;
-            if (c.Amount == c.Maximum) return c;
+
+            if (c.Amount == c.Maximum)
+                return c;
 
             if (c.Amount + amt > c.Maximum)
                 c.Amount = c.Maximum;
@@ -106,7 +111,9 @@ namespace SUS.Server.Objects.Items
         {
             if (amt <= 0)
                 return c;
-            if (c.Amount == 0) return c;
+
+            if (c.Amount == 0)
+                return c;
 
             if (c.Amount - amt < 0)
                 c.Amount = 0;

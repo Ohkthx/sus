@@ -18,7 +18,8 @@ namespace SUS.Server
             {
                 // Is the initiator attacking themselves? Do the damage and return.
                 log.Add($"You perform {m1.Damage(m1.Attack()) * -1} damage on yourself.");
-                if (!m1.Alive) log.Add("You have died.");
+                if (!m1.Alive)
+                    log.Add("You have died.");
 
                 return log;
             }
@@ -29,7 +30,8 @@ namespace SUS.Server
             m2.Target = m1;
 
             var d = Point2D.Distance(m1, m2);
-            if (m1.Weapon.Range < d && m2.Weapon.Range < d) CloseDistance(ref log, m1, m2);
+            if (m1.Weapon.Range < d && m2.Weapon.Range < d)
+                CloseDistance(ref log, m1, m2);
 
             PerformAttack(m1, ref log, m1, m2);
             PerformAttack(m1, ref log, m2, m1);
@@ -67,7 +69,8 @@ namespace SUS.Server
             {
                 m1.Location = Point2D.MoveTowards(m1, m2, m1.Speed);
                 paces += m1.Speed;
-                if (Point2D.Distance(m1, m2) <= d) break;
+                if (Point2D.Distance(m1, m2) <= d)
+                    break;
 
                 m2.Location = Point2D.MoveTowards(m2, m1, m2.Speed);
                 paces += m2.Speed;
@@ -79,23 +82,28 @@ namespace SUS.Server
         private static void CombatTurn(Mobile initiator, ref List<string> log, Mobile attacker, Mobile target,
             bool extra = false)
         {
-            if (!attacker.Alive || !target.Alive) return;
+            if (!attacker.Alive || !target.Alive)
+                return;
 
             #region Check Ranges
 
             var distance = Point2D.Distance(attacker, target);
-            if (attacker is BaseCreature) Ai.PerformAction(attacker, Ai.Actions.Attack);
+            if (attacker is BaseCreature)
+                Ai.PerformAction(attacker, Ai.Actions.Attack);
 
             if (extra && attacker.Weapon.Range < distance)
                 return; // Return because not in range to perform the extra attack.
-            if (extra) log.Add("[Attempting an Extra Attack]");
+
+            if (extra)
+                log.Add("[Attempting an Extra Attack]");
 
             if (attacker.Weapon.Range < distance)
             {
                 attacker.Location = Point2D.MoveTowards(attacker, target, attacker.Speed);
                 distance = Point2D.Distance(attacker, target);
                 var text = $"{attacker.Name} moves towards {target.Name}";
-                if (distance >= 1) text += $" and is now {distance} pace{(distance > 1 ? "s" : "")} away";
+                if (distance >= 1)
+                    text += $" and is now {distance} pace{(distance > 1 ? "s" : "")} away";
 
                 log.Add(text + ".");
             }
@@ -115,10 +123,12 @@ namespace SUS.Server
             var d20Roll = d20.Roll(); // The rolls.
 
             // If the target's distance is less than (or equal) to the distance.
-            if (attacker.Weapon.Range < Point2D.Distance(attacker, target)) return;
+            if (attacker.Weapon.Range < Point2D.Distance(attacker, target))
+                return;
 
             // Remove required resource.
-            if (attacker.Weapon.IsBow) --attacker.Arrows;
+            if (attacker.Weapon.IsBow)
+                --attacker.Arrows;
 
             var hit = false;
 
@@ -156,7 +166,8 @@ namespace SUS.Server
                 if (target.IsPlayer)
                     foreach (var equippable in target.Equipment.Values)
                     {
-                        if (!equippable.IsArmor || !equippable.DurabilityLoss()) continue;
+                        if (!equippable.IsArmor || !equippable.DurabilityLoss())
+                            continue;
 
                         // Log the damage, break because we only damage 1 piece of armor at a time.
                         if (equippable.IsBroken)
@@ -175,11 +186,13 @@ namespace SUS.Server
 
             // Check for skill increase.
             var skillIncrease = attacker.SkillIncrease(attacker.Weapon.RequiredSkill);
-            if (initiator == attacker && skillIncrease != string.Empty) log.Add(skillIncrease);
+            if (initiator == attacker && skillIncrease != string.Empty)
+                log.Add(skillIncrease);
 
             // Check for stat increase.
             var statIncrease = attacker.StatIncrease(attacker.Weapon.Stat);
-            if (initiator == attacker && statIncrease != string.Empty) log.Add(statIncrease);
+            if (initiator == attacker && statIncrease != string.Empty)
+                log.Add(statIncrease);
 
             // Attempt durability loss on attackers weapon.
             if (attacker.IsPlayer)
@@ -189,12 +202,14 @@ namespace SUS.Server
                     log.Add(weapon.IsBroken ? $"{weapon.Name}." : $"{weapon.Name} has suffered durability loss.");
             }
 
-            if (target.Alive) return;
+            if (target.Alive)
+                return;
 
             // Killed the target, print and loot.
             attacker.Target = null;
             log.Add($"{attacker.Name} has killed {target.Name}.");
-            if (attacker.IsPlayer) (attacker as Player)?.AddKill();
+            if (attacker.IsPlayer)
+                (attacker as Player)?.AddKill();
 
             ExchangeLoot(ref log, attacker, target);
             World.Kill(target);
@@ -211,19 +226,22 @@ namespace SUS.Server
         private static void Loot(ref List<string> log, Mobile from, Mobile to)
         {
             // Prevent looting from players. TODO: Subtract from players loots and re-enable.
-            if (from.IsPlayer) return;
+            if (from.IsPlayer)
+                return;
 
             foreach (var i in from.Items)
             {
                 // Iterate all of the owned items from the target.
-                if (i.Type != ItemTypes.Consumable) continue;
+                if (i.Type != ItemTypes.Consumable)
+                    continue;
 
                 var c = i as Consumable;
                 if (c == null)
                     continue;
 
                 var added = to.ConsumableAdd(c);
-                if (added > 0) log.Add($"Looted: {added} {c.Name}.");
+                if (added > 0)
+                    log.Add($"Looted: {added} {c.Name}.");
             }
         }
     }

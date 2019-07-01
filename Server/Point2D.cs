@@ -11,9 +11,11 @@ namespace SUS.Server
         {
             if (!invalid)
             {
-                if (x < 0) x = 0;
+                if (x < 0)
+                    x = 0;
 
-                if (y < 0) y = 0;
+                if (y < 0)
+                    y = 0;
             }
 
             _x = x;
@@ -27,7 +29,8 @@ namespace SUS.Server
             get => _x;
             set
             {
-                if (value < 0 || value == X) return;
+                if (value < 0 || value == X)
+                    return;
 
                 _x = value;
             }
@@ -38,7 +41,8 @@ namespace SUS.Server
             get => _y;
             set
             {
-                if (value < 0 || value == Y) return;
+                if (value < 0 || value == Y)
+                    return;
 
                 _y = value;
             }
@@ -78,7 +82,8 @@ namespace SUS.Server
 
         public override bool Equals(object value)
         {
-            if (ReferenceEquals(null, value)) return false;
+            if (ReferenceEquals(null, value))
+                return false;
 
             return value.GetType() == GetType() && IsEqual((Point2D) value);
         }
@@ -141,15 +146,18 @@ namespace SUS.Server
 
             if (w < 0)
                 dx1 = -1;
-            else if (w > 0) dx1 = 1;
+            else if (w > 0)
+                dx1 = 1;
 
             if (h < 0)
                 dy1 = -1;
-            else if (h > 0) dy1 = 1;
+            else if (h > 0)
+                dy1 = 1;
 
             if (w < 0)
                 dx2 = -1;
-            else if (w > 0) dx2 = 1;
+            else if (w > 0)
+                dx2 = 1;
 
             var longest = Math.Abs(w);
             var shortest = Math.Abs(h);
@@ -159,7 +167,8 @@ namespace SUS.Server
                 shortest = Math.Abs(w);
                 if (h < 0)
                     dy2 = -1;
-                else if (h > 0) dy2 = 1;
+                else if (h > 0)
+                    dy2 = 1;
 
                 dx2 = 0;
             }
@@ -167,7 +176,8 @@ namespace SUS.Server
             var numerator = longest >> 1;
             for (var i = 0; i < speed; i++)
             {
-                if (i == longest) break;
+                if (i == longest)
+                    break;
 
                 numerator += shortest;
                 if (!(numerator < longest))

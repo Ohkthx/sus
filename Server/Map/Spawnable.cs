@@ -5,7 +5,7 @@ using SUS.Shared;
 
 namespace SUS.Server.Map
 {
-    public abstract class Spawnable : Node
+    public abstract class Spawnable : Region
     {
         private static readonly ConcurrentDictionary<Guid, Spawner> Spawners =
             new ConcurrentDictionary<Guid, Spawner>();
@@ -15,7 +15,7 @@ namespace SUS.Server.Map
 
         #region Constructors
 
-        protected Spawnable(RegionTypes types, Shared.Regions region, int width, int length) : base(types, region)
+        protected Spawnable(RegionTypes types, Regions id, int width, int length) : base(types, id)
         {
             Dimensions = new Dimension2D(width, length);
             IsSpawnable = true;
@@ -28,9 +28,9 @@ namespace SUS.Server.Map
             if (spawns == SpawnTypes.None)
                 return;
 
-            var spawner = new Spawner(Region, spawns, x, y, range, limit, MaxX, MaxY);
+            var spawner = new Spawner(Id, spawns, x, y, range, limit, MaxX, MaxY);
             Spawners.TryAdd(spawner.ID, spawner);
-            Utility.ConsoleNotify($"Spawner created @{spawner.HomeLocation.ToString()} in {Region.ToString()}");
+            Utility.ConsoleNotify($"Spawner created @{spawner.HomeLocation.ToString()} in {Id.ToString()}");
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace SUS.Server.Map
         /// <param name="suggestedLocation">Coordinates of entrance.</param>
         /// <param name="width">Width of the zone.</param>
         /// <param name="length">Length of the zone.</param>
-        protected void AddZone(Shared.Regions parentRegion, IPoint2D suggestedLocation, int width, int length)
+        protected void AddZone(Regions parentRegion, IPoint2D suggestedLocation, int width, int length)
         {
             var zone = new Zone(parentRegion, suggestedLocation, Dimensions, width, length);
             UnlockableAreas.Add(zone);
@@ -51,14 +51,16 @@ namespace SUS.Server.Map
         /// </summary>
         /// <param name="objectLocation">Location of the object.</param>
         /// <returns>New unlocked area or Region.None if not found.</returns>
-        public Shared.Regions InUnlockedArea(IPoint2D objectLocation)
+        public Regions InUnlockedArea(IPoint2D objectLocation)
         {
-            var unlocked = Shared.Regions.None;
+            var unlocked = Regions.None;
 
             foreach (var zone in UnlockableAreas)
                 // If we are in that area, add it to the unlocked zones.
+            {
                 if (zone.InArea(objectLocation))
                     unlocked |= zone.ParentRegion; // Combining because it could be an overlapped area.
+            }
 
             return unlocked;
         }

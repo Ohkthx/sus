@@ -78,14 +78,17 @@ namespace SUS.Server.Server
             try
             {
                 var handler = ((IPEndPoint) listener.LocalEndPoint).Port == PlayerPort
-                    ? (Handler) new ClientHandler(socket)
+                    ? new ClientHandler(socket) as IHandler
                     : new ConsoleHandler(socket);
 
                 handler.Core();
+                handler.Close();
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Something happened within a client. {e.Message}");
+                Console.WriteLine("\n Closing connection.");
+                socket.Close();
             }
         }
     }

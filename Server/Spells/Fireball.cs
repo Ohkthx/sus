@@ -12,7 +12,8 @@ namespace SUS.Server.Spells
 
         public override int Effect(Mobile caster, Mobile target)
         {
-            if (caster.Mana < ManaRequired) return 0;
+            if (caster.Mana < ManaRequired)
+                return 0;
 
             caster.Mana -= ManaRequired;
             return SpellHelper.Damage(caster, target, Utility.RandomMinMax(10, 17), DamageTypes.Fire);

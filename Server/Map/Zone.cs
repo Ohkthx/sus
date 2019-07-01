@@ -1,8 +1,10 @@
-﻿namespace SUS.Server.Map
+﻿using SUS.Shared;
+
+namespace SUS.Server.Map
 {
     public class Zone
     {
-        private Shared.Regions _parentRegion;
+        private Regions _parentRegion;
 
         /// <summary>
         ///     Checks if the current location is located inside the zone.
@@ -11,7 +13,9 @@
         /// <returns>True / False if it is located within.</returns>
         public bool InArea(IPoint2D location)
         {
-            if (location.X < Location.X || location.X > Location.X + (Width - 1)) return false;
+            if (location.X < Location.X || location.X > Location.X + (Width - 1))
+                return false;
+
             return location.Y >= Location.Y && location.Y <= Location.Y + (Width - 1);
         }
 
@@ -46,12 +50,12 @@
 
         #region Constructors
 
-        public Zone(Shared.Regions parentRegion, IPoint2D suggestedLocation, IDimension2D mapSize) : this(parentRegion,
+        public Zone(Regions parentRegion, IPoint2D suggestedLocation, IDimension2D mapSize) : this(parentRegion,
             suggestedLocation, mapSize, 2, 2)
         {
         }
 
-        public Zone(Shared.Regions parentRegion, IPoint2D suggestedLocation, IDimension2D mapSize, int width,
+        public Zone(Regions parentRegion, IPoint2D suggestedLocation, IDimension2D mapSize, int width,
             int length)
         {
             ParentRegion = parentRegion;
@@ -71,14 +75,15 @@
 
         public int Width => Dimensions.Width;
 
-        public Shared.Regions ParentRegion
+        public Regions ParentRegion
         {
             get => _parentRegion;
             protected set
             {
                 // Debug: Throw error due to being potentially invalid.
-                if (value == Shared.Regions.None || !Node.IsValidRegion(value))
+                if (value == Regions.None || !Region.IsValidRegion(value))
                     return;
+
                 _parentRegion = value;
             }
         }

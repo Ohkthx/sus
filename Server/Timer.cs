@@ -39,9 +39,11 @@ namespace SUS.Server
         {
             get
             {
-                if (!Started) return 0;
+                if (!Started)
+                    return 0;
 
-                if (Started && !Running) return (int) (EndTime - StartTime).TotalMilliseconds;
+                if (Started && !Running)
+                    return (int) (EndTime - StartTime).TotalMilliseconds;
 
                 return (int) (DateTime.Now - StartTime).TotalMilliseconds;
             }
@@ -111,7 +113,8 @@ namespace SUS.Server
         /// </summary>
         public void Start()
         {
-            if (Running) return;
+            if (Running)
+                return;
 
             if (!Started)
             {
@@ -128,7 +131,8 @@ namespace SUS.Server
         public void Stop()
         {
             // It is not running and it has not ever started.
-            if (!Running || !Started) return;
+            if (!Running || !Started)
+                return;
 
             EndTime = DateTime.Now;
             Running = false;
