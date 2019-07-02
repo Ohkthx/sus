@@ -32,8 +32,7 @@ namespace SUS.Client
             Console.WriteLine("[ Client Started ]");
 
             // Connect to the remote endpoint.  
-            client.BeginConnect(remoteEp,
-                ConnectCallback, client);
+            client.BeginConnect(remoteEp, ConnectCallback, client);
             ConnectDone.WaitOne();
 
             // CORE of the server. Handles actions made by client and information from the Server.
@@ -50,8 +49,7 @@ namespace SUS.Client
                 // Complete the connection.  
                 client.EndConnect(ar);
 
-                Console.WriteLine("Socket connected to {0}",
-                    client.RemoteEndPoint);
+                Console.WriteLine($"Socket connected to {client.RemoteEndPoint}.");
 
                 // Signal that the connection has been made.  
                 ConnectDone.Set();

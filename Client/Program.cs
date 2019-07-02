@@ -17,7 +17,6 @@ namespace SUS.Client
         /// <summary>
         ///     Launches the client, parses all arguments passed at launch.
         /// </summary>
-        /// <param name="args"></param>
         private static void StartUp(string[] args)
         {
             if (args == null)
@@ -61,8 +60,7 @@ namespace SUS.Client
         }
 
         /// <summary>
-        ///     Begins the exchange of information, authentication, and further processing of
-        ///     all input to and from the server.
+        ///     Begins the exchange of information, authentication, and further processing of all input to and from the server.
         /// </summary>
         /// <param name="toServer">Socket to communicate to the Server.</param>
         public static void ServerConnect(Socket toServer)
@@ -103,6 +101,9 @@ namespace SUS.Client
             }
         }
 
+        /// <summary>
+        ///     The loop the sends and receives information to the remote connection until closed..
+        /// </summary>
         private static void ServerHandler()
         {
             // While we are receiving information from the server, continue to decipher and process it.
@@ -110,9 +111,10 @@ namespace SUS.Client
             {
                 try
                 {
-                    var clientRequest = InteractiveConsole.PacketParser(serverPacket);
-                    if (clientRequest != null)
+                    // Attempt to parse the received packet.
+                    if (InteractiveConsole.PacketParser(serverPacket, out var clientRequest))
                     {
+                        // If the packet was modified and requires to be resend, do so.
                         InteractiveConsole.ToServer(clientRequest);
                         continue;
                     }
@@ -122,7 +124,10 @@ namespace SUS.Client
                     if (clientRequest == null)
                         continue;
 
+                    // Sends the information from the players action to the remote connection.
                     InteractiveConsole.ToServer(clientRequest);
+
+                    // If we are closing the connection, exit.
                     if (clientRequest is SocketKillPacket)
                         Environment.Exit(0); // Kill the application after informing the server.
                 }

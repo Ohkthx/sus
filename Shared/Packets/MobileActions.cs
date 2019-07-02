@@ -205,6 +205,16 @@ namespace SUS.Shared.Packets
             }
         }
 
+        /// <summary>
+        ///     Removes non-required data at certain stages for cleaner transmission.
+        /// </summary>
+        protected override void Clean()
+        {
+            // We no longer need items to be transmitted in Stage Three.
+            if (Stage == Stages.Three)
+                _items = null;
+        }
+
         #endregion
     }
 
@@ -246,6 +256,25 @@ namespace SUS.Shared.Packets
                 throw new IndexOutOfRangeException("Item choice is not valid.");
 
             return optionMapping[choice];
+        }
+
+        /// <summary>
+        ///     Removes unneeded information from the packet for cleaner transmission.
+        /// </summary>
+        protected override void Clean()
+        {
+            switch (Stage)
+            {
+                // No longer need to include vendors in transmission.
+                case Stages.Three:
+                    LocalVendors = null;
+                    break;
+
+                // No longer need to include items in transmission.
+                case Stages.Four:
+                    Items = null;
+                    break;
+            }
         }
 
         #region Getters / Setters
