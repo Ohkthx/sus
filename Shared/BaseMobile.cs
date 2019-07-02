@@ -32,7 +32,7 @@ namespace SUS.Shared
         SouthWest = South | West
     }
 
-    public enum NPCTypes
+    public enum NpcTypes
     {
         None = 0,
         Armorsmith = 1,

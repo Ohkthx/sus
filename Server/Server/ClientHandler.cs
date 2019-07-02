@@ -84,7 +84,7 @@ namespace SUS.Server.Server
                         case GetInfoPacket.RequestReason.Vendors:
                             foreach (var (_, type) in region.GetLocalNpcs())
                             {
-                                var n = Enum.GetName(typeof(NPCTypes), type);
+                                var n = Enum.GetName(typeof(NpcTypes), type);
                                 getInfo.AddInfo(n);
                             }
 
@@ -555,12 +555,12 @@ namespace SUS.Server.Server
                 throw new UnknownRegionException(Gamestate.Account.Serial,
                     $"Attempted to access {Gamestate.Account.Region} while using a vendor.");
 
-            NPC vendor = null;
-            if (useVendor.Stage >= Packet.Stages.Two && useVendor.LocalNPC != NPCTypes.None)
+            Npc vendor = null;
+            if (useVendor.Stage >= Packet.Stages.Two && useVendor.LocalNPC != NpcTypes.None)
                 vendor = currentRegion.FindNpc(useVendor.LocalNPC);
 
             Item item = null;
-            if (useVendor.Stage >= Packet.Stages.Three && !useVendor.Item.Default)
+            if (useVendor.Stage >= Packet.Stages.Three && !useVendor.Item.Empty)
                 if (!World.FindItem(useVendor.Item.Serial, out item))
                     return new ErrorPacket("That is an unknown item.");
 
@@ -570,7 +570,7 @@ namespace SUS.Server.Server
                 case Packet.Stages.One:
                     // Present the local vendors if there are some.
                     useVendor.LocalVendors = currentRegion.GetLocalNpcs(true);
-                    if (useVendor.LocalVendors.Count <= 1 && useVendor.LocalVendors[0] == NPCTypes.None)
+                    if (useVendor.LocalVendors.Count <= 1 && useVendor.LocalVendors[0] == NpcTypes.None)
                         return new ErrorPacket("There are no vendors in this area.");
 
                     break;
@@ -584,11 +584,26 @@ namespace SUS.Server.Server
                     if (useVendor.Items == null || useVendor.Items.Count == 0)
                         return new ErrorPacket("There are not any items that service applies to.");
 
+                    // Can we select the "all" option?
+                    useVendor.AllowAll = vendor.AllowAll;
+
                     break;
 
                 case Packet.Stages.Three:
                     if (vendor == null)
                         break;
+
+                    // If the user opted to choose all items, process the cost.
+                    if (useVendor.AllSelected)
+                    {
+                        foreach (var i in vendor.ServiceableItems(Gamestate.Account).Keys)
+                        {
+                            if (World.FindItem(i.Serial, out item))
+                                useVendor.Transaction += vendor.ServicePrice(item);
+                        }
+
+                        break;
+                    }
 
                     useVendor.Transaction = vendor.ServicePrice(item);
                     break;
@@ -600,11 +615,26 @@ namespace SUS.Server.Server
                     if (useVendor.PerformAction == UseVendorPacket.Choices.No)
                         break;
 
-                    var price = vendor.PerformService(Gamestate.Account, item);
-                    if (price > 0)
-                        return new OkPacket($"Total cost charged was: {price}gp.");
+                    var price = 0;
 
-                    return new OkPacket("You were not changed any gold for the service.");
+                    if (useVendor.AllSelected)
+                    {
+                        foreach (var i in vendor.ServiceableItems(Gamestate.Account).Keys)
+                        {
+                            if (World.FindItem(i.Serial, out item))
+                                price += vendor.PerformService(Gamestate.Account, item);
+                        }
+                    }
+                    else
+                    {
+                        price = vendor.PerformService(Gamestate.Account, item);
+                    }
+
+                    var message = price > 0
+                        ? $"Total cost charged was: {price}gp."
+                        : "You were not changed any gold for the service.";
+
+                    return new OkPacket(message);
 
                 default:
                     throw new InvalidEnumArgumentException("Unexpected action attempted while using a vendor.");

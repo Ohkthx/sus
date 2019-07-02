@@ -227,35 +227,52 @@ namespace SUS.Shared.Packets
             No
         }
 
-        public static BaseItem PrintItems(Dictionary<BaseItem, int> items, bool zeroIsNone = false)
+        public bool SetItem(bool zeroIsNone = false)
         {
-            if (items == null)
-                throw new ArgumentNullException(nameof(items));
+            if (Items == null)
+                throw new ArgumentNullException(nameof(Items), "There are no items to display.");
 
             var optionMapping = new Dictionary<int, BaseItem>(); // <pos, item>
+            var totalCount = Items.Count;
 
             if (zeroIsNone)
+            {
                 Console.WriteLine($"[{0,-2}] none");
+                ++totalCount;
+            }
 
             var i = 1;
-            foreach (var (item, cost) in items)
+            foreach (var (item, cost) in Items)
             {
                 optionMapping.Add(i, item);
                 Console.WriteLine($"[{i,-2}] {cost + "gp",-8} - {item.Name}");
                 ++i;
             }
 
+            if (AllowAll)
+            {
+                Console.WriteLine($"[{i,-2}] all");
+                ++totalCount;
+            }
+
             // Get the choice from the user.
-            var choice = Utility.ReadInt(items.Count + 1, zeroIsNone);
+            var choice = Utility.ReadInt(totalCount, zeroIsNone);
 
             // Return an empty item, "none" was selected.
             if (zeroIsNone && choice == 0)
-                return new BaseItem();
+                return false;
+
+            if (choice == i)
+            {
+                AllSelected = true;
+                return true;
+            }
 
             if (!optionMapping.ContainsKey(choice))
                 throw new IndexOutOfRangeException("Item choice is not valid.");
 
-            return optionMapping[choice];
+            Item = optionMapping[choice];
+            return true;
         }
 
         /// <summary>
@@ -279,18 +296,22 @@ namespace SUS.Shared.Packets
 
         #region Getters / Setters
 
-        public Dictionary<int, NPCTypes> LocalVendors { get; set; } =
-            new Dictionary<int, NPCTypes>(); // < Position, Type >
+        public Dictionary<int, NpcTypes> LocalVendors { get; set; } =
+            new Dictionary<int, NpcTypes>(); // < Position, Type >
 
         public Dictionary<BaseItem, int> Items { get; set; } = new Dictionary<BaseItem, int>(); // < Cost, BaseItem >
 
-        public NPCTypes LocalNPC { get; set; }
+        public NpcTypes LocalNPC { get; set; }
 
         public BaseItem Item { get; set; }
 
         public int Transaction { get; set; }
 
         public Choices PerformAction { get; set; }
+
+        public bool AllowAll { get; set; }
+
+        public bool AllSelected { get; set; }
 
         #endregion
     }

@@ -32,7 +32,7 @@ namespace SUS.Shared
     public struct BaseItem
     {
         private readonly string _name;
-        private readonly bool _notDefault;
+        private readonly bool _notEmpty;
 
         #region Constructors
 
@@ -40,7 +40,7 @@ namespace SUS.Shared
         {
             Type = type;
             _name = name;
-            _notDefault = true;
+            _notEmpty = true;
             Serial = serial;
         }
 
@@ -52,7 +52,7 @@ namespace SUS.Shared
 
         public ItemTypes Type { get; }
 
-        public bool Default => !_notDefault;
+        public bool Empty => !_notEmpty;
 
         public int Serial { get; }
 

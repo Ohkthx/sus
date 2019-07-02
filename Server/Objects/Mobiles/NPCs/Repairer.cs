@@ -4,7 +4,7 @@ using SUS.Shared;
 
 namespace SUS.Server.Objects.Mobiles.NPCs
 {
-    public class Repairer : NPC
+    public class Repairer : Npc
     {
         private int _repairRate;
 
@@ -30,7 +30,7 @@ namespace SUS.Server.Objects.Mobiles.NPCs
         {
         }
 
-        public Repairer(int repairRate) : base(NPCTypes.Repairer, Services.Repair)
+        public Repairer(int repairRate) : base(NpcTypes.Repairer, Services.Repair | Services.All)
         {
             RepairRate = repairRate;
         }

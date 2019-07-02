@@ -6,7 +6,7 @@ using SUS.Shared;
 
 namespace SUS.Server.Objects.Mobiles.NPCs
 {
-    public class Armorsmith : NPC
+    public class Armorsmith : Npc
     {
         private int _stockSize;
 
@@ -32,7 +32,7 @@ namespace SUS.Server.Objects.Mobiles.NPCs
         {
         }
 
-        public Armorsmith(int stockSize) : base(NPCTypes.Armorsmith, Services.Sell)
+        public Armorsmith(int stockSize) : base(NpcTypes.Armorsmith, Services.Sell)
         {
             PriceModifier = 100; // _priceModifier * armor.Rating() = price.
             StockSize = stockSize;

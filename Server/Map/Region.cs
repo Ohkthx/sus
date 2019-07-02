@@ -8,7 +8,7 @@ namespace SUS.Server.Map
 {
     public abstract class Region
     {
-        private readonly ConcurrentDictionary<NPCTypes, NPC> _localNpcs;
+        private readonly ConcurrentDictionary<NpcTypes, Npc> _localNpcs;
         private string _description = string.Empty;
         private string _name;
 
@@ -21,7 +21,7 @@ namespace SUS.Server.Map
             Type = type;
             Id = id;
 
-            _localNpcs = new ConcurrentDictionary<NPCTypes, NPC>();
+            _localNpcs = new ConcurrentDictionary<NpcTypes, Npc>();
         }
 
         #endregion
@@ -131,21 +131,21 @@ namespace SUS.Server.Map
             return (ConnectedRegions & connection) == connection;
         }
 
-        public NPC FindNpc(NPCTypes type)
+        public Npc FindNpc(NpcTypes type)
         {
             return _localNpcs.TryGetValue(type, out var npc) ? npc : null;
         }
 
-        protected bool AddNpc(NPC npc)
+        protected bool AddNpc(Npc npc)
         {
-            return _localNpcs.TryAdd(npc.NPCType, npc);
+            return _localNpcs.TryAdd(npc.NpcType, npc);
         }
 
-        public Dictionary<int, NPCTypes> GetLocalNpcs(bool includeNone = false)
+        public Dictionary<int, NpcTypes> GetLocalNpcs(bool includeNone = false)
         {
-            var npcs = new Dictionary<int, NPCTypes>();
+            var npcs = new Dictionary<int, NpcTypes>();
             if (includeNone)
-                npcs[0] = NPCTypes.None;
+                npcs[0] = NpcTypes.None;
 
             var i = 0;
             foreach (var (key, _) in _localNpcs)

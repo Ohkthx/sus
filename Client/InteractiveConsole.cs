@@ -524,7 +524,7 @@ namespace SUS.Client
 
                     // Get the choice from the user as to what vendor (if any) should be used.
                     var choice = Utility.ReadInt(useVendor.LocalVendors.Count, useVendor.LocalVendors.ContainsKey(0));
-                    if (useVendor.LocalVendors[choice] == NPCTypes.None)
+                    if (useVendor.LocalVendors[choice] == NpcTypes.None)
                         return null; // If the user decided on "none", then return null.
 
                     // Assign the LocalNPC to the choice.
@@ -541,8 +541,7 @@ namespace SUS.Client
                     }
 
                     // Get the item choice from the user.
-                    useVendor.Item = UseVendorPacket.PrintItems(useVendor.Items, true);
-                    if (useVendor.Item.Default)
+                    if (!useVendor.SetItem(true))
                         return null;
 
                     break;

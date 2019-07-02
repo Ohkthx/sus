@@ -4,25 +4,28 @@ using SUS.Shared;
 
 namespace SUS.Server.Objects.Mobiles
 {
-    public abstract class NPC : Mobile
+    public abstract class Npc : Mobile
     {
         [Flags]
         public enum Services
         {
             None = 0,
-            Buy = 1,
-            Sell = 2,
-            Repair = 4
+            Buy = 1 << 0,
+            Sell = 1 << 1,
+            Repair = 1 << 2,
+            All = 1 << 3
         }
+
+        private Services _services;
 
         #region Constructors
 
-        protected NPC(NPCTypes npcType, Services service)
+        protected Npc(NpcTypes npcType, Services service)
             : base(MobileTypes.Npc)
         {
-            NPCType = npcType;
+            NpcType = npcType;
             Service = service;
-            Name = Enum.GetName(typeof(NPCTypes), npcType);
+            Name = Enum.GetName(typeof(NpcTypes), npcType);
         }
 
         #endregion
@@ -50,9 +53,15 @@ namespace SUS.Server.Objects.Mobiles
 
         #region Getters / Setters
 
-        public NPCTypes NPCType { get; protected set; }
+        public NpcTypes NpcType { get; protected set; }
 
-        public Services Service { get; protected set; }
+        public Services Service
+        {
+            get => _services & ~Services.All;
+            private set => _services = value;
+        }
+
+        public bool AllowAll => (_services & Services.All) == Services.All;
 
         #endregion
     }
