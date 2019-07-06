@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net.Sockets;
 using System.Threading;
@@ -242,7 +241,7 @@ namespace SUS.Server.Server
 
 
                 case CombatPacket pkt:
-                    return MobileActionHandler(pkt);
+                    return MobileCombat(pkt);
                 case MovePacket pkt:
                     return MobileMove(pkt);
                 case ResurrectPacket pkt:
@@ -322,19 +321,10 @@ namespace SUS.Server.Server
         #region Mobile Actions
 
         /// <summary>
-        ///     Handles actions that a mobile wants to perform. (received from client)
-        /// </summary>
-        private Packet MobileActionHandler(CombatPacket combatPacket)
-        {
-            var req = MobileActionHandlerAttack(combatPacket);
-            return req ?? combatPacket;
-        }
-
-        /// <summary>
         ///     Performs the lookup and combating of mobiles.
         /// </summary>
         /// <returns>Packaged Error if occurred, otherwise should normally return null.</returns>
-        private Packet MobileActionHandlerAttack(CombatPacket combatPacket)
+        private Packet MobileCombat(CombatPacket combatPacket)
         {
             Mobile attacker = Gamestate.Account;
             if (!attacker.Alive)
@@ -351,55 +341,55 @@ namespace SUS.Server.Server
                 foreach (var m in localMobiles)
                     combatPacket.AddMobile(m);
 
+                // If the attacker has a prior target, allow the client to attack the last.
+                if (attacker.Target != null)
+                    combatPacket.AllowLast = true;
+
                 return combatPacket;
             }
 
-            if (combatPacket.Stage >= Packet.Stages.Two && combatPacket.Targets.Count == 0)
-                return new ErrorPacket("Server: No targets provided for attacking.");
+            Serial targetSerial;
 
-            attacker.Target = null; // Reset the target.
-            var mobiles = new List<Mobile>(); // This will hold all good mobiles.
-
-
-            // Iterate each of the affected, adding it to our list of Local Mobiles.
-            foreach (Serial serial in combatPacket.Targets)
+            // Get the target to attack.
+            if (combatPacket.LastSelected)
             {
-                // Lookup the affected mobile.
-                if (!World.FindMobile(serial, out var target) || !target.Alive)
-                    return new ErrorPacket("Server: That target has moved or died recently.");
+                if (attacker.Target == null)
+                    return new ErrorPacket("Server: You have no last target.");
 
-                if (attacker.Region != target.Region)
-                    return new ErrorPacket("Server: That target is no longer in the area.");
-
-                if (Point2D.Distance(attacker, target) > attacker.Vision)
-                    return new ErrorPacket("Server: You are too far from the target.");
-
-                if (target.IsPlayer)
-                {
-                    var p = target as Player;
-                    if (p != null && !p.IsLoggedIn)
-                        return new ErrorPacket("Server: That target has logged out recently.");
-                }
-
-                mobiles.Add(target); // Add it to our list of known "good" mobiles.
+                // Use the last target of the attacker.
+                targetSerial = attacker.Target.Serial;
+            }
+            else
+            {
+                // Use the specified target and reset.
+                targetSerial = combatPacket.Target;
+                attacker.Target = null;
             }
 
-            // Iterate our mobiles and perform combat.
-            foreach (var m in mobiles)
+            // Lookup the affected mobile.
+            if (!World.FindMobile(targetSerial, out var target) || !target.Alive)
+                return new ErrorPacket("Server: That target has moved or died recently.");
+
+            if (attacker.Region != target.Region)
+                return new ErrorPacket("Server: That target is no longer in the area.");
+
+            if (Point2D.Distance(attacker, target) > attacker.Vision)
+                return new ErrorPacket("Server: You are too far from the target.");
+
+            if (target.IsPlayer)
             {
-                if (!attacker.Alive)
-                    break;
-
-                var target = m;
-
-                // Combat the two objects.
-                combatPacket.AddUpdate(CombatStage.Combat(attacker, target));
-                combatPacket.IsAlive = attacker.Alive;
-                combatPacket.Result +=
-                    $"{attacker.Name} attacked {target.Name}. "; // TODO: Move this to MobileModifier.
+                var p = target as Player;
+                if (p != null && !p.IsLoggedIn)
+                    return new ErrorPacket("Server: That target has logged out recently.");
             }
 
-            return null;
+            // Combat the two objects.
+            combatPacket.AddUpdate(CombatStage.Combat(attacker, target));
+            combatPacket.IsAlive = attacker.Alive;
+            combatPacket.Result +=
+                $"{attacker.Name} attacked {target.Name}. ";
+
+            return combatPacket;
         }
 
         /// <summary>
@@ -556,11 +546,11 @@ namespace SUS.Server.Server
                     $"Attempted to access {Gamestate.Account.Region} while using a vendor.");
 
             Npc vendor = null;
-            if (useVendor.Stage >= Packet.Stages.Two && useVendor.LocalNPC != NpcTypes.None)
-                vendor = currentRegion.FindNpc(useVendor.LocalNPC);
+            if (useVendor.Stage >= Packet.Stages.Two && useVendor.LocalNpc != NpcTypes.None)
+                vendor = currentRegion.FindNpc(useVendor.LocalNpc);
 
             Item item = null;
-            if (useVendor.Stage >= Packet.Stages.Three && !useVendor.Item.Empty)
+            if (useVendor.Stage >= Packet.Stages.Three && !useVendor.Item.IsEmpty)
                 if (!World.FindItem(useVendor.Item.Serial, out item))
                     return new ErrorPacket("That is an unknown item.");
 
@@ -618,17 +608,13 @@ namespace SUS.Server.Server
                     var price = 0;
 
                     if (useVendor.AllSelected)
-                    {
                         foreach (var i in vendor.ServiceableItems(Gamestate.Account).Keys)
                         {
                             if (World.FindItem(i.Serial, out item))
                                 price += vendor.PerformService(Gamestate.Account, item);
                         }
-                    }
                     else
-                    {
                         price = vendor.PerformService(Gamestate.Account, item);
-                    }
 
                     var message = price > 0
                         ? $"Total cost charged was: {price}gp."

@@ -52,7 +52,7 @@ namespace SUS.Shared
 
         public ItemTypes Type { get; }
 
-        public bool Empty => !_notEmpty;
+        public bool IsEmpty => !_notEmpty;
 
         public int Serial { get; }
 

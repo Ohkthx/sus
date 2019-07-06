@@ -7,21 +7,16 @@ namespace SUS.Shared.Packets
     [Serializable]
     public class CombatPacket : Packet
     {
-        private int _mobileCount;
         private Dictionary<int, BaseMobile> _mobiles; // Local mobiles that exist in the area.
-        private Regions _region; // Local region.
         private string _result; // Result of the combat.
-        private List<int> _targets; // List of Targets
         private List<string> _updates; // Updates on all.
 
         public bool IsAlive { get; set; } // Determines if the Initiator (Player) died.
 
-        public void AddTarget(BaseMobile tag)
-        {
-            if (!Targets.Contains(tag.Serial))
-                Targets.Add(tag.Serial);
-        }
-
+        /// <summary>
+        ///     Add an update from the result of the combat.
+        /// </summary>
+        /// <param name="info">Information that is to be added.</param>
         public void AddUpdate(List<string> info)
         {
             if (info == null)
@@ -30,24 +25,27 @@ namespace SUS.Shared.Packets
             Updates.AddRange(info);
         }
 
-        public void AddMobile(BaseMobile mobile, int position = -1)
+        /// <summary>
+        ///     Add a mobile to the list of potential targets.
+        /// </summary>
+        /// <param name="mobile">Mobile to be added.</param>
+        public void AddMobile(BaseMobile mobile)
         {
-            var pos = position < 0 ? ++_mobileCount : position;
-            Mobiles.Add(pos, mobile);
+            Mobiles.Add(mobile.Serial, mobile);
         }
-
 
         #region Getters / Setters
 
-        public List<int> Targets => _targets ?? (_targets = new List<int>());
+        /// <summary>
+        ///     Signifies that "last" a valid option.
+        /// </summary>
+        public bool AllowLast { get; set; }
+
+        public bool LastSelected { get; set; }
+
+        public int Target { get; private set; }
 
         public List<string> Updates => _updates ?? (_updates = new List<string>());
-
-        public Regions Region
-        {
-            get => _region;
-            private set => _region = value;
-        }
 
         public Dictionary<int, BaseMobile> Mobiles
         {
@@ -71,6 +69,55 @@ namespace SUS.Shared.Packets
 
                 _result = value;
             }
+        }
+
+        /// <summary>
+        ///     Sets the target to be attacked, if any.
+        /// </summary>
+        /// <returns>True if a target is chosen.</returns>
+        public bool SetTarget()
+        {
+            if (Mobiles == null)
+                throw new ArgumentNullException(nameof(Mobiles), "There are no mobiles to display.");
+
+            var optionMapping = new Dictionary<int, BaseMobile>(); // <pos, mobile>
+            var totalCount = Mobiles.Count;
+
+            Console.WriteLine($"[{0,-2}] none");
+            ++totalCount;
+
+            var i = 1;
+            foreach (var (serial, mobile) in Mobiles)
+            {
+                optionMapping.Add(i, mobile);
+                Console.WriteLine($"[{i,-2}] {mobile.Name}");
+                ++i;
+            }
+
+            if (AllowLast)
+            {
+                Console.WriteLine($"[{i,-2}] last");
+                ++totalCount;
+            }
+
+            // Get the choice from the user.
+            var choice = Utility.ReadInt(totalCount, true);
+
+            // Return an empty item, "none" was selected.
+            if (choice == 0)
+                return false;
+
+            if (choice == i)
+            {
+                LastSelected = true;
+                return true;
+            }
+
+            if (!optionMapping.ContainsKey(choice))
+                throw new IndexOutOfRangeException("Item choice is not valid.");
+
+            Target = optionMapping[choice].Serial;
+            return true;
         }
 
         #endregion
@@ -227,7 +274,11 @@ namespace SUS.Shared.Packets
             No
         }
 
-        public bool SetItem(bool zeroIsNone = false)
+        /// <summary>
+        ///     Sets the item to be used, if any.
+        /// </summary>
+        /// <returns>True if an item is chosen.</returns>
+        public bool SetItem()
         {
             if (Items == null)
                 throw new ArgumentNullException(nameof(Items), "There are no items to display.");
@@ -235,11 +286,8 @@ namespace SUS.Shared.Packets
             var optionMapping = new Dictionary<int, BaseItem>(); // <pos, item>
             var totalCount = Items.Count;
 
-            if (zeroIsNone)
-            {
-                Console.WriteLine($"[{0,-2}] none");
-                ++totalCount;
-            }
+            Console.WriteLine($"[{0,-2}] none");
+            ++totalCount;
 
             var i = 1;
             foreach (var (item, cost) in Items)
@@ -256,10 +304,10 @@ namespace SUS.Shared.Packets
             }
 
             // Get the choice from the user.
-            var choice = Utility.ReadInt(totalCount, zeroIsNone);
+            var choice = Utility.ReadInt(totalCount, true);
 
             // Return an empty item, "none" was selected.
-            if (zeroIsNone && choice == 0)
+            if (choice == 0)
                 return false;
 
             if (choice == i)
@@ -299,9 +347,9 @@ namespace SUS.Shared.Packets
         public Dictionary<int, NpcTypes> LocalVendors { get; set; } =
             new Dictionary<int, NpcTypes>(); // < Position, Type >
 
-        public Dictionary<BaseItem, int> Items { get; set; } = new Dictionary<BaseItem, int>(); // < Cost, BaseItem >
+        public Dictionary<BaseItem, int> Items { get; set; } = new Dictionary<BaseItem, int>(); // <BaseItem, cost>
 
-        public NpcTypes LocalNPC { get; set; }
+        public NpcTypes LocalNpc { get; set; }
 
         public BaseItem Item { get; set; }
 

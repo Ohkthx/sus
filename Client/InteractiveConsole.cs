@@ -1,45 +1,95 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using SUS.Shared;
 using SUS.Shared.Packets;
 
 namespace SUS.Client
 {
-    public static class InteractiveConsole
+    #region Enums
+
+    public enum BaseOptions
     {
-        private static List<string> _lastOption; // Stores the last option chosen by the user.
-        private static ClientState _state; // "Client State" to be controlled and used by the Console.
-        public static SocketHandler SocketHandler; // Remote connection.
+        None,
+        Help,
+        Get,
+        Use,
+        Move,
+        Attack,
+        Vendors,
+        Exit,
+
+        // Aliases
+        Show = Get,
+        List = Get,
+        Quit = Exit
+    }
+
+    public enum GetOptions
+    {
+        None,
+        Help,
+        Paperdoll,
+        Location,
+        Equipment,
+        Items,
+        Vendors,
+        Npcs
+    }
+
+    #endregion
+
+    public class InteractiveConsole
+    {
+        private readonly SocketHandler _socketHandler; // Remote connection.
+        private Input _input; // Input from the user.
+        private ClientState _state; // "Client State" to be controlled and used by the Console.
+
+        #region Constructors
+
+        public InteractiveConsole(SocketHandler socketHandler)
+        {
+            if (socketHandler == null)
+                throw new ArgumentNullException(nameof(socketHandler), "Socket must be assigned.");
+
+            _socketHandler = socketHandler;
+        }
+
+        #endregion
+
+        #region Getters / Setters
+
+        /// <summary>
+        ///     Client State to be managed by the interactive console.
+        /// </summary>
+        private ClientState State
+        {
+            get => _state;
+            set
+            {
+                if (value == null)
+                    return;
+
+                _state = value;
+            }
+        }
+
+        #endregion
 
         /// <summary>
         ///     Main processor that the user interacts with.
         /// </summary>
         /// <returns>Packet information to be transmitted to the server.</returns>
-        public static Packet Core()
+        public Packet Core()
         {
             // Print out the available options that the user can choose from.
-            Console.WriteLine("\nChoose an option:");
-            foreach (var e in UniqueEnumNames<BaseOptions>(false, 0))
-                Console.Write($"[{e.ToLower()}] ");
-
-            Console.WriteLine(); // Blank line for styling.
+            Input.PrintUniqueOptions<BaseOptions>(false, 0);
 
             // Loop until we get valid user input as to which option to perform.
             do
             {
-                string userInput;
-                do
-                {
-                    Console.Write("\n > ");
-                    userInput = Console.ReadLine();
-                } while (string.IsNullOrWhiteSpace(userInput));
+                var userInput = Input.Get();
 
-                Console.WriteLine();
-
-                // Convert to lowercase and split the input into a list.
-                userInput = userInput.ToLower();
-                _lastOption = userInput.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+                // Process the user input.
+                _input = new Input(userInput);
 
                 try
                 {
@@ -74,8 +124,9 @@ namespace SUS.Client
         /// <param name="packet">Packet to process.</param>
         /// <param name="toServer">Information to be sent back to the remove host.</param>
         /// <returns>Success or failure of the action..</returns>
-        public static bool PacketParser(Packet packet, out Packet toServer)
+        public bool PacketParser(Packet packet, out Packet toServer)
         {
+            Console.WriteLine();
             toServer = null;
 
             switch (packet)
@@ -101,7 +152,7 @@ namespace SUS.Client
                     if (pkt.Message != string.Empty)
                         Utility.ConsoleNotify("Reason: " + pkt.Message);
 
-                    SocketHandler.Kill();
+                    _socketHandler.Kill();
                     break;
 
                 // Information requested by the server to be displayed.
@@ -137,104 +188,26 @@ namespace SUS.Client
 
         #endregion
 
-        #region Enums
-
-        private enum BaseOptions
-        {
-            None,
-            Help,
-            Get,
-            Use,
-            Move,
-            Attack,
-            Vendors,
-            Exit,
-
-            // Aliases
-            Show = Get,
-            List = Get,
-            Quit = Exit
-        }
-
-        private enum GetOptions
-        {
-            None,
-            Help,
-            Paperdoll,
-            Location,
-            Equipment,
-            Items,
-            Vendors,
-            Npcs
-        }
-
-        #endregion
-
-        #region Getters / Setters
-
-        /// <summary>
-        ///     Client State to be managed by the interactive console.
-        /// </summary>
-        private static ClientState State
-        {
-            get => _state;
-            set
-            {
-                if (value == null)
-                    return;
-
-                _state = value;
-            }
-        }
-
-        /// <summary>
-        ///     Socket Handler to be utilized by the interactive console.
-        /// </summary>
-        /// <param name="handler"></param>
-        public static void SetHandler(SocketHandler handler)
-        {
-            if (SocketHandler != null)
-                return;
-
-            SocketHandler = handler;
-        }
-
-        #endregion
-
-        #region Console Actions
+        #region Console Parsers
 
         /// <summary>
         ///     Parses user input assigned to '_lastOption'
         /// </summary>
         /// <param name="toServer">Packet to be sent to the server.</param>
         /// <returns>Success or failure of the action.</returns>
-        private static bool InputParser(out Packet toServer)
+        private bool InputParser(out Packet toServer)
         {
-            // We cannot operate on an invalid supplied list of options.
-            if (_lastOption == null || _lastOption.Count == 0)
-                throw new ArgumentException("User input cannot be null or empty.");
-
-            // Attempt to convert the input to an Enum value ignoring duplicates.
-            if (!ConvertEnum<BaseOptions>(_lastOption[0], out var opt, false, 0))
-                throw new ArgumentException("User input was not valid.");
-
-            switch (opt)
+            switch (_input.Base)
             {
                 case BaseOptions.Help:
-                    Console.WriteLine("Options:");
-                    foreach (var e in UniqueEnumNames<BaseOptions>(false, 0))
-                        Console.Write($"[{e.ToLower()}] ");
-
-                    Console.WriteLine();
+                    Input.PrintUniqueOptions<BaseOptions>(false, 0);
                     toServer = null;
                     break;
 
                 case BaseOptions.Get:
-                    _lastOption.RemoveAt(0); // Remove the "get" portion of the command.
                     toServer = GetParser();
                     break;
                 case BaseOptions.Use:
-                    _lastOption.RemoveAt(0); // Remove the "use" portion of the command.
                     toServer = UseItem();
                     break;
                 case BaseOptions.Move:
@@ -253,31 +226,25 @@ namespace SUS.Client
 
                 case BaseOptions.None:
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(opt));
+                    throw new ArgumentOutOfRangeException(nameof(_input.Base));
             }
 
             return toServer != null;
         }
 
-        private static Packet GetParser()
+        private Packet GetParser()
         {
-            // We cannot operate on an invalid supplied list of options.
-            if (_lastOption == null || _lastOption.Count == 0)
-                throw new ArgumentException("That command requires more input, please use 'get help'.");
+            var getOption = _input.GetOption;
 
-            // Attempt to convert the input to an Enum value ignoring duplicates.
-            if (!ConvertEnum<GetOptions>(_lastOption[0], out var opt, false, 0))
-                throw new ArgumentException("User input was not valid.");
+            // Present the options and attempt to parse the input.
+            if (getOption == GetOptions.None)
+                getOption = Input.PrintAndGet<GetOptions>(false, 0);
 
-            switch (opt)
+            switch (getOption)
             {
                 // Print the help message.
                 case GetOptions.Help:
-                    Console.WriteLine("Options:");
-                    foreach (var e in UniqueEnumNames<GetOptions>(false))
-                        Console.Write($"[{e.ToLower()}] ");
-
-                    Console.WriteLine();
+                    Input.PrintUniqueOptions<GetOptions>(false, 0);
                     return null;
 
                 // Information to retrieve from the remote connection.
@@ -295,7 +262,7 @@ namespace SUS.Client
                     return new GetInfoPacket(GetInfoPacket.RequestReason.Items);
                 case GetOptions.None:
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(opt));
+                    throw new ArgumentOutOfRangeException(nameof(_input.GetOption));
             }
         }
 
@@ -307,24 +274,18 @@ namespace SUS.Client
         ///     A wrapper for the Socket Handler to send information to the remote connection.
         /// </summary>
         /// <param name="packet">Information to be sent.</param>
-        public static void ToServer(IPacket packet)
+        public void ToServer(IPacket packet)
         {
-            if (SocketHandler == null)
-                throw new InvalidSocketHandlerException("Socket handler for the server was never assigned.");
-
-            SocketHandler.Send(packet);
+            _socketHandler.Send(packet);
         }
 
         /// <summary>
         ///     A wrapper for the Socket Handler to receive information from the remote connection.
         /// </summary>
-        /// <returns></returns>
-        public static Packet FromServer()
+        /// <returns>Packet retrieved from the remote connection.</returns>
+        public Packet FromServer()
         {
-            if (SocketHandler == null)
-                throw new InvalidSocketHandlerException("Socket handler for the server was never assigned.");
-
-            if (!(SocketHandler.Receive() is Packet packet))
+            if (!(_socketHandler.Receive() is Packet packet))
                 throw new InvalidPacketException("Server sent an invalid packet.");
 
             return packet;
@@ -339,7 +300,7 @@ namespace SUS.Client
         /// </summary>
         /// <param name="movePacket">Packet received by the remote connection to process.</param>
         /// <returns>Information to be sent to the remote connection.</returns>
-        private static Packet MobileMove(MovePacket movePacket = null)
+        private Packet MobileMove(MovePacket movePacket = null)
         {
             // Initiate stage, get either a location or direction from the user. Send it off.
             if (movePacket == null || movePacket.Stage == Packet.Stages.One)
@@ -352,7 +313,7 @@ namespace SUS.Client
                     return GetMovePacket(State.CurrentRegion.Navigable, State.NearbyAccessibleRegions);
 
                 // Process the result from the remote connection.
-                default:
+                case Packet.Stages.Two:
                     State.CurrentRegion = movePacket.NewRegion; // Reassign our region.
                     if (movePacket.DiscoveredRegions == Regions.None)
                         return null;
@@ -361,6 +322,10 @@ namespace SUS.Client
                     State.AddUnlockedRegion(movePacket.NewRegion.Connections);
                     Console.WriteLine($"Discovered: {movePacket.DiscoveredRegions}!");
                     return null;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(movePacket.Stage),
+                        "An error occurred while trying to move.");
             }
         }
 
@@ -369,7 +334,7 @@ namespace SUS.Client
         /// </summary>
         /// <param name="combatPacket">Packet received from the remote connection to process.</param>
         /// <returns>Information to be sent to the remote connection.</returns>
-        private static Packet MobileCombat(CombatPacket combatPacket = null)
+        private Packet MobileCombat(CombatPacket combatPacket = null)
         {
             // Initiate stage, request potential targets from the server.
             if (combatPacket == null || combatPacket.Stage == Packet.Stages.One)
@@ -383,6 +348,20 @@ namespace SUS.Client
 
                 // Packet received, potential targets included.
                 case Packet.Stages.Two:
+                    // Attempt the parse "last" from left-over user input.
+                    while (_input.Iterate(out var input))
+                    {
+                        // See if the user input is "last".
+                        if (!input.Contains("last"))
+                            continue;
+
+                        if (!combatPacket.AllowLast)
+                            continue;
+
+                        combatPacket.LastSelected = true;
+                        return combatPacket;
+                    }
+
                     // We cannot perform attacks on zero nearby targets.
                     if (combatPacket.Mobiles.Count == 0)
                     {
@@ -390,27 +369,13 @@ namespace SUS.Client
                         return null;
                     }
 
-                    // For display purposes when the user is prompted for an action.
-                    if (!combatPacket.Mobiles.ContainsKey(0))
-                        Console.WriteLine(" [0] None");
+                    if (!combatPacket.SetTarget())
+                        return null;
 
-                    // List of the possible mobiles to attack.
-                    foreach (var (value, mobile) in combatPacket.Mobiles)
-                        Console.WriteLine($" [{value}] {mobile.Name}");
-
-                    Console.WriteLine(); // Blank line to make it pretty.
-
-                    // Get the choice from the user as to what mobile (if any) should be attacked.
-                    var choice = Utility.ReadInt(combatPacket.Mobiles.Count + 1, true);
-                    if (choice == 0)
-                        return null; // If the user decided on "none", then return null.
-
-                    // Assign the LocalNPC to the choice.
-                    combatPacket.AddTarget(combatPacket.Mobiles[choice]);
                     return combatPacket;
 
                 // Action has been performed, print the result of the combat.
-                default:
+                case Packet.Stages.Three:
                     // Server response on the action.
                     Console.WriteLine(combatPacket.Result);
                     foreach (var str in combatPacket.Updates)
@@ -419,6 +384,10 @@ namespace SUS.Client
                     // Write it to a local log for debugging.
                     Utility.LogWrite("combat.txt", combatPacket.Updates);
                     return null;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(combatPacket.Stage),
+                        "An error occurred while trying to perform combat.");
             }
         }
 
@@ -427,7 +396,7 @@ namespace SUS.Client
         /// </summary>
         /// <param name="resurrectPacket">Packet received from the remote connection to process.</param>
         /// <returns>Information to be sent to the remote connection.</returns>
-        private static Packet Resurrect(ResurrectPacket resurrectPacket)
+        private Packet Resurrect(ResurrectPacket resurrectPacket)
         {
             // The resurrection was not targeted to this player.
             if (resurrectPacket.PlayerId != State.PlayerId)
@@ -444,7 +413,7 @@ namespace SUS.Client
         /// </summary>
         /// <param name="useItem">Packet received from the remote connection to process.</param>
         /// <returns>Information to be sent to the remote connection.</returns>
-        private static Packet UseItem(UseItemPacket useItem = null)
+        private Packet UseItem(UseItemPacket useItem = null)
         {
             // Initial stage, get the items from the remote connection that the player owns.
             if (useItem == null || useItem.Stage == Packet.Stages.One)
@@ -459,8 +428,12 @@ namespace SUS.Client
                 // Decide which item to utilize.
                 case Packet.Stages.Two:
                     // Attempt the parse the item name from left-over user input.
-                    if (_lastOption != null && _lastOption.Count > 0 && GetItem(useItem, string.Join(" ", _lastOption)))
-                        return useItem;
+                    while (_input.Iterate(out var item))
+                    {
+                        // See if the user input is an item that is owned.
+                        if (GetItem(useItem, item))
+                            return useItem;
+                    }
 
                     var pos = 0;
                     Console.WriteLine($" [{pos++}] None");
@@ -483,7 +456,7 @@ namespace SUS.Client
                         if (++pos != opt)
                             continue;
 
-                        // Item has been found, return a packet to ther server.
+                        // Item has been found, return a packet to the server.
                         useItem.Item = i;
                         return useItem;
                     }
@@ -491,9 +464,13 @@ namespace SUS.Client
                     return null;
 
                 // Server has responded with the action being completed either successfully or failure.
-                default:
+                case Packet.Stages.Three:
                     Console.WriteLine($" {useItem.Response}");
                     return null;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(useItem.Stage),
+                        "An error occurred while trying to use the vendor.");
             }
         }
 
@@ -502,7 +479,7 @@ namespace SUS.Client
         /// </summary>
         /// <param name="useVendor">Packet received from the remote connection to process.</param>
         /// <returns>Information to be sent to the remote connection.</returns>
-        private static Packet UseVendor(UseVendorPacket useVendor = null)
+        private Packet UseVendor(UseVendorPacket useVendor = null)
         {
             // Initial stage, get the local vendors from the remote connection.
             if (useVendor == null || useVendor.Stage == Packet.Stages.One)
@@ -516,6 +493,14 @@ namespace SUS.Client
 
                 // Prompt the user to decide which vendor and services to use.
                 case Packet.Stages.Two:
+                    // Attempt the parse the vendor name from left-over user input.
+                    while (_input.Iterate(out var vendor))
+                    {
+                        // See if the user input is a vendor.
+                        if (GetVendor(useVendor, vendor))
+                            return useVendor;
+                    }
+
                     // Print out the vendors.
                     foreach (var (key, value) in useVendor.LocalVendors)
                         Console.WriteLine($"[{key}] {value}");
@@ -528,7 +513,7 @@ namespace SUS.Client
                         return null; // If the user decided on "none", then return null.
 
                     // Assign the LocalNPC to the choice.
-                    useVendor.LocalNPC = useVendor.LocalVendors[choice];
+                    useVendor.LocalNpc = useVendor.LocalVendors[choice];
                     break;
 
                 // Prompt the user to decide which item to choose for the service.
@@ -541,7 +526,7 @@ namespace SUS.Client
                     }
 
                     // Get the item choice from the user.
-                    if (!useVendor.SetItem(true))
+                    if (!useVendor.SetItem())
                         return null;
 
                     break;
@@ -569,7 +554,7 @@ namespace SUS.Client
         ///     Processes 'get' information received from the remote connection.
         /// </summary>
         /// <param name="getInfo">Information received to parse.</param>
-        private static void GetInfo(GetInfoPacket getInfo)
+        private void GetInfo(GetInfoPacket getInfo)
         {
             switch (getInfo.Reason)
             {
@@ -631,13 +616,59 @@ namespace SUS.Client
         }
 
         /// <summary>
+        ///     Attempts to parse a vendor from a string and applies it to the packet.
+        /// </summary>
+        /// <param name="useVendor">Packet to add the vendor to.</param>
+        /// <param name="vendor">Vendor to attempt to parse.</param>
+        /// <returns>Success or failure of the action.</returns>
+        private static bool GetVendor(UseVendorPacket useVendor, string vendor)
+        {
+            foreach (var (i, value) in useVendor.LocalVendors)
+            {
+                var name = Enum.GetName(typeof(NpcTypes), value);
+                if (!name.ToLower().Contains(vendor))
+                    continue;
+
+                // Valid vendor.
+                useVendor.LocalNpc = value;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         ///     Gets either a Location or Direction from the user as to where to move.
         /// </summary>
         /// <param name="canNavigate">Can the user navigate in the current zone?</param>
         /// <param name="nearbyAccessibleRegions">Nearby regions that are available to the user.</param>
         /// <returns></returns>
-        private static MovePacket GetMovePacket(bool canNavigate, Regions nearbyAccessibleRegions)
+        private MovePacket GetMovePacket(bool canNavigate, Regions nearbyAccessibleRegions)
         {
+            // Try to parse the remainder of the user input.
+            while (_input.Iterate(out var input))
+            {
+                // Attempt to parse a direction.
+                if (Input.ConvertEnum<Directions>(input, out var dir, false, 0))
+                {
+                    // Be sure the parsed direction is possible in this region.
+                    if (!canNavigate)
+                        Utility.ConsoleNotify("You cannot navigate in this region.");
+                    else
+                        return new MovePacket(State.Account.Serial, State.CurrentRegion.Id, dir);
+                }
+
+                // Try to parse a nearby region.
+                if (!Input.ConvertEnum<Regions>(input, out var reg, false, 0))
+                    continue;
+
+                // Verify it can be accessed.
+                if ((State.NearbyAccessibleRegions & reg) != reg)
+                    Utility.ConsoleNotify("That region is not accessible from your current location.");
+                else
+                    return new MovePacket(State.Account.Serial, reg);
+            }
+
             var count = 0;
             Console.WriteLine($" [{count++}] None");
 
@@ -704,84 +735,6 @@ namespace SUS.Client
             }
 
             throw new IndexOutOfRangeException("Request movement cannot be decided.");
-        }
-
-        /// <summary>
-        ///     Gets a list of enum names that are unique in their underlying value. Ignoring duplicates and aliases.
-        /// </summary>
-        /// <typeparam name="TEnum">Type of the Enum.</typeparam>
-        /// <param name="allowNone">Is none a valid argument to consider?</param>
-        /// <param name="noneValue">If None is in the enum, the value it holds.</param>
-        /// <returns>List of unique enum names pertaining to the TEnum type.</returns>
-        private static List<string> UniqueEnumNames<TEnum>(bool allowNone, int noneValue = -1)
-            where TEnum : struct, IConvertible, IFormattable
-        {
-            var uniqueNames = new List<string>();
-
-            var enumPos = 0;
-            foreach (var e in (TEnum[]) Enum.GetValues(typeof(TEnum)))
-            {
-                // Get the integer and string value of the enum.
-                var enumValue = Convert.ToInt32(e);
-                var enumName = Enum.GetName(typeof(TEnum), e);
-
-                // If it is a duplicate or alias, skip it.
-                if (enumPos != enumValue)
-                    continue;
-
-                // If the value is "none" and we are ignoring "none", continue.
-                if (!allowNone && noneValue >= 0 && enumPos == noneValue && enumName.ToLower() == "none")
-                {
-                    ++enumPos;
-                    continue;
-                }
-
-                // Add the value to the list to be returned.
-                uniqueNames.Add(enumName);
-                ++enumPos;
-            }
-
-            return uniqueNames;
-        }
-
-        /// <summary>
-        ///     Takes in a string, attempts to match it to a value of an Enum. Works for integer based Enums.
-        /// </summary>
-        /// <typeparam name="TEnum">Type of Enum</typeparam>
-        /// <param name="value">String to convert to Enum.</param>
-        /// <param name="input">If successful, holds the converted value.</param>
-        /// <param name="allowNone">Is none a valid argument to consider?</param>
-        /// <param name="noneValue">If None is in the enum, the value it holds.</param>
-        /// <returns>Success or failure of the action.</returns>
-        private static bool ConvertEnum<TEnum>(string value, out TEnum input, bool allowNone, int noneValue = -1)
-            where TEnum : struct, IConvertible, IFormattable
-        {
-            // Set the default value to the value of "none" in the event we return false.
-            input = (TEnum) Enum.Parse(typeof(TEnum), noneValue.ToString(), true);
-
-            var enumPos = -1;
-            foreach (var enumName in Enum.GetNames(typeof(TEnum)))
-            {
-                ++enumPos; // Increment the position of the enum.
-
-                // Get the enum in the form of the enum type and integer.
-                var enumCode = (TEnum) Enum.Parse(typeof(TEnum), enumName, true);
-                var enumValue = Convert.ToInt32(enumCode);
-
-                // If the value is "none" and we are ignoring "none", continue.
-                if (!allowNone && noneValue >= 0 && enumPos == noneValue && enumName.ToLower() == "none")
-                    continue;
-
-                // Compare if the enum contains the passed value, continue if not.
-                if (!enumName.ToLower().Contains(value.ToLower()))
-                    continue;
-
-                // Success, convert it to the first occurrence in the enum (aliases / duplicates are treated as same value.
-                input = (TEnum) Enum.Parse(typeof(TEnum), enumValue.ToString(), true);
-                return true;
-            }
-
-            return false;
         }
 
         #endregion

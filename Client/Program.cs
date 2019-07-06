@@ -79,13 +79,13 @@ namespace SUS.Client
             try
             {
                 // The Socket to communicate over to the server.
-                InteractiveConsole.SetHandler(new SocketHandler(toServer, SocketHandler.Types.Server, _debug));
+                var console = new InteractiveConsole(new SocketHandler(toServer, SocketHandler.Types.Server, _debug));
 
                 // Send the authentication to the server.
-                InteractiveConsole.ToServer(new AccountAuthenticatePacket(id, username));
+                console.ToServer(new AccountAuthenticatePacket(id, username));
 
                 // Handles the client's connection to the server with packet parsing.
-                ServerHandler();
+                ServerHandler(console);
             }
             catch (InvalidSocketHandlerException she)
             {
@@ -94,6 +94,10 @@ namespace SUS.Client
             catch (InvalidPacketException ipe)
             {
                 Utility.ConsoleNotify($"Received a bad packet: {ipe.Message}");
+            }
+            catch (ArgumentNullException ane)
+            {
+                Utility.ConsoleNotify($"Invalid argument passed: {ane.Message}");
             }
             catch (Exception e)
             {
@@ -104,28 +108,28 @@ namespace SUS.Client
         /// <summary>
         ///     The loop the sends and receives information to the remote connection until closed..
         /// </summary>
-        private static void ServerHandler()
+        private static void ServerHandler(InteractiveConsole console)
         {
             // While we are receiving information from the server, continue to decipher and process it.
-            for (Packet serverPacket; (serverPacket = InteractiveConsole.FromServer()) != null;)
+            for (Packet serverPacket; (serverPacket = console.FromServer()) != null;)
             {
                 try
                 {
                     // Attempt to parse the received packet.
-                    if (InteractiveConsole.PacketParser(serverPacket, out var clientRequest))
+                    if (console.PacketParser(serverPacket, out var clientRequest))
                     {
                         // If the packet was modified and requires to be resend, do so.
-                        InteractiveConsole.ToServer(clientRequest);
+                        console.ToServer(clientRequest);
                         continue;
                     }
 
                     // Activates the interactive console to grab the next action desired to be performed.
-                    clientRequest = InteractiveConsole.Core();
+                    clientRequest = console.Core();
                     if (clientRequest == null)
                         continue;
 
                     // Sends the information from the players action to the remote connection.
-                    InteractiveConsole.ToServer(clientRequest);
+                    console.ToServer(clientRequest);
 
                     // If we are closing the connection, exit.
                     if (clientRequest is SocketKillPacket)

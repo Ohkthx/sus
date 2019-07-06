@@ -47,6 +47,7 @@ namespace SUS.Shared
     public struct BaseMobile
     {
         private readonly string _name;
+        private readonly bool _notEmpty;
 
         #region Constructors
 
@@ -55,6 +56,7 @@ namespace SUS.Shared
             Type = type;
             Serial = serial;
             _name = name;
+            _notEmpty = true;
         }
 
         public int Serial { get; }
@@ -68,6 +70,8 @@ namespace SUS.Shared
         public string Name => _name ?? "Unknown";
 
         public bool IsPlayer => Type == MobileTypes.Player;
+
+        public bool IsEmpty => !_notEmpty;
 
         #endregion
 
